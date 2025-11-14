@@ -13,6 +13,8 @@ import sys
 
 here = Path(__file__).resolve().parent
 
+default_opt_base_model = "opt_base_roms-marbl-cson-default"
+
 
 def _ensure_dir(path: Path) -> Path:
     """Create directory if needed and return it."""
@@ -35,6 +37,7 @@ class DataPaths:
 # --------------------------------------------------------
 # Hostname / system detection helpers
 # --------------------------------------------------------
+
 
 def _get_hostname() -> str:
     """Return lowercase hostname from multiple sources."""
@@ -108,9 +111,10 @@ def register_system(tag: str) -> Callable[[SystemLayoutFn], SystemLayoutFn]:
 
 # ------------------ Default layouts ----------------------
 
+
 @register_system("mac")
 def _layout_mac(home: Path, env: dict) -> Tuple[Path, Path, Path]:
-    base = home / "data"
+    base = home / "cson-forge-data"
     source_data = base / "source_data"
     input_data = base / "input_data"
     scratch = base / "scratch"
@@ -121,10 +125,11 @@ def _layout_mac(home: Path, env: dict) -> Tuple[Path, Path, Path]:
 def _layout_anvil(home: Path, env: dict) -> Tuple[Path, Path, Path]:
     work = Path(env.get("WORK", home / "work"))
     scratch_root = Path(env.get("SCRATCH", work / "scratch"))
+    base = work / "cson-forge-data"
 
-    source_data = work / "roms" / "source_data"
-    input_data = work / "roms" / "input_data"
-    scratch = scratch_root / "roms"
+    source_data = base / "source_data"
+    input_data = base / "input_data"
+    scratch = scratch_root / "cson-forge"
     return source_data, input_data, scratch
 
 
@@ -139,7 +144,7 @@ def _layout_perlmutter(home: Path, env: dict) -> Tuple[Path, Path, Path]:
 
 @register_system("unknown")
 def _layout_unknown(home: Path, env: dict) -> Tuple[Path, Path, Path]:
-    base = home / "data"
+    base = home / "cson-forge-data"
     source_data = base / "source_data"
     input_data = base / "input_data"
     scratch = base / "scratch"
@@ -149,6 +154,7 @@ def _layout_unknown(home: Path, env: dict) -> Tuple[Path, Path, Path]:
 # --------------------------------------------------------
 # Main factory
 # --------------------------------------------------------
+
 
 def get_data_paths() -> DataPaths:
     """
@@ -165,7 +171,7 @@ def get_data_paths() -> DataPaths:
     source_data, input_data, scratch = layout_fn(home, env)
 
     # Project-local assets
-    model_config = here / "model-configs" / "opt_base_roms-marbl-cson-default"
+    model_config = here / "model-configs" / default_opt_base_model
     logs_dir = here / "logs"
     blueprints_dir = here / "blueprints"
 
@@ -190,6 +196,7 @@ paths = get_data_paths()
 # --------------------------------------------------------
 # Command-line interface
 # --------------------------------------------------------
+
 
 def _paths_to_dict(dp: DataPaths) -> dict:
     return {
