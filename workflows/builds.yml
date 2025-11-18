@@ -1,47 +1,14 @@
-- build_dir: /Users/mclong/codes/cson-forge/workflows/model-configs/bld_roms-marbl-gulf-guinea-toy
-  clean: false
+- build_dir: /Users/mclong/codes/cson-forge/workflows/model-configs/bld/bld_roms-marbl-wio-toy.tmp
+  clean: true
   compiler_kind: gnu
-  exe: /Users/mclong/codes/cson-forge/workflows/model-configs/exe/roms-marbl-gulf-guinea-toy-20251117T140022Z-5aabd4a0
-  grid_name: gulf-guinea-toy
-  input_data_path: /Users/mclong/cson-forge-data/input_data/gulf-guinea-toy
-  logs_dir: /Users/mclong/codes/cson-forge/workflows/model-configs/bld_roms-marbl-gulf-guinea-toy/logs
-  marbl_root: /Users/mclong/cson-forge-data/codes/MARBL
-  model_name: roms-marbl
-  opt_base_dir: /Users/mclong/codes/cson-forge/workflows/model-configs/opt_base_roms-marbl-cson-default
-  opt_dir: /Users/mclong/codes/cson-forge/workflows/model-configs/opt_roms-marbl-gulf-guinea-toy
-  parameters:
-    cdr_frc.opt: {}
-    param.opt:
-      NP_ETA: 5
-      NP_XI: 2
-    river_frc.opt:
-      nriv: 30
-    roms.in: {}
-  repos:
-    marbl:
-      checkout: marbl0.45.0
-      default_dirname: MARBL
-      url: https://github.com/marbl-ecosys/MARBL.git
-    roms:
-      checkout: null
-      default_dirname: ucla-roms
-      url: https://github.com/CWorthy-ocean/ucla-roms.git
-  roms_conda_env: roms_env
-  roms_root: /Users/mclong/cson-forge-data/codes/ucla-roms
-  system: mac
-  timestamp_utc: '2025-11-17T14:00:53.161641Z'
-  token: 20251117T140022Z-5aabd4a0
-- build_dir: /Users/mclong/codes/cson-forge/workflows/model-configs/bld_roms-marbl-wio-toy
-  clean: false
-  compiler_kind: gnu
-  exe: /Users/mclong/codes/cson-forge/workflows/model-configs/exe/roms-marbl-wio-toy-20251117T141655Z-f5975969
+  exe: /Users/mclong/codes/cson-forge/workflows/model-configs/exe/roms-marbl-wio-toy-20251118T001633Z-30eb1d12
   grid_name: wio-toy
   input_data_path: /Users/mclong/cson-forge-data/input_data/wio-toy
-  logs_dir: /Users/mclong/codes/cson-forge/workflows/model-configs/bld_roms-marbl-wio-toy/logs
+  logs_dir: /Users/mclong/codes/cson-forge/workflows/model-configs/bld/bld_roms-marbl-wio-toy.tmp/logs
   marbl_root: /Users/mclong/cson-forge-data/codes/MARBL
   model_name: roms-marbl
-  opt_base_dir: /Users/mclong/codes/cson-forge/workflows/model-configs/opt_base_roms-marbl-cson-default
-  opt_dir: /Users/mclong/codes/cson-forge/workflows/model-configs/opt_roms-marbl-wio-toy
+  opt_base_dir: /Users/mclong/codes/cson-forge/workflows/model-configs/opt_base/opt_base_roms-marbl-cson-default
+  opt_dir: /Users/mclong/codes/cson-forge/workflows/model-configs/opt/opt_roms-marbl-wio-toy
   parameters:
     cdr_frc.opt: {}
     param.opt:
@@ -62,5 +29,170 @@
   roms_conda_env: roms_env
   roms_root: /Users/mclong/cson-forge-data/codes/ucla-roms
   system: mac
-  timestamp_utc: '2025-11-17T14:17:26.553227Z'
-  token: 20251117T141655Z-f5975969
+  timestamp_utc: '2025-11-18T00:17:48.247234Z'
+  token: 20251118T001633Z-30eb1d12
+- build_dir_tmp: /Users/mclong/codes/cson-forge/workflows/model-configs/bld/bld_roms-marbl-wio-toy.tmp
+  clean: true
+  compiler_kind: gnu
+  exe: /Users/mclong/codes/cson-forge/workflows/model-configs/bld/bld_roms-marbl-wio-toy.tmp/roms
+  grid_name: wio-toy
+  input_data_path: /Users/mclong/cson-forge-data/input_data/wio-toy
+  logs_dir: /Users/mclong/codes/cson-forge/workflows/model-configs/bld/bld_roms-marbl-wio-toy.tmp/logs
+  marbl_root: /Users/mclong/cson-forge-data/codes/MARBL
+  model_name: roms-marbl
+  opt_base_dir: /Users/mclong/codes/cson-forge/workflows/model-configs/opt_base/opt_base_roms-marbl-cson-default
+  opt_dir: /Users/mclong/codes/cson-forge/workflows/model-configs/opt/opt_roms-marbl-wio-toy
+  parameters:
+    cdr_frc.opt: {}
+    param.opt:
+      NP_ETA: 5
+      NP_XI: 2
+    river_frc.opt:
+      nriv: 89
+    roms.in: {}
+  repos:
+    marbl:
+      checkout: marbl0.45.0
+      default_dirname: MARBL
+      url: https://github.com/marbl-ecosys/MARBL.git
+    roms:
+      checkout: null
+      default_dirname: ucla-roms
+      url: https://github.com/CWorthy-ocean/ucla-roms.git
+  roms_conda_env: roms_env
+  roms_root: /Users/mclong/cson-forge-data/codes/ucla-roms
+  system: mac
+  timestamp_utc: '2025-11-18T00:24:28.609864Z'
+  token: 20251118T002316Z-54fbf225
+- build_dir_tmp: /Users/mclong/codes/cson-forge/workflows/model-configs/bld/tmp_bld_roms-marbl-wio-toy
+  clean: true
+  compiler_kind: gnu
+  exe: /Users/mclong/codes/cson-forge/workflows/model-configs/exe/roms-marbl-wio-toy-20251118T002537Z-51adf390
+  grid_name: wio-toy
+  input_data_path: /Users/mclong/cson-forge-data/input_data/wio-toy
+  logs_dir: /Users/mclong/codes/cson-forge/workflows/model-configs/bld/tmp_bld_roms-marbl-wio-toy/logs
+  marbl_root: /Users/mclong/cson-forge-data/codes/MARBL
+  model_name: roms-marbl
+  opt_base_dir: /Users/mclong/codes/cson-forge/workflows/model-configs/opt_base/opt_base_roms-marbl-cson-default
+  opt_dir: /Users/mclong/codes/cson-forge/workflows/model-configs/opt/opt_roms-marbl-wio-toy
+  parameters:
+    cdr_frc.opt: {}
+    param.opt:
+      NP_ETA: 5
+      NP_XI: 2
+    river_frc.opt:
+      nriv: 89
+    roms.in: {}
+  repos:
+    marbl:
+      checkout: marbl0.45.0
+      default_dirname: MARBL
+      url: https://github.com/marbl-ecosys/MARBL.git
+    roms:
+      checkout: null
+      default_dirname: ucla-roms
+      url: https://github.com/CWorthy-ocean/ucla-roms.git
+  roms_conda_env: roms_env
+  roms_root: /Users/mclong/cson-forge-data/codes/ucla-roms
+  system: mac
+  timestamp_utc: '2025-11-18T00:26:49.480608Z'
+  token: 20251118T002537Z-51adf390
+- build_dir: /Users/mclong/codes/cson-forge/workflows/model-configs/bld/bld_roms-marbl-wio-toy
+  clean: false
+  compiler_kind: gnu
+  exe: /Users/mclong/codes/cson-forge/workflows/model-configs/exe/roms-marbl-wio-toy-20251118T002915Z-598ac017
+  grid_name: wio-toy
+  input_data_path: /Users/mclong/cson-forge-data/input_data/wio-toy
+  logs_dir: /Users/mclong/codes/cson-forge/workflows/model-configs/bld/tmp_bld_roms-marbl-wio-toy/logs
+  marbl_root: /Users/mclong/cson-forge-data/codes/MARBL
+  model_name: roms-marbl
+  opt_base_dir: /Users/mclong/codes/cson-forge/workflows/model-configs/opt_base/opt_base_roms-marbl-cson-default
+  opt_dir: /Users/mclong/codes/cson-forge/workflows/model-configs/opt/opt_roms-marbl-wio-toy
+  parameters:
+    cdr_frc.opt: {}
+    param.opt:
+      NP_ETA: 5
+      NP_XI: 2
+    river_frc.opt:
+      nriv: 89
+    roms.in: {}
+  repos:
+    marbl:
+      checkout: marbl0.45.0
+      default_dirname: MARBL
+      url: https://github.com/marbl-ecosys/MARBL.git
+    roms:
+      checkout: null
+      default_dirname: ucla-roms
+      url: https://github.com/CWorthy-ocean/ucla-roms.git
+  roms_conda_env: roms_env
+  roms_root: /Users/mclong/cson-forge-data/codes/ucla-roms
+  system: mac
+  timestamp_utc: '2025-11-18T00:29:45.298479Z'
+  token: 20251118T002915Z-598ac017
+- build_dir: /Users/mclong/codes/cson-forge/workflows/model-configs/bld/bld_roms-marbl-wio-toy
+  clean: false
+  compiler_kind: gnu
+  exe: /Users/mclong/codes/cson-forge/workflows/model-configs/exe/roms-marbl-wio-toy-20251118T003859Z-e79dc892
+  grid_name: wio-toy
+  input_data_path: /Users/mclong/cson-forge-data/input_data/wio-toy
+  logs_dir: /Users/mclong/codes/cson-forge/workflows/model-configs/bld/tmp_bld_roms-marbl-wio-toy/logs
+  marbl_root: /Users/mclong/cson-forge-data/codes/MARBL
+  model_name: roms-marbl
+  opt_base_dir: /Users/mclong/codes/cson-forge/workflows/model-configs/opt_base/opt_base_roms-marbl-cson-default
+  opt_dir: /Users/mclong/codes/cson-forge/workflows/model-configs/opt/opt_roms-marbl-wio-toy
+  parameters:
+    cdr_frc.opt: {}
+    param.opt:
+      NP_ETA: 5
+      NP_XI: 2
+    river_frc.opt:
+      nriv: 89
+    roms.in: {}
+  repos:
+    marbl:
+      checkout: marbl0.45.0
+      default_dirname: MARBL
+      url: https://github.com/marbl-ecosys/MARBL.git
+    roms:
+      checkout: null
+      default_dirname: ucla-roms
+      url: https://github.com/CWorthy-ocean/ucla-roms.git
+  roms_conda_env: roms_env
+  roms_root: /Users/mclong/cson-forge-data/codes/ucla-roms
+  system: mac
+  timestamp_utc: '2025-11-18T00:39:29.620009Z'
+  token: 20251118T003859Z-e79dc892
+- build_dir: /Users/mclong/codes/cson-forge/workflows/model-configs/bld/bld_roms-marbl-gulf-guinea-toy
+  clean: false
+  compiler_kind: gnu
+  exe: /Users/mclong/codes/cson-forge/workflows/model-configs/exe/roms-marbl-gulf-guinea-toy-20251118T012021Z-526d8c7a
+  grid_name: gulf-guinea-toy
+  input_data_path: /Users/mclong/cson-forge-data/input_data/gulf-guinea-toy
+  logs_dir: /Users/mclong/codes/cson-forge/workflows/model-configs/bld/tmp_bld_roms-marbl-gulf-guinea-toy/logs
+  marbl_root: /Users/mclong/cson-forge-data/codes/MARBL
+  model_name: roms-marbl
+  opt_base_dir: /Users/mclong/codes/cson-forge/workflows/model-configs/opt_base/opt_base_roms-marbl-cson-default
+  opt_dir: /Users/mclong/codes/cson-forge/workflows/model-configs/opt/opt_roms-marbl-gulf-guinea-toy
+  parameters:
+    cdr_frc.opt: {}
+    param.opt:
+      NP_ETA: 5
+      NP_XI: 2
+    river_frc.opt:
+      nriv: 30
+    roms.in: {}
+  repos:
+    marbl:
+      checkout: marbl0.45.0
+      default_dirname: MARBL
+      url: https://github.com/marbl-ecosys/MARBL.git
+    roms:
+      checkout: null
+      default_dirname: ucla-roms
+      url: https://github.com/CWorthy-ocean/ucla-roms.git
+  roms_conda_env: roms_env
+  roms_root: /Users/mclong/cson-forge-data/codes/ucla-roms
+  system: mac
+  timestamp_utc: '2025-11-18T01:20:51.474241Z'
+  token: 20251118T012021Z-526d8c7a

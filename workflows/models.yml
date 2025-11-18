@@ -1,6 +1,6 @@
 
 roms-marbl:
-  opt_base_dir: opt_base_roms-marbl-cson-default  
+  opt_base_dir: opt_base/opt_base_roms-marbl-cson-default  
   conda_env: roms_env
   repos:
     roms: 

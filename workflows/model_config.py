@@ -145,7 +145,7 @@ class ROMSInputs:
         self.bp_path.parent.mkdir(parents=True, exist_ok=True)
 
         # Source data paths from SourceData
-        self.glorys_path = self.source_data.paths["GLORYS"]
+        self.glorys_path = self.source_data.paths["GLORYS_REGIONAL"]
         self.bgc_forcing_path = self.source_data.paths["UNIFIED_BGC"]
 
         # Storage for detailed per-input objects
@@ -548,7 +548,7 @@ class ROMSInputs:
 
 
 # ---------------------------------------------------
-# Optional convenience function that mirrors original API
+# convenience function that mirrors original API
 # ---------------------------------------------------
 
 

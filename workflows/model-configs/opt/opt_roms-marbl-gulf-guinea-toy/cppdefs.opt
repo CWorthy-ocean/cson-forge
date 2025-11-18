@@ -1,0 +1,96 @@
+/* This is "cppdefs.h": MODEL CONFIGURATION FILE
+   ==== == ============ ===== ============= ==== */
+
+/*
+ * CHOOSE ONLY ONE PRIMARY FLAG FOR SWITCH LIST BELOW
+ */
+# define ROMS_MARBL_EXAMPLE
+
+
+#if defined ROMS_MARBL_EXAMPLE
+/*
+   Main switch starts here: model configuration choice.
+*/
+
+   /* grid */
+# define CURVGRID
+# define SPHERICAL
+# define MASKING
+
+ /* IBCs */
+# define BULK_FRC
+# define EXACT_RESTART
+# define SPONGE
+# define RIVER_SOURCE
+
+/* Mixing stuff */
+# define UV_VIS2
+# define TS_DIF2
+
+
+        /* Basics */
+# define SOLVE3D
+# define UV_ADV
+# define UV_COR
+
+        /* Equation of State */
+# define SALINITY
+# define NONLIN_EOS
+# define SPLIT_EOS
+!# define LIN_RHO_EOS
+
+/* Tides */
+# define TIDES
+
+        /* Mixing */
+# define LMD_MIXING
+# define LMD_KPP
+# define LMD_BKPP
+# define LMD_RIMIX
+# define LMD_CONVEC
+# define LMD_NONLOCAL
+        /*        - lateral */
+
+        /*        - vertical */
+
+        /* Boundary Conditions */
+
+# define IMPLICIT_BOTTOM_DRAG
+
+# define OBC_M2FLATHER
+# define OBC_M3ORLANSKI
+# define OBC_TORLANKSI
+!# define OBC_WEST
+# define OBC_EAST
+# define OBC_NORTH
+# define OBC_SOUTH
+
+# define Z_FRC_BRY
+# define M2_FRC_BRY
+# define M3_FRC_BRY
+# define T_FRC_BRY
+
+                        /* Biology Settings */
+# define MARBL
+# define MARBL_DIAGS
+
+#ifdef MARBL
+# define NOX_FORCING
+# define NHY_FORCING
+#endif
+
+!# define BIOLOGY_BEC2
+
+
+#ifdef BIOLOGY_BEC2
+# define BIOLOGY                  /* DPD current does nothing in new code */
+!# define BEC2_DIAG                /* BGC diagnostics */
+#endif /* BIOLOGY_BEC2 */
+
+#if defined(BIOLOGY_BEC2) || defined(MARBL)
+# define PCO2AIR_FORCING
+#endif
+
+#endif /* ROMS_MARBL_EXAMPLE */
+
+#include "set_global_definitions.h"

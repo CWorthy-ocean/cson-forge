@@ -20,7 +20,7 @@ InitialConditions:
   ini_time: '2012-01-01T00:00:00'
   source:
     name: GLORYS
-    path: /Users/mclong/cson-forge-data/source_data/GLORYS_wio-toy_2012-01-01-2012-02-01.nc
+    path: /Users/mclong/cson-forge-data/source_data/GLORYS_REGIONAL_wio-toy_2012-01-01-2012-02-01.nc
     climatology: false
   bgc_source:
     name: UNIFIED

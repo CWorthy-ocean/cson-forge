@@ -120,35 +120,6 @@ def _load_models_yaml(path: Path, model: str) -> ModelSpec:
     )
 
 
-def _copy_opt_dir_to_build_dir(opt_dir: str | Path, build_dir: str | Path) -> None:
-    """
-    Copy the entire contents of an opt_dir into the target build_dir.
-
-    This performs a recursive directory copy using :func:`shutil.copytree`
-    and will merge into an existing ``build_dir`` if it already exists.
-
-    Parameters
-    ----------
-    opt_dir : str or Path
-        Path to the source model configuration directory to copy.
-    build_dir : str or Path
-        Path to the destination directory where the configuration should be
-        copied.
-
-    Notes
-    -----
-    - Uses ``dirs_exist_ok=True`` to allow ``build_dir`` to pre-exist; files
-      and subdirectories within it will be overwritten or merged as needed.
-    - Does not return a value; raises exceptions from ``shutil.copytree`` if
-      copy operations fail (e.g., permissions, missing source path).
-    """
-    shutil.copytree(
-        str(opt_dir),
-        str(build_dir),
-        dirs_exist_ok=True,
-    )
-
-
 def _render_opt_base_dir_to_opt_dir(
     grid_name: str,
     parameters: Dict[str, Dict[str, Any]],
@@ -483,25 +454,26 @@ def build(
 
     model_code = _load_models_yaml(config.paths.models_yaml, model_name)
 
-    opt_base_dir = config.paths.here / "model-configs" / model_code.opt_base_dir
+    opt_base_dir = config.paths.model_configs / model_code.opt_base_dir
 
     # opt_dir: rendered configuration
-    opt_dir = config.paths.here / "model-configs" / f"opt_{model_code.name}-{grid_name}"
+    opt_dir = config.paths.model_configs / "opt" / f"opt_{model_code.name}-{grid_name}"
     opt_dir.mkdir(parents=True, exist_ok=True)
 
-    # build_dir: clean build tree
-    build_dir = config.paths.here / "model-configs" / f"bld_{model_code.name}-{grid_name}"
-    if build_dir.exists():
+    # build_dir_tmp: clean build tree
+    build_dir_final = config.paths.model_configs / "bld" / f"bld_{model_code.name}-{grid_name}"
+    build_dir_tmp = config.paths.model_configs / "bld" / f"tmp_bld_{model_code.name}-{grid_name}"
+    build_dir_tmp.mkdir(parents=True, exist_ok=True)
+    if build_dir_tmp.exists() and clean:
         # Remove any previous build contents to guarantee a clean build tree
-        shutil.rmtree(build_dir)
-    build_dir.mkdir(parents=True, exist_ok=True)
+        shutil.rmtree(build_dir_tmp)
 
     roms_conda_env = model_code.conda_env
     repos = model_code.repos
     if "roms" not in repos or "marbl" not in repos:
         raise ValueError("models.yml must define at least 'roms' and 'marbl' repos.")
 
-    logs_dir = build_dir / "logs"
+    logs_dir = build_dir_tmp / "logs"
     logs_dir.mkdir(parents=True, exist_ok=True)
 
     build_all_log = logs_dir / f"build.{model_code.name}.{build_token}.log"
@@ -533,7 +505,7 @@ def build(
     log(f"Building {model_code.name} for grid: {grid_name}")
     log(f"{model_code.name} opt_base_dir : {opt_base_dir}")
     log(f"ROMS opt_dir      : {opt_dir}")
-    log(f"ROMS build_dir    : {build_dir}")
+    log(f"ROMS build_dir    : {build_dir_final}")
     log(f"Input data path   : {input_data_path}")
     log(f"ROMS_ROOT         : {roms_root}")
     log(f"MARBL_ROOT        : {marbl_root}")
@@ -571,39 +543,6 @@ def build(
         log(f"Conda env '{roms_conda_env}' already exists.")
 
     # -----------------------------------------------------
-    # Clone / update repos
-    # -----------------------------------------------------
-    if not (roms_root / ".git").is_dir():
-        log(f"Cloning ROMS from {repos['roms'].url} into {roms_root}")
-        _run(["git", "clone", repos["roms"].url, str(roms_root)])
-    else:
-        log(f"ROMS repo already present at {roms_root}")
-
-    if repos["roms"].checkout:
-        log(f"Checking out ROMS {repos['roms'].checkout}")
-        _run(["git", "fetch", "--tags"], cwd=roms_root)
-        _run(["git", "checkout", repos["roms"].checkout], cwd=roms_root)
-
-    if not (marbl_root / ".git").is_dir():
-        log(f"Cloning MARBL from {repos['marbl'].url} into {marbl_root}")
-        _run(["git", "clone", repos["marbl"].url, str(marbl_root)])
-    else:
-        log(f"MARBL repo already present at {marbl_root}")
-
-    if repos["marbl"].checkout:
-        log(f"Checking out MARBL {repos['marbl'].checkout}")
-        _run(["git", "fetch", "--tags"], cwd=marbl_root)
-        _run(["git", "checkout", repos["marbl"].checkout], cwd=marbl_root)
-
-    # -----------------------------------------------------
-    # Sanity checks for directory trees
-    # -----------------------------------------------------
-    if not (roms_root / "src").is_dir():
-        raise RuntimeError(f"ROMS_ROOT does not look correct: {roms_root}")
-    if not (marbl_root / "src").is_dir():
-        raise RuntimeError(f"MARBL_ROOT/src not found at {marbl_root}")
-
-    # -----------------------------------------------------
     # Toolchain checks (inside env)
     # -----------------------------------------------------
     try:
@@ -638,7 +577,7 @@ def build(
         "grid_name": grid_name,
         "input_data_path": str(input_data_path),
         "logs_dir": str(logs_dir),
-        "build_dir": str(build_dir),
+        "build_dir": str(build_dir_final),
         "marbl_root": str(marbl_root),
         "model_name": model_code.name,
         "opt_base_dir": str(opt_base_dir),
@@ -682,6 +621,40 @@ def build(
                 log(f"⚠️ Failed to remove existing executable {exe_path}: {e}")
                 log("Proceeding with clean rebuild; old exe may remain on disk.")
 
+
+    # -----------------------------------------------------
+    # Clone / update repos
+    # -----------------------------------------------------
+    if not (roms_root / ".git").is_dir():
+        log(f"Cloning ROMS from {repos['roms'].url} into {roms_root}")
+        _run(["git", "clone", repos["roms"].url, str(roms_root)])
+    else:
+        log(f"ROMS repo already present at {roms_root}")
+
+    if repos["roms"].checkout:
+        log(f"Checking out ROMS {repos['roms'].checkout}")
+        _run(["git", "fetch", "--tags"], cwd=roms_root)
+        _run(["git", "checkout", repos["roms"].checkout], cwd=roms_root)
+
+    if not (marbl_root / ".git").is_dir():
+        log(f"Cloning MARBL from {repos['marbl'].url} into {marbl_root}")
+        _run(["git", "clone", repos["marbl"].url, str(marbl_root)])
+    else:
+        log(f"MARBL repo already present at {marbl_root}")
+
+    if repos["marbl"].checkout:
+        log(f"Checking out MARBL {repos['marbl'].checkout}")
+        _run(["git", "fetch", "--tags"], cwd=marbl_root)
+        _run(["git", "checkout", repos["marbl"].checkout], cwd=marbl_root)
+
+    # -----------------------------------------------------
+    # Sanity checks for directory trees
+    # -----------------------------------------------------
+    if not (roms_root / "src").is_dir():
+        raise RuntimeError(f"ROMS_ROOT does not look correct: {roms_root}")
+    if not (marbl_root / "src").is_dir():
+        raise RuntimeError(f"MARBL_ROOT/src not found at {marbl_root}")
+
     # -----------------------------------------------------
     # Environment vars for builds
     # -----------------------------------------------------
@@ -707,7 +680,7 @@ def build(
     env["ROMS_ROOT"] = str(roms_root)
     env["MARBL_ROOT"] = str(marbl_root)
     env["GRID_NAME"] = grid_name
-    env["BUILD_DIR"] = str(build_dir)
+    env["BUILD_DIR"] = str(build_dir_tmp)
 
     env["MPIHOME"] = conda_prefix
     env["NETCDFHOME"] = conda_prefix
@@ -781,20 +754,24 @@ def build(
         overwrite=True,
         log_func=log,
     )
-    _copy_opt_dir_to_build_dir(opt_dir, build_dir)
-    _maybe_clean(f"ROMS ({build_dir})", build_dir)
+    _maybe_clean(f"ROMS ({build_dir_tmp})", build_dir_tmp)
     _run_logged(
-        f"Build ROMS ({build_dir})",
+        f"Build ROMS ({build_dir_tmp})",
         log_roms,
-        _conda_run(["make", "-C", str(build_dir)]),
+        _conda_run(["make", "-C", str(opt_dir)]),
         env=env,
         log_func=log,
     )
 
+    # Remove existing final directory if present
+    if build_dir_final.exists():
+        shutil.rmtree(build_dir_final)
+    build_dir_tmp.rename(build_dir_final)
+
     # -----------------------------------------------------
     # Rename ROMS executable with token
     # -----------------------------------------------------
-    exe_path = build_dir / "roms"
+    exe_path = build_dir_final / "roms"
     exe_token_path = (
         config.paths.here
         / "model-configs"
@@ -808,6 +785,7 @@ def build(
         log(f"{model_code.name} executable -> {exe_token_path}")
     else:
         log(f"⚠️ {model_code.name} executable not found at {exe_path}; not renamed.")
+
 
     # -----------------------------------------------------
     # Record build metadata in builds.yaml

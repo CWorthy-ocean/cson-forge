@@ -133,6 +133,10 @@ dask-worker-space/
 
 # Vscode
 .vscode/
+
 .DS_Store
+
+# binarys
 workflows/model-configs/exe/*
 *.o
+*.mod

@@ -33,6 +33,7 @@ class DataPaths:
     """
 
     here: Path
+    model_configs: Path
     source_data: Path
     input_data: Path
     output_data: Path
@@ -180,16 +181,18 @@ def get_data_paths() -> DataPaths:
     source_data, input_data, output_data, code_root = layout_fn(home, env)
 
     here = Path(__file__).resolve().parent
+    model_configs = here / "model-configs"
     blueprints_dir = here / "blueprints"
     models_yaml = here / "models.yml"
     builds_yaml = here / "builds.yml"    
 
     # ensure everything exists
-    for p in (source_data, input_data, output_data, code_root, blueprints_dir):
+    for p in (source_data, input_data, output_data, code_root, blueprints_dir, model_configs):
         _ensure_dir(p)
 
     return DataPaths(
         here=here,
+        model_configs=model_configs,
         source_data=source_data,
         input_data=input_data,
         output_data=output_data,
@@ -209,13 +212,7 @@ system = _detect_system()
 # --------------------------------------------------------
 
 def _paths_to_dict(dp: DataPaths) -> dict:
-    return {
-        "source_data": str(dp.source_data),
-        "input_data": str(dp.input_data),
-        "output_data": str(dp.output_data),
-        "code_root": str(dp.code_root),
-        "blueprints": str(dp.blueprints),
-    }
+    return {k: str(v) for k, v in dp.__dict__.items()}
 
 
 def main(argv: list[str] | None = None) -> int:

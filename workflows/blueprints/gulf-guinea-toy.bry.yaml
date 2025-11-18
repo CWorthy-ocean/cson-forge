@@ -26,7 +26,7 @@ BoundaryForcing:
     west: true
   source:
     name: GLORYS
-    path: /Users/mclong/cson-forge-data/source_data/GLORYS_gulf-guinea-toy_2012-01-01-2012-02-01.nc
+    path: /Users/mclong/cson-forge-data/source_data/GLORYS_REGIONAL_gulf-guinea-toy_2012-01-01-2012-02-01.nc
     climatology: false
   type: physics
   apply_2d_horizontal_fill: false

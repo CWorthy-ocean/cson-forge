@@ -17,7 +17,7 @@ inputs:
       end_time: '2012-02-01T00:00:00'
       source:
         name: GLORYS
-        path: /Users/mclong/cson-forge-data/source_data/GLORYS_wio-toy_2012-01-01-2012-02-01.nc
+        path: /Users/mclong/cson-forge-data/source_data/GLORYS_REGIONAL_wio-toy_2012-01-01-2012-02-01.nc
       start_time: '2012-01-01T00:00:00'
       type: physics
       use_dask: true
@@ -55,7 +55,7 @@ inputs:
       source:
         climatology: false
         name: GLORYS
-        path: /Users/mclong/cson-forge-data/source_data/GLORYS_wio-toy_2012-01-01-2012-02-01.nc
+        path: /Users/mclong/cson-forge-data/source_data/GLORYS_REGIONAL_wio-toy_2012-01-01-2012-02-01.nc
       start_time: '2012-01-01T00:00:00'
       type: physics
       use_dask: true
@@ -322,7 +322,7 @@ inputs:
       ini_time: '2012-01-01T00:00:00'
       source:
         name: GLORYS
-        path: /Users/mclong/cson-forge-data/source_data/GLORYS_wio-toy_2012-01-01-2012-02-01.nc
+        path: /Users/mclong/cson-forge-data/source_data/GLORYS_REGIONAL_wio-toy_2012-01-01-2012-02-01.nc
       use_dask: true
     method: roms_tools.setup.initial_conditions.InitialConditions
     obj:
@@ -358,7 +358,7 @@ inputs:
       source:
         climatology: false
         name: GLORYS
-        path: /Users/mclong/cson-forge-data/source_data/GLORYS_wio-toy_2012-01-01-2012-02-01.nc
+        path: /Users/mclong/cson-forge-data/source_data/GLORYS_REGIONAL_wio-toy_2012-01-01-2012-02-01.nc
       use_dask: true
     paths:
     - /Users/mclong/cson-forge-data/input_data/wio-toy/roms_ic.nc
@@ -704,7 +704,7 @@ roms_input_list:
 source_data:
   clobber: false
   datasets:
-  - GLORYS
+  - GLORYS_REGIONAL
   - UNIFIED_BGC
   end_time: '2012-02-01T00:00:00'
   grid:
