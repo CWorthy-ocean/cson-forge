@@ -56,7 +56,7 @@ ROMS Tools supports streaming for some datasets, such as ERA5 (i.e., no local do
 
 :::{important} Register for dataset access
 GLORYS data is provided via the Copernicus Marine Service. 
-Learn out to register for access [here](https://help.marine.copernicus.eu/en/articles/4220332-how-to-sign-up-for-copernicus-marine-service).
+Learn how to register for access [here](https://help.marine.copernicus.eu/en/articles/4220332-how-to-sign-up-for-copernicus-marine-service).
 That process should result in a .copernicusmarine or .copernicusmarine-credentials file in your home directory
 :::
 
@@ -95,7 +95,7 @@ Each preparation routine ensures datasets are up to date and correctly subsetted
 ---
 
 For further reference, see:
-- [`workflows/source_data.py`](source_data.py)
+- [`workflows/source_data.py`](https://github.com/smaticka/cson-forge/blob/main/workflows/source_data.py)
 - Model input requirements in [`workflows/models.yml`](models.yml)
 - Model configuration documentation in [docs_models.md](docs_models.md)
 
