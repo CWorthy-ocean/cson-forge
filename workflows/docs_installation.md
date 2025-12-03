@@ -16,7 +16,7 @@ git clone https://github.com/<YOUR_GITHUB_USERNAME>/cson-forge.git
 cd cson-forge
 ```
 
-2. Create and activate the conda environment:
+3. Create and activate the conda environment:
 ```bash
 conda env create -f environment.yml
 conda activate cson-forge
