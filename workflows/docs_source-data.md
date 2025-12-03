@@ -95,7 +95,7 @@ Each preparation routine ensures datasets are up to date and correctly subsetted
 ---
 
 For further reference, see:
-- [`workflows/source_data.py`](https://github.com/smaticka/cson-forge/blob/main/workflows/source_data.py)
+- [`workflows/source_data.py`](https://github.com/CWorthy-ocean/cson-forge/blob/main/workflows/source_data.py)
 - Model input requirements in [`workflows/models.yml`](models.yml)
 - Model configuration documentation in [docs_models.md](docs_models.md)
 
