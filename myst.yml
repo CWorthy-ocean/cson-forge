@@ -14,6 +14,7 @@ project:
   toc:
     - file: README.md
     - file: workflows/docs_overview.md    
+    
     - title: Get Started
       children:
         - file: workflows/docs_installation.md
@@ -22,7 +23,8 @@ project:
         - file: workflows/docs_source-data.md
         - file: workflows/docs_grid-making.md
         - file: workflows/docs_api-ref.md
-    - title: Grid Recipes
+    
+    - title: Make a Model Blueprint
       children:
         - file: workflows/grid_index.md      
         - file: workflows/grid_source-data.ipynb      
@@ -30,6 +32,12 @@ project:
         - file: workflows/grid_gulf-guinea-toy.ipynb
         - file: workflows/grid_hvalfjörður-iceland.ipynb
         - file: workflows/grid_wio-toy.ipynb
+    
+    - title: Use Model Blueprint
+      children:
+        - file: workflows/docs_catalog.md
+        - file: workflows/docs_catalog.ipynb  
+
     - title: Analysis
       children:
         - file: workflows/analysis_index.md
