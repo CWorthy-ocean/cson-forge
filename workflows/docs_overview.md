@@ -37,11 +37,13 @@ cson-forge/
 │   ├── source_data.py          # Dataset download and preparation
 │   ├── config.py               # Path management and system detection
 │   ├── models.yml              # Model configuration specifications
+│   ├── catalog.py              # Blueprint catalog
 │   ├── blueprints/             # Generated blueprint YAML files
 │   │   └── {model}_{grid}/
 │   │       ├── blueprint_{model}-{grid}.yml
 │   │       └── _{input_type}.yml
-│   └── model-configs/          # Model source code & input file templates
+│   ├── model-configs/          # Model source code & input file templates
+│   └── builds/                 # Model compilation directories
 └── README.md
 ```
 
