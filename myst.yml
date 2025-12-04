@@ -35,7 +35,6 @@ project:
     
     - title: Use Model Blueprint
       children:
-        - file: workflows/docs_catalog.md
         - file: workflows/docs_catalog.ipynb  
 
     - title: Analysis
