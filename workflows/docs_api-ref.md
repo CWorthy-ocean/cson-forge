@@ -44,8 +44,8 @@ The defaults from `model_spec.inputs[<key>]` are merged with runtime arguments (
 - `model_name` (str): Name of the model configuration.
 - `grid_name` (str): Name of the grid.
 - `grid` (object): Grid object from roms_tools.
-- `start_time` (object): Start time for the simulation.
-- `end_time` (object): End time for the simulation.
+- `start_time` (datetime): Start time for the simulation.
+- `end_time` (datetime): End time for the simulation.
 - `np_eta` (int): Number of processors in the eta direction.
 - `np_xi` (int): Number of processors in the xi direction.
 - `boundaries` (dict): Boundary configuration dictionary.
@@ -97,8 +97,8 @@ High-level object:
 - `grid_name` (str): Name of the grid.
 - `grid_kwargs` (Dict[str, Any]): Keyword arguments for creating the Grid object.
 - `boundaries` (dict): Boundary configuration dictionary.
-- `start_time` (object): Start time for the simulation.
-- `end_time` (object): End time for the simulation.
+- `start_time` (datetime): Start time for the simulation.
+- `end_time` (datetime): End time for the simulation.
 - `np_eta` (int): Number of processors in the eta direction.
 - `np_xi` (int): Number of processors in the xi direction.
 

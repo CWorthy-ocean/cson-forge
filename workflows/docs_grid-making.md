@@ -3,6 +3,9 @@
 ## Example
 
 ```python
+import cson_forge
+from datetime import datetime 
+
 model_name = "roms-marbl"
 grid_name = "wio-toy"
 
