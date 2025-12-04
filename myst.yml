@@ -6,11 +6,8 @@ project:
   description: "Create new C-Star domains"
   license: Apache-2.0
   open_access: true
-  #authors:
-  #  - name: "[C]Worthy"
-  #    website: https://cworthy.org
-  #    github: https://github.com/CWorthy-Ocean/cson-forge  
-    
+  github: https://github.com/CWorthy-Ocean/cson-forge
+     
   toc:
     - file: README.md
     - file: workflows/docs_overview.md    
@@ -47,5 +44,7 @@ site:
   options:
     favicon: favicon.ico
     logo: cworthy-logo.png
+  actions:
+    - title: "[C]Worthy"
+      url: https://cworthy.org
 
-   
