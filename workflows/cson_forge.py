@@ -1063,7 +1063,42 @@ def build(
     def _conda_run(cmd: list[str]) -> list[str]:
         return ["conda", "run", "-n", roms_conda_env] + cmd
 
+    # -----------------------------------------------------
+    # Clone / update repos
+    # -----------------------------------------------------
+    if not (roms_root / ".git").is_dir():
+        log(f"Cloning ROMS from {model_spec.repos['roms'].url} into {roms_root}")
+        _run(["git", "clone", model_spec.repos["roms"].url, str(roms_root)])
+    else:
+        log(f"ROMS repo already present at {roms_root}")
+
+    if model_spec.repos["roms"].checkout:
+        log(f"Checking out ROMS {model_spec.repos['roms'].checkout}")
+        _run(["git", "fetch", "--tags"], cwd=roms_root)
+        _run(["git", "checkout", model_spec.repos["roms"].checkout], cwd=roms_root)
+
+    if not (marbl_root / ".git").is_dir():
+        log(f"Cloning MARBL from {model_spec.repos['marbl'].url} into {marbl_root}")
+        _run(["git", "clone", model_spec.repos["marbl"].url, str(marbl_root)])
+    else:
+        log(f"MARBL repo already present at {marbl_root}")
+
+    if model_spec.repos["marbl"].checkout:
+        log(f"Checking out MARBL {model_spec.repos['marbl'].checkout}")
+        _run(["git", "fetch", "--tags"], cwd=marbl_root)
+        _run(["git", "checkout", model_spec.repos["marbl"].checkout], cwd=marbl_root)
+
+    # -----------------------------------------------------
+    # Sanity checks for directory trees
+    # -----------------------------------------------------
+    if not (roms_root / "src").is_dir():
+        raise RuntimeError(f"ROMS_ROOT does not look correct: {roms_root}")
+    if not (marbl_root / "src").is_dir():
+        raise RuntimeError(f"MARBL_ROOT/src not found at {marbl_root}")
+
+    # -----------------------------------------------------
     # Create env if needed
+    # -----------------------------------------------------
     env_list = _run(["conda", "env", "list"])
     if roms_conda_env not in env_list:
         log(f"Creating conda env '{roms_conda_env}' from ROMS environment file...")
@@ -1104,7 +1139,7 @@ def build(
 
     log(f"Using compiler kind: {compiler_kind}")
 
-   # -----------------------------------------------------
+    #-----------------------------------------------------
     # Build fingerprint & cache lookup
     # -----------------------------------------------------
     builds_yaml = config.paths.builds_yaml
@@ -1161,39 +1196,6 @@ def build(
                 log(f"⚠️ Failed to remove existing executable {exe_path}: {e}")
                 log("Proceeding with clean rebuild; old exe may remain on disk.")
 
-
-    # -----------------------------------------------------
-    # Clone / update repos
-    # -----------------------------------------------------
-    if not (roms_root / ".git").is_dir():
-        log(f"Cloning ROMS from {model_spec.repos['roms'].url} into {roms_root}")
-        _run(["git", "clone", model_spec.repos["roms"].url, str(roms_root)])
-    else:
-        log(f"ROMS repo already present at {roms_root}")
-
-    if model_spec.repos["roms"].checkout:
-        log(f"Checking out ROMS {model_spec.repos['roms'].checkout}")
-        _run(["git", "fetch", "--tags"], cwd=roms_root)
-        _run(["git", "checkout", model_spec.repos["roms"].checkout], cwd=roms_root)
-
-    if not (marbl_root / ".git").is_dir():
-        log(f"Cloning MARBL from {model_spec.repos['marbl'].url} into {marbl_root}")
-        _run(["git", "clone", model_spec.repos["marbl"].url, str(marbl_root)])
-    else:
-        log(f"MARBL repo already present at {marbl_root}")
-
-    if model_spec.repos["marbl"].checkout:
-        log(f"Checking out MARBL {model_spec.repos['marbl'].checkout}")
-        _run(["git", "fetch", "--tags"], cwd=marbl_root)
-        _run(["git", "checkout", model_spec.repos["marbl"].checkout], cwd=marbl_root)
-
-    # -----------------------------------------------------
-    # Sanity checks for directory trees
-    # -----------------------------------------------------
-    if not (roms_root / "src").is_dir():
-        raise RuntimeError(f"ROMS_ROOT does not look correct: {roms_root}")
-    if not (marbl_root / "src").is_dir():
-        raise RuntimeError(f"MARBL_ROOT/src not found at {marbl_root}")
 
     # -----------------------------------------------------
     # Environment vars for builds
