@@ -143,3 +143,4 @@ workflows/builds/*/exe/*
 
 # MyST build outputs
 _build
+workflows/builds/*/bld_tmp/*

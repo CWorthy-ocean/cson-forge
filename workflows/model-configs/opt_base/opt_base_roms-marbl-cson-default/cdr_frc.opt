@@ -1,8 +1,7 @@
-
       ! ****************************************************************
       ! user inputs
 
-      logical,parameter,public :: cdr_source  = .true.  ! Should be false if not using CDR forcing
+      logical,parameter,public :: cdr_source  = .false.  ! Should be false if not using CDR forcing
 
       character(len=60) :: cdr_file = 'cdr_release.nc'   ! NetCDF forcing file and variable names
 

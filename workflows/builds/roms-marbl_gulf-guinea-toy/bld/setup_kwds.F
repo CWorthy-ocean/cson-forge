@@ -111,14 +111,11 @@
 #ifdef SOLVE3D
 #endif
 #ifdef SOLVE3D
-# if !defined LMD_MIXING && !defined BVF_MIXING && !defined PP_MIXING\
-                         && !defined MY2_MIXING && !defined MY25_MIXING
       ie=is +15
       if (ie>=max_opt_size) goto 99
       kwds(is:ie)='vertical_mixing'
       kwds(ie+1:ie+1)=' '
       is=ie+2
-# endif
 # ifdef MY25_MIXING
       ie=is +13
       if (ie>=max_opt_size) goto 99

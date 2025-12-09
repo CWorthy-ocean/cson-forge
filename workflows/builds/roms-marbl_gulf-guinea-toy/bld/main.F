@@ -10,12 +10,12 @@
       use tracers, only: init_tracers
       use mpi
       use sponge_tune
-
+      use timers, only: tstart, tend
 
       implicit none                                        ! with single parallel region using
       integer :: ierr                                      ! explicit barrier synchronization.
 # ifdef MPI
-      real*8 tstart, tend
+c$$$      real*8 tstart, tend
 C$    integer level,req_lev
 
 c**   call system('uname -nmr')
@@ -59,6 +59,7 @@ C$OMP END PARALLEL                       ! launch the model in OpenMP
       use scalars
       use ocean_vars
       use basic_output
+      use timers
 
       implicit none
 
@@ -97,10 +98,10 @@ C$OMP END MASTER                         ! is in uniform state]. This
       use diagnostics
       use boundary
       use particles
-      use cstar_output
       use upscale_output
       use random_output
       use cstar_output
+      use frc_output
       use cdr_frc
 # if defined(BIOLOGY_BEC2) || defined(MARBL)
       use bec2_params
@@ -287,6 +288,7 @@ CR      write(*,*)  ' -2' MYID
       if (do_random) call init_random
       if (do_cstar)  call init_cstar
       if (do_upscale) call init_upscale
+      if (do_frc) call init_frc
 
       if (may_day_flag /=0 ) goto 99     !-->  EXIT
 
@@ -320,6 +322,7 @@ CR      write(*,*)  ' -2' MYID
       use surf_flux
       use random_output
       use cstar_output
+      use frc_output
       use zslice_output
       use basic_output
       use boundary
@@ -481,6 +484,7 @@ CR      write(*,*)  ' -2' MYID
       if (do_cstar)  call wrt_cstar
 #endif
       if (do_zslice) call wrt_zslice
+      if (do_frc)    call wrt_frc
 
 #if defined(BIOLOGY_BEC2) || defined(MARBL)
       call wrt_bgc

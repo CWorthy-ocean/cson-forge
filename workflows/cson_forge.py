@@ -779,11 +779,12 @@ def _run(cmd: list[str], **kwargs: Any) -> str:
     return result.stdout.strip()
 
 
-def _check_command_exists(command: str) -> None:
+def _get_conda_command() -> str:
     """Raise if a command is not found on PATH."""
-    if shutil.which(command) is None:
-        raise RuntimeError(f"Required command '{command}' not found on PATH.")
-
+    conda_exe = os.environ.get("CONDA_EXE")
+    if conda_exe is None:
+        raise RuntimeError("Required command 'conda' not found on PATH.")
+    return conda_exe
 
 def _render_opt_base_dir_to_opt_dir(
     grid_name: str,
@@ -1001,7 +1002,7 @@ def build(
     build_token = (
         datetime.utcnow().strftime("%Y%m%dT%H%M%SZ") + "-" + uuid.uuid4().hex[:8]
     )
-
+    
     # Load model spec and derive directories
     opt_base_dir = config.paths.model_configs / model_spec.opt_base_dir
     build_root = config.paths.here / "builds" / f"{model_spec.name}_{grid_name}"
@@ -1058,10 +1059,10 @@ def build(
     log(f"Logs              : {logs_dir}")
 
     # Check conda and define conda-run helper
-    _check_command_exists("conda")
+    conda_exe = _get_conda_command()
 
     def _conda_run(cmd: list[str]) -> list[str]:
-        return ["conda", "run", "-n", roms_conda_env] + cmd
+        return [conda_exe, "run", "-n", roms_conda_env] + cmd
 
     # -----------------------------------------------------
     # Clone / update repos
@@ -1098,8 +1099,8 @@ def build(
 
     # -----------------------------------------------------
     # Create env if needed
-    # -----------------------------------------------------
-    env_list = _run(["conda", "env", "list"])
+    env_list = _run([conda_exe, "env", "list"])
+
     if roms_conda_env not in env_list:
         log(f"Creating conda env '{roms_conda_env}' from ROMS environment file...")
         env_yml = roms_root / "environments" / "conda_environment.yml"
@@ -1107,7 +1108,7 @@ def build(
             raise FileNotFoundError(f"Conda environment file not found: {env_yml}")
         _run(
             [
-                "conda",
+                conda_exe,
                 "env",
                 "create",
                 "-f",

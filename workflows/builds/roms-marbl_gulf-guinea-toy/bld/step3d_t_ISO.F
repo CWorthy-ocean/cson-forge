@@ -55,8 +55,8 @@ c--# define CONST_TRACERS
 
       use param
       use pipe_frc
-      use cdr_frc, only: cdr_nprf, cdr_icdr,
-     &     cdr_source, cdr_iloc, cdr_jloc, cdr_flx, cdr_prf
+      use cdr_frc, only: cdr_nprf, cdr_icdr, cdr_source, cdr_iloc,
+     &      cdr_jloc, cdr_flx, cdr_prf, cdr_flx_3d, forcing_3d, ncdr
       use river_frc
       use surf_flux, only: stflx, srflx
       use tracers
@@ -832,22 +832,36 @@ c**               cff=1./(z_r(i,j,k+1)-z_r(i,j,k))
 # endif
 
         if (cdr_source) then
-          ! Loop over cdr release locations in this subdomain
-          ! The global sum over all cdr_prf for each tracer should be 1.
-          ! cdr_flux unit is [C/s]
-          do cidx=1,cdr_nprf
-            icdr = cdr_icdr(cidx)
-            i = cdr_iloc(cidx)
-            j = cdr_jloc(cidx)
-            if (icdr==0) then
+
+          if (forcing_3d) then
+            do icdr=1,ncdr
+              do k=1,nz
+                do j=1,ny
+                  do i=1,nx
+                    t(i,j,k,nnew,itrc)=t(i,j,k,nnew,itrc)
+     &                +dt*pm(i,j)*pn(i,j)*cdr_flx_3d(icdr,itrc,i,j,k)
+                  enddo
+                enddo
+              enddo
+            enddo
+          else
+            ! Loop over cdr release locations in this subdomain
+            ! The global sum over all cdr_prf for each tracer should be 1.
+            ! cdr_flux unit is [C/s]
+            do cidx=1,cdr_nprf
+              icdr = cdr_icdr(cidx)
+              i = cdr_iloc(cidx)
+              j = cdr_jloc(cidx)
+              if (icdr==0) then
                print *, "LOST AT LOCATION",mynode,i,j,cidx,cdr_nprf
-            end if
-            do k=1,nz
-              t(i,j,k,nnew,itrc)=t(i,j,k,nnew,itrc)
+              end if
+              do k=1,nz
+                t(i,j,k,nnew,itrc)=t(i,j,k,nnew,itrc)
      &           +dt*pm(i,j)*pn(i,j)*
      &            cdr_prf(cidx,itrc,k)*cdr_flx(icdr,itrc)
+              enddo
             enddo
-          enddo
+          endif
         endif
 
         do j=jstr,jend

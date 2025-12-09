@@ -1,7 +1,7 @@
 visc3d_GP.o : visc3d_GP.F cppdefs.opt param.o hidden_mpi_vars.o private_scratch.o compute_tile_bounds.h diagnostics.o coupling.o grid.o mixing.o ocean_vars.o scalars.o 
 set_depth.o : set_depth.F cppdefs.opt param.o hidden_mpi_vars.o private_scratch.o wec_frc.o coupling.o grid.o ocean_vars.o scalars.o scoord.o dimensions.o diagnostics.o strings.o 
-timers.o : timers.F cppdefs.opt param.o comm_vars.o scalars.o 
-main.o : main.F cppdefs.opt param.o tracers.o sponge_tune.o scalars.o ocean_vars.o basic_output.o dimensions.o grid.o analytical.o diagnostics.o boundary.o particles.o cstar_output.o upscale_output.o random_output.o cdr_frc.o bec2_params.o bgc_io.o extract_data.o surf_flux.o zslice_output.o tides.o mixing.o 
+timers.o : timers.F param.o comm_vars.o scalars.o cppdefs.opt 
+main.o : main.F cppdefs.opt param.o tracers.o sponge_tune.o timers.o scalars.o ocean_vars.o basic_output.o dimensions.o grid.o analytical.o diagnostics.o boundary.o particles.o upscale_output.o random_output.o cstar_output.o frc_output.o cdr_frc.o bec2_params.o bgc_io.o extract_data.o surf_flux.o zslice_output.o tides.o mixing.o 
 step3d_t_ISO.o : step3d_t_ISO.F cppdefs.opt param.o hidden_mpi_vars.o private_scratch.o pipe_frc.o cdr_frc.o river_frc.o surf_flux.o tracers.o marbl_driver.o diagnostics.o eos_vars.o grid.o mixing.o ocean_vars.o scalars.o upscale_output.o strings.o 
 visc3d_S_FS.o : visc3d_S_FS.F cppdefs.opt dimensions.o param.o diagnostics.o coupling.o grid.o mixing.o scalars.o 
 sponge_tune.o : sponge_tune.opt 
@@ -70,7 +70,7 @@ extract_data.o : extract_data.F cppdefs.opt dimensions.o grid.o nc_read_write.o 
 step3d_uv2.o : step3d_uv2.F cppdefs.opt param.o hidden_mpi_vars.o private_scratch.o river_frc.o wec_frc.o dimensions.o diagnostics.o coupling.o eos_vars.o grid.o mixing.o ocean_vars.o scalars.o surf_flux.o strings.o 
 sponge_tune.o : sponge_tune.F cppdefs.opt nc_read_write.o scalars.o dimensions.o diagnostics.o roms_read_write.o hidden_mpi_vars.o mixing.o sponge_tune.opt grid.o param.o 
 bec2_vars.o : bec2_vars.F cppdefs.opt param.o tracers.o roms_read_write.o 
-diag.o : diag.F cppdefs.opt param.o hidden_mpi_vars.o private_scratch.o scalars.o compute_tile_bounds.h comm_vars.o diag_vars.o eos_vars.o grid.o ocean_vars.o diag.opt 
+diag.o : diag.F cppdefs.opt param.o hidden_mpi_vars.o private_scratch.o scalars.o compute_tile_bounds.h comm_vars.o diag_vars.o eos_vars.o grid.o ocean_vars.o timers.o diag.opt 
 work_mod.o : work_mod.F cppdefs.opt param.o scalars.o 
 extract_data.o : extract_data.opt 
 tracers.o : tracers.F cppdefs.opt param.o dimensions.o surf_flux.o scalars.o nc_read_write.o roms_read_write.o marbl_driver.o mpi_exchanges.o tracers.opt 
@@ -95,6 +95,7 @@ t3dmix_GP.o : t3dmix_GP.F cppdefs.opt param.o hidden_mpi_vars.o private_scratch.
 diagnostics.o : diagnostics.F cppdefs.opt dimensions.o tracers.o ocean_vars.o scalars.o hidden_mpi_vars.o nc_read_write.o roms_read_write.o grid.o tides.o diagnostics.opt coupling.o param.o eos_vars.o 
 sediment.o : sediment.F cppdefs.opt param.o grid.o hidden_mpi_vars.o private_scratch.o ocean_vars.o scalars.o 
 bulk_frc.o : bulk_frc.F cppdefs.opt param.o dimensions.o mpi_exchanges.o roms_read_write.o bulk_frc.opt surf_flux.o tracers.o grid.o mixing.o ocean_vars.o scalars.o 
+frc_output.o : frc_output.opt 
 private_scratch.o : private_scratch.F cppdefs.opt param.o scalars.o 
 ext_copy_prv2shr.o : ext_copy_prv2shr.F cppdefs.opt param.o compute_extended_bounds.h 
 river_frc.o : river_frc.opt 
@@ -120,6 +121,7 @@ bulk_frc.o : bulk_frc.opt
 t3dbc_im.o : t3dbc_im.F cppdefs.opt param.o tracers.o boundary.o grid.o ocean_vars.o scalars.o sponge_tune.o 
 u3dbc_im.o : u3dbc_im.F cppdefs.opt param.o wec_frc.o boundary.o grid.o ocean_vars.o scalars.o sponge_tune.o 
 read_write.o : read_write.opt 
+frc_output.o : frc_output.F cppdefs.opt dimensions.o grid.o nc_read_write.o roms_read_write.o ocean_vars.o basic_output.o scalars.o bulk_frc.o flux_frc.o surf_flux.o frc_output.opt param.o hidden_mpi_vars.o compute_tile_bounds.h 
 pipe_frc.o : pipe_frc.opt 
 omega.o : omega.F cppdefs.opt param.o hidden_mpi_vars.o private_scratch.o pipe_frc.o cdr_frc.o grid.o ocean_vars.o scalars.o 
 scoord.o : scoord.F cppdefs.opt param.o 
