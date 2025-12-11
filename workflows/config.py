@@ -62,27 +62,26 @@ def _detect_system() -> str:
     Return a tag for the current compute environment.
 
     Tags:
-        - "mac"
-        - "anvil"
-        - "perlmutter"
+        - "MacOS"
+        - "RCAC_anvil"
+        - "NERSC_perlmutter"
         - "unknown"
 
     Extendable via SYSTEM_LAYOUT_REGISTRY.
     """
-    system = platform.system().lower()
-    host = _get_hostname()
 
+    system = platform.system().lower()
     if system == "darwin":
-        return "mac"
+        return "MacOS"
+    
+    host = _get_hostname()
     if "anvil" in host:
-        return "anvil"
-    if (
-        "perlmutter" in host
-        or "pm-cpu" in host
-        or "pm-gpu" in host
-        or host.startswith("nid")
-    ):
-        return "perlmutter"
+        return "RCAC_anvil"
+
+    # Check NERSC_HOST environment variable for Perlmutter
+    if os.environ.get("NERSC_HOST", "").lower() == "perlmutter":
+        return "NERSC_perlmutter"
+
     return "unknown"
 
 
@@ -103,8 +102,6 @@ def register_system(tag: str) -> Callable[[SystemLayoutFn], SystemLayoutFn]:
     The decorated function must accept (home: Path, env: dict)
     and return (source_data, input_data, run_dir, code_root).
     """
-    tag = tag.lower()
-
     def decorator(func: SystemLayoutFn) -> SystemLayoutFn:
         SYSTEM_LAYOUT_REGISTRY[tag] = func
         return func
@@ -116,7 +113,7 @@ def register_system(tag: str) -> Callable[[SystemLayoutFn], SystemLayoutFn]:
 # Default system layouts
 # --------------------------------------------------------
 
-@register_system("mac")
+@register_system("MacOS")
 def _layout_mac(home: Path, env: dict) -> Tuple[Path, Path, Path, Path]:
     base = home / "cson-forge-data"
     source_data = base / "source-data"
@@ -126,8 +123,8 @@ def _layout_mac(home: Path, env: dict) -> Tuple[Path, Path, Path, Path]:
     return source_data, input_data, run_dir, code_root
 
 
-@register_system("anvil")
-def _layout_anvil(home: Path, env: dict) -> Tuple[Path, Path, Path, Path]:
+@register_system("RCAC_anvil")
+def _layout_RCAC_anvil(home: Path, env: dict) -> Tuple[Path, Path, Path, Path]:
     work = Path(env.get("WORK", home / "work"))
     scratch_root = Path(env.get("SCRATCH", work / "scratch"))
     base = work / "cson-forge-data"
@@ -139,8 +136,8 @@ def _layout_anvil(home: Path, env: dict) -> Tuple[Path, Path, Path, Path]:
     return source_data, input_data, run_dir, code_root
 
 
-@register_system("perlmutter")
-def _layout_perlmutter(home: Path, env: dict) -> Tuple[Path, Path, Path, Path]:
+@register_system("NERSC_perlmutter")
+def _layout_NERSC_perlmutter(home: Path, env: dict) -> Tuple[Path, Path, Path, Path]:
     scratch_root = Path(env.get("SCRATCH", home / "scratch"))
     base = scratch_root / "cson-forge-data"
 

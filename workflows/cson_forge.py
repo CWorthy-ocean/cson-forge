@@ -757,7 +757,7 @@ class ROMSInputs:
 # =========================================================
 
 
-def _run(cmd: list[str], **kwargs: Any) -> str:
+def _run_command(cmd: list[str], **kwargs: Any) -> str:
     """
     Convenience wrapper around subprocess.run that returns stdout.
     
@@ -837,7 +837,7 @@ def _render_opt_base_dir_to_opt_dir(
         os.chmod(template_path, st.st_mode)
 
 
-def _run_logged(
+def _run_command_logged(
     label: str,
     logfile: Path,
     cmd: list[str],
@@ -978,6 +978,8 @@ def build(
     input_data_path: Path,
     parameters: Dict[str, Dict[str, Any]],
     clean: bool = False,
+    use_conda: bool = False,
+    skip_inputs_check: bool = False,
 ) -> Optional[Path]:
     """
     Build the ocean model for a given grid and `model_name` (e.g., "roms-marbl").
@@ -997,6 +999,12 @@ def build(
         Build parameters to pass to the model configuration.
     clean : bool, optional
         If True, clean the temporary build directory before building.
+    use_conda : bool, optional
+        If True, use conda to manage the build environment. If False (default),
+        source a shell script from ROMS_ROOT/environments/{system}.sh.
+    skip_inputs_check : bool, optional
+        If True, skip the check for whether the input_data_path directory exists.
+        Default is False.
     """
     # Unique build token and logging setup
     build_token = (
@@ -1037,12 +1045,13 @@ def build(
     log(f"Build token: {build_token}")
 
     # Paths from config / sanity checks
-    if not input_data_path.is_dir():
-        raise FileNotFoundError(
-            f"Expected input data directory for grid '{grid_name}' at:\n"
-            f"  {input_data_path}\n"
-            "but it does not exist. Did you run the `gen_inputs` step?"
-        )
+    if not skip_inputs_check:
+        if not input_data_path.is_dir():
+            raise FileNotFoundError(
+                f"Expected input data directory for grid '{grid_name}' at:\n"
+                f"  {input_data_path}\n"
+                "but it does not exist. Did you run the `gen_inputs` step?"
+            )
 
     codes_root = config.paths.code_root
     roms_root = codes_root / model_spec.repos["roms"].default_dirname
@@ -1055,85 +1064,127 @@ def build(
     log(f"Input data path   : {input_data_path}")
     log(f"ROMS_ROOT         : {roms_root}")
     log(f"MARBL_ROOT        : {marbl_root}")
-    log(f"Conda env         : {roms_conda_env}")
     log(f"Logs              : {logs_dir}")
+    log(f"Build environment : {'conda' if use_conda else 'shell script'}")
 
-    # Check conda and define conda-run helper
-    conda_exe = _get_conda_command()
+    # Define build environment runner
+    def _build_env_run(cmd: list[str]) -> list[str]:
+        """
+        Run a command in the build environment by sourcing a shell script.
+        
+        Sources {ROMS_ROOT}/environments/{system}.sh before running the command.
+        """
+        system_build_env_file = config.system
+        roms_root_str = str(roms_root)
+        
+        # Convert command list to a single string for shell execution
+        cmd_str = " ".join(shlex.quote(str(arg)) for arg in cmd)
+        
+        shell_cmd = f"""
+pushd > /dev/null
+cd {shlex.quote(roms_root_str)}/environments
+source {shlex.quote(system_build_env_file)}.sh
+popd > /dev/null
+{cmd_str}
+"""
+        # Return a command that will be executed via bash -lc
+        return ["bash", "-lc", shell_cmd]
 
     def _conda_run(cmd: list[str]) -> list[str]:
+        """Run a command in the conda environment."""
+        conda_exe = _get_conda_command()
         return [conda_exe, "run", "-n", roms_conda_env] + cmd
+
+    # Choose the appropriate runner based on use_conda flag
+    def _env_run(cmd: list[str]) -> list[str]:
+        """Run a command in the build environment (conda or shell script)."""
+        if use_conda:
+            return _conda_run(cmd)
+        else:
+            return _build_env_run(cmd)
 
     # -----------------------------------------------------
     # Clone / update repos
     # -----------------------------------------------------
     if not (roms_root / ".git").is_dir():
         log(f"Cloning ROMS from {model_spec.repos['roms'].url} into {roms_root}")
-        _run(["git", "clone", model_spec.repos["roms"].url, str(roms_root)])
+        _run_command(["git", "clone", model_spec.repos["roms"].url, str(roms_root)])
     else:
         log(f"ROMS repo already present at {roms_root}")
 
     if model_spec.repos["roms"].checkout:
         log(f"Checking out ROMS {model_spec.repos['roms'].checkout}")
-        _run(["git", "fetch", "--tags"], cwd=roms_root)
-        _run(["git", "checkout", model_spec.repos["roms"].checkout], cwd=roms_root)
+        _run_command(["git", "fetch", "--tags"], cwd=roms_root)
+        _run_command(["git", "checkout", model_spec.repos["roms"].checkout], cwd=roms_root)
 
     if not (marbl_root / ".git").is_dir():
         log(f"Cloning MARBL from {model_spec.repos['marbl'].url} into {marbl_root}")
-        _run(["git", "clone", model_spec.repos["marbl"].url, str(marbl_root)])
+        _run_command(["git", "clone", model_spec.repos["marbl"].url, str(marbl_root)])
     else:
         log(f"MARBL repo already present at {marbl_root}")
 
     if model_spec.repos["marbl"].checkout:
         log(f"Checking out MARBL {model_spec.repos['marbl'].checkout}")
-        _run(["git", "fetch", "--tags"], cwd=marbl_root)
-        _run(["git", "checkout", model_spec.repos["marbl"].checkout], cwd=marbl_root)
+        _run_command(["git", "fetch", "--tags"], cwd=marbl_root)
+        _run_command(["git", "checkout", model_spec.repos["marbl"].checkout], cwd=marbl_root)
 
     # -----------------------------------------------------
     # Sanity checks for directory trees
     # -----------------------------------------------------
     if not (roms_root / "src").is_dir():
         raise RuntimeError(f"ROMS_ROOT does not look correct: {roms_root}")
+    
     if not (marbl_root / "src").is_dir():
         raise RuntimeError(f"MARBL_ROOT/src not found at {marbl_root}")
 
     # -----------------------------------------------------
-    # Create env if needed
+    # Create conda env if needed (only when use_conda=True)
     # -----------------------------------------------------
-    env_list = _run([conda_exe, "env", "list"])
+    if use_conda:
+        conda_exe = _get_conda_command()
+        env_list = _run_command([conda_exe, "env", "list"])
 
-    if roms_conda_env not in env_list:
-        log(f"Creating conda env '{roms_conda_env}' from ROMS environment file...")
-        env_yml = roms_root / "environments" / "conda_environment.yml"
-        if not env_yml.exists():
-            raise FileNotFoundError(f"Conda environment file not found: {env_yml}")
-        _run(
-            [
-                conda_exe,
-                "env",
-                "create",
-                "-f",
-                str(env_yml),
-                "--name",
-                roms_conda_env,
-            ]
-        )
+        if roms_conda_env not in env_list:
+            log(f"Creating conda env '{roms_conda_env}' from ROMS environment file...")
+            env_yml = roms_root / "environments" / "conda_environment.yml"
+            if not env_yml.exists():
+                raise FileNotFoundError(f"Conda environment file not found: {env_yml}")
+            _run_command(
+                [
+                    conda_exe,
+                    "env",
+                    "create",
+                    "-f",
+                    str(env_yml),
+                    "--name",
+                    roms_conda_env,
+                ]
+            )
+        else:
+            log(f"Conda env '{roms_conda_env}' already exists.")
     else:
-        log(f"Conda env '{roms_conda_env}' already exists.")
+        log(f"Using shell script environment: {config.system}.sh")
+        env_script = roms_root / "environments" / f"{config.system}.sh"
+        if not env_script.exists():
+            raise FileNotFoundError(
+                f"Build environment script not found: {env_script}\n"
+                f"Expected at: {roms_root}/environments/{config.system}.sh"
+            )
 
     # Toolchain checks
     try:
-        _run(_conda_run(["which", "gfortran"]))
-        _run(_conda_run(["which", "mpifort"]))
+        _run_command(_env_run(["which", "gfortran"]))
+        _run_command(_env_run(["which", "mpifort"]))
     except subprocess.CalledProcessError:
+        env_name = roms_conda_env if use_conda else f"{config.system}.sh"
         raise RuntimeError(
-            f"❌ gfortran or mpifort not found in env '{roms_conda_env}'. "
-            "Check your conda environment."
+            f"❌ gfortran or mpifort not found in build environment '{env_name}'. "
+            "Check your build environment configuration."
         )
 
     compiler_kind = "gnu"
     try:
-        mpifort_version = _run(_conda_run(["mpifort", "--version"]))
+        mpifort_version = _run_command(_env_run(["mpifort", "--version"]))
         if any(token in mpifort_version.lower() for token in ["ifx", "ifort", "intel"]):
             compiler_kind = "intel"
     except Exception:
@@ -1202,33 +1253,43 @@ def build(
     # -----------------------------------------------------
     # Environment vars for builds
     # -----------------------------------------------------
-    try:
-        conda_prefix = _run(
-            [
-                "conda",
-                "run",
-                "-n",
-                roms_conda_env,
-                "python",
-                "-c",
-                "import os; print(os.environ['CONDA_PREFIX'])",
-            ]
-        )
-    except subprocess.CalledProcessError as exc:
-        raise RuntimeError(
-            f"Failed to determine CONDA_PREFIX for env '{roms_conda_env}'. "
-            "Is the environment created correctly?"
-        ) from exc
-
     env = os.environ.copy()
     env["ROMS_ROOT"] = str(roms_root)
     env["MARBL_ROOT"] = str(marbl_root)
     env["GRID_NAME"] = grid_name
     env["BUILD_DIR"] = str(build_dir_tmp)
 
-    env["MPIHOME"] = conda_prefix
-    env["NETCDFHOME"] = conda_prefix
-    env["LD_LIBRARY_PATH"] = env.get("LD_LIBRARY_PATH", "") + f":{conda_prefix}/lib"
+    if use_conda:
+        try:
+            conda_exe = _get_conda_command()
+            conda_prefix = _run_command(
+                [
+                    conda_exe,
+                    "run",
+                    "-n",
+                    roms_conda_env,
+                    "python",
+                    "-c",
+                    "import os; print(os.environ['CONDA_PREFIX'])",
+                ]
+            )
+        except subprocess.CalledProcessError as exc:
+            raise RuntimeError(
+                f"Failed to determine CONDA_PREFIX for env '{roms_conda_env}'. "
+                "Is the environment created correctly?"
+            ) from exc
+
+        env["MPIHOME"] = conda_prefix
+        env["NETCDFHOME"] = conda_prefix
+        env["LD_LIBRARY_PATH"] = env.get("LD_LIBRARY_PATH", "") + f":{conda_prefix}/lib"
+    else:
+        # For shell script environments, the environment variables should be set
+        # by the sourced script. We'll query them from the environment after sourcing.
+        # For now, we'll try to get them from the current environment or use defaults.
+        # The sourced script should set MPIHOME, NETCDFHOME, etc.
+        log("Using environment variables from sourced build script")
+        # These will be set when commands are run via _build_env_run
+
     tools_path = str(roms_root / "Tools-Roms")
     env["PATH"] = tools_path + os.pathsep + env.get("PATH", "")
 
@@ -1240,7 +1301,7 @@ def build(
             log(f"[Clean] {label} ...")
             try:
                 subprocess.run(
-                    _conda_run(["make", "-C", str(path), "clean"]),
+                    _env_run(["make", "-C", str(path), "clean"]),
                     check=False,
                     env=env,
                 )
@@ -1248,9 +1309,10 @@ def build(
                 log(f"  ⚠️ clean failed for {label}: {e}")
 
     # -----------------------------------------------------
-    # Builds (all via conda run)
+    # Builds (all via environment runner)
     # -----------------------------------------------------
-    log(_run(_conda_run(["conda", "list"])))
+    if use_conda:
+        log(_run_command(_env_run(["conda", "list"])))
 
     log_marbl = logs_dir / f"build.MARBL.{build_token}.log"
     log_nhmg = logs_dir / f"build.NHMG.{build_token}.log"
@@ -1259,10 +1321,10 @@ def build(
 
     # MARBL
     _maybe_clean("MARBL/src", marbl_root / "src")
-    _run_logged(
+    _run_command_logged(
         f"Build MARBL (compiler: {compiler_kind})",
         log_marbl,
-        _conda_run(
+        _env_run(
             ["make", "-C", str(marbl_root / "src"), compiler_kind, "USEMPI=TRUE"]
         ),
         env=env,
@@ -1271,20 +1333,20 @@ def build(
 
     # NHMG (optional nonhydrostatic lib)
     _maybe_clean("NHMG/src", roms_root / "NHMG" / "src")
-    _run_logged(
+    _run_command_logged(
         "Build NHMG/src",
         log_nhmg,
-        _conda_run(["make", "-C", str(roms_root / "NHMG" / "src")]),
+        _env_run(["make", "-C", str(roms_root / "NHMG" / "src")]),
         env=env,
         log_func=log,
     )
 
     # Tools-Roms
     _maybe_clean("Tools-Roms", roms_root / "Tools-Roms")
-    _run_logged(
+    _run_command_logged(
         "Build Tools-Roms",
         log_tools,
-        _conda_run(["make", "-C", str(roms_root / "Tools-Roms")]),
+        _env_run(["make", "-C", str(roms_root / "Tools-Roms")]),
         env=env,
         log_func=log,
     )
@@ -1300,10 +1362,10 @@ def build(
     )
 
     _maybe_clean(f"ROMS ({opt_dir})", opt_dir)
-    _run_logged(
+    _run_command_logged(
         f"Build ROMS ({build_dir_tmp})",
         log_roms,
-        _conda_run(["make", "-C", str(opt_dir)]),
+        _env_run(["make", "-C", str(opt_dir)]),
         env=env,
         log_func=log,
     )
@@ -1392,9 +1454,9 @@ def _default_cluster_type() -> str:
     Returns
     -------
     str
-        "LocalCluster" for mac, "SLURMCluster" for other systems.
+        "LocalCluster" for MacOS, "SLURMCluster" for other systems.
     """
-    if config.system == "mac":
+    if config.system == "MacOS":
         return ClusterType.LOCAL
     else:
         return ClusterType.SLURM
@@ -1505,7 +1567,7 @@ def run(
         template variables in the master_settings_file.
     cluster_type : str, optional
         Type of cluster/scheduler to use. Options: "LocalCluster", "SLURMCluster".
-        Defaults based on config.system (mac → LocalCluster, others → SLURMCluster).
+        Defaults based on config.system (MacOS → LocalCluster, others → SLURMCluster).
     account : str, optional
         Account for SLURM jobs (required for SLURMCluster).
     queue : str, optional
@@ -1766,6 +1828,10 @@ class OcnModel:
     def __post_init__(self):
         self.grid = rt.Grid(**self.grid_kwargs)
         self.spec = _load_models_yaml(config.paths.models_yaml, self.model_name)
+   
+    @property
+    def input_data_dir(self) -> Path:
+        return config.paths.input_data / f"{self.model_name}_{self.grid_name}"
 
     @property
     def name(self) -> str:
@@ -1852,22 +1918,41 @@ class OcnModel:
 
         return self.inputs.obj
 
-    def build(self, parameters: Dict[str, Dict[str, Any]], clean: bool = False) -> Path:
+    def build(
+        self, 
+        parameters: Dict[str, Dict[str, Any]], 
+        clean: bool = False, 
+        skip_inputs_check: bool = False
+    ) -> Path:
         """
         Build the model executable for this configuration, using the
         lower-level `build()` helper in this module.
+
+        Parameters
+        ----------
+        parameters : dict
+            Build-time parameter overrides for the build.
+        clean : bool, optional
+            If True, clean the existing build directory before building.
+        skip_inputs_check : bool, optional
+            If True, skip the check for whether inputs have been generated. Default is False.
         """
-        if self.inputs is None:
+        if not skip_inputs_check and self.inputs is None:
             raise RuntimeError(
-                "You must call OcnModel.generate_inputs() "
-                "before building the model."
+                "You must call OcnModel.generate_inputs() before building the model. "
+                "If you wish to skip this check, pass skip_inputs_check=True to build()."
             )
+
+        use_conda = config.system == "MacOS"
+        
         exe_path = build(
             model_spec=self.spec,
             grid_name=self.grid_name,
-            input_data_path=self.inputs.input_data_dir,
+            input_data_path=self.input_data_dir,
             parameters=parameters,
             clean=clean,
+            use_conda=use_conda,
+            skip_inputs_check=skip_inputs_check,
         )
         if exe_path is None:
             raise RuntimeError(
@@ -1894,7 +1979,7 @@ class OcnModel:
             Case name for this run (used in job name and output directory).
         cluster_type : str, optional
             Type of cluster/scheduler to use. Options: "LocalCluster", "SLURMCluster".
-            Defaults based on config.system (mac → LocalCluster, others → SLURMCluster).
+            Defaults based on config.system (MacOS → LocalCluster, others → SLURMCluster).
         account : str, optional
             Account for SLURM jobs (required for SLURMCluster).
         queue : str, optional
