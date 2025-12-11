@@ -62,7 +62,7 @@ def _detect_system() -> str:
     Return a tag for the current compute environment.
 
     Tags:
-        - "mac"
+        - "MacOS"
         - "RCAC_anvil"
         - "NERSC_perlmutter"
         - "unknown"
@@ -72,7 +72,7 @@ def _detect_system() -> str:
 
     system = platform.system().lower()
     if system == "darwin":
-        return "mac"
+        return "MacOS"
     
     host = _get_hostname()
     if "anvil" in host:
@@ -102,8 +102,6 @@ def register_system(tag: str) -> Callable[[SystemLayoutFn], SystemLayoutFn]:
     The decorated function must accept (home: Path, env: dict)
     and return (source_data, input_data, run_dir, code_root).
     """
-    tag = tag.lower()
-
     def decorator(func: SystemLayoutFn) -> SystemLayoutFn:
         SYSTEM_LAYOUT_REGISTRY[tag] = func
         return func
@@ -115,7 +113,7 @@ def register_system(tag: str) -> Callable[[SystemLayoutFn], SystemLayoutFn]:
 # Default system layouts
 # --------------------------------------------------------
 
-@register_system("mac")
+@register_system("MacOS")
 def _layout_mac(home: Path, env: dict) -> Tuple[Path, Path, Path, Path]:
     base = home / "cson-forge-data"
     source_data = base / "source-data"

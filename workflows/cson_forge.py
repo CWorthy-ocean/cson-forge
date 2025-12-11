@@ -1449,9 +1449,9 @@ def _default_cluster_type() -> str:
     Returns
     -------
     str
-        "LocalCluster" for mac, "SLURMCluster" for other systems.
+        "LocalCluster" for MacOS, "SLURMCluster" for other systems.
     """
-    if config.system == "mac":
+    if config.system == "MacOS":
         return ClusterType.LOCAL
     else:
         return ClusterType.SLURM
@@ -1562,7 +1562,7 @@ def run(
         template variables in the master_settings_file.
     cluster_type : str, optional
         Type of cluster/scheduler to use. Options: "LocalCluster", "SLURMCluster".
-        Defaults based on config.system (mac → LocalCluster, others → SLURMCluster).
+        Defaults based on config.system (MacOS → LocalCluster, others → SLURMCluster).
     account : str, optional
         Account for SLURM jobs (required for SLURMCluster).
     queue : str, optional
@@ -1920,7 +1920,7 @@ class OcnModel:
                 "before building the model."
             )
 
-        use_conda = config.system == "mac"
+        use_conda = config.system == "MacOS"
         
         exe_path = build(
             model_spec=self.spec,
@@ -1955,7 +1955,7 @@ class OcnModel:
             Case name for this run (used in job name and output directory).
         cluster_type : str, optional
             Type of cluster/scheduler to use. Options: "LocalCluster", "SLURMCluster".
-            Defaults based on config.system (mac → LocalCluster, others → SLURMCluster).
+            Defaults based on config.system (MacOS → LocalCluster, others → SLURMCluster).
         account : str, optional
             Account for SLURM jobs (required for SLURMCluster).
         queue : str, optional

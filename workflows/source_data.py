@@ -71,9 +71,9 @@ SRTM15_URL = f"https://topex.ucsd.edu/pub/srtm15_plus/SRTM15_{SRTM15_VERSION}.nc
 # -----------------------------------------
 
 # GLORYS dataset key: set based on system type
-# - "mac" (local-client) → "GLORYS_REGIONAL" (regional subset)
+# - "MacOS" (local-client) → "GLORYS_REGIONAL" (regional subset)
 # - "hpc" systems (anvil, perlmutter, etc.) → "GLORYS_GLOBAL" (full dataset)
-if config.system == "mac":
+if config.system == "MacOS":
     glorys_dataset_key: str = "GLORYS_REGIONAL"
 else:
     glorys_dataset_key: str = "GLORYS_GLOBAL"
