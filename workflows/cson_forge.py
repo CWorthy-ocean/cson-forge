@@ -1823,6 +1823,10 @@ class OcnModel:
     def __post_init__(self):
         self.grid = rt.Grid(**self.grid_kwargs)
         self.spec = _load_models_yaml(config.paths.models_yaml, self.model_name)
+   
+    @property
+    def input_data_dir(self) -> Path:
+        return config.paths.input_data / f"{self.model_name}_{self.grid_name}"
 
     @property
     def name(self) -> str:
@@ -1909,12 +1913,26 @@ class OcnModel:
 
         return self.inputs.obj
 
-    def build(self, parameters: Dict[str, Dict[str, Any]], clean: bool = False) -> Path:
+    def build(
+        self, 
+        parameters: Dict[str, Dict[str, Any]], 
+        clean: bool = False, 
+        skip_inputs_check: bool = False
+    ) -> Path:
         """
         Build the model executable for this configuration, using the
         lower-level `build()` helper in this module.
+
+        Parameters
+        ----------
+        parameters : dict
+            Build-time parameter overrides for the build.
+        clean : bool, optional
+            If True, clean the existing build directory before building.
+        skip_inputs_check : bool, optional
+            If True, skip the check for whether inputs have been generated. Default is False.
         """
-        if self.inputs is None:
+        if not skip_inputs_check and self.inputs is None:
             raise RuntimeError(
                 "You must call OcnModel.generate_inputs() "
                 "before building the model."
@@ -1925,7 +1943,7 @@ class OcnModel:
         exe_path = build(
             model_spec=self.spec,
             grid_name=self.grid_name,
-            input_data_path=self.inputs.input_data_dir,
+            input_data_path=self.input_data_dir,
             parameters=parameters,
             clean=clean,
             use_conda=use_conda,
