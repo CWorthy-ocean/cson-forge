@@ -4,12 +4,14 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Union
 
+import math
 import os
 import shlex
 import shutil
 import stat
 import subprocess
 import sys
+import textwrap
 from datetime import datetime
 import uuid
 
@@ -1010,7 +1012,7 @@ def build(
     build_token = (
         datetime.utcnow().strftime("%Y%m%dT%H%M%SZ") + "-" + uuid.uuid4().hex[:8]
     )
-    
+
     # Load model spec and derive directories
     opt_base_dir = config.paths.model_configs / model_spec.opt_base_dir
     build_root = config.paths.here / "builds" / f"{model_spec.name}_{grid_name}"
@@ -1080,13 +1082,13 @@ def build(
         # Convert command list to a single string for shell execution
         cmd_str = " ".join(shlex.quote(str(arg)) for arg in cmd)
         
-        shell_cmd = f"""
-pushd > /dev/null
-cd {shlex.quote(roms_root_str)}/environments
-source {shlex.quote(system_build_env_file)}.sh
-popd > /dev/null
-{cmd_str}
-"""
+        shell_cmd = textwrap.dedent(f"""
+            pushd > /dev/null
+            cd {shlex.quote(roms_root_str)}/environments
+            source {shlex.quote(system_build_env_file)}.sh
+            popd > /dev/null
+            {cmd_str}
+        """).strip()
         # Return a command that will be executed via bash -lc
         return ["bash", "-lc", shell_cmd]
 
@@ -1468,13 +1470,19 @@ def _generate_slurm_script(
     account: str,
     queue: str,
     wallclock_time: str,
+    n_nodes: int,
+    n_tasks_per_node: int,
     run_dir: Path,
-    conda_env: str,
     log_func: Callable[[str], None] = print,
 ) -> Path:
     """
-    Generate a SLURM batch script for running the model.
-    
+    Generate a SLURM batch script for running the model, with system-specific options.
+
+    Supported machines:
+        - NERSC_perlmutter
+
+    Raises NotImplementedError for all other systems.
+
     Parameters
     ----------
     run_command : str
@@ -1487,10 +1495,12 @@ def _generate_slurm_script(
         Queue/partition to submit to.
     wallclock_time : str
         Wallclock time limit (format: HH:MM:SS).
+    n_nodes : int
+        Number of nodes to request.
+    n_tasks_per_node : int
+        Number of tasks to request.
     run_dir : Path
-        Directory where the batch script and output files will be written.
-    conda_env : str
-        Name of the conda environment to run the model in.
+        Directory where the batch script and output files will be written.  
     log_func : callable, optional
         Logging function for messages.
     
@@ -1499,35 +1509,49 @@ def _generate_slurm_script(
     Path
         Path to the generated batch script.
     """
-    script_path = run_dir / f"{job_name}.sh"
+    
+    script_path = run_dir / f"{job_name}.run"
     stdout_path = run_dir / f"{job_name}.out"
     stderr_path = run_dir / f"{job_name}.err"
+
+    if config.system_id == "NERSC_perlmutter":
+        # Perlmutter (NERSC) SLURM script
+        script_content = textwrap.dedent(f"""
+            #!/bin/bash
+            #SBATCH --job-name={job_name}
+            #SBATCH --account={account}
+            #SBATCH --qos={queue}
+            #SBATCH --time={wallclock_time}
+            #SBATCH --output={stdout_path}
+            #SBATCH --error={stderr_path}
+            #SBATCH --constraint=cpu
+            #SBATCH --nodes={n_nodes}
+            #SBATCH --ntasks-per-node={n_tasks_per_node}
+
+            # Change to the run directory
+            cd {run_dir}
+
+            {run_command}
+        """).strip()
+
+    elif config.system_id == "RCAC_anvil":
+        # Anvil (RCAC) SLURM script
+        raise NotImplementedError(
+            f"SLURM job script generation is not implemented for this system: {config.system_id}"
+        )
     
-    script_content = f"""#!/bin/bash
-#SBATCH --job-name={job_name}
-#SBATCH --account={account}
-#SBATCH --partition={queue}
-#SBATCH --time={wallclock_time}
-#SBATCH --output={stdout_path}
-#SBATCH --error={stderr_path}
+    else:
+        raise NotImplementedError(
+            f"SLURM job script generation is not implemented for this system: {config.system_id}"
+        )
 
-# Change to the run directory
-cd {run_dir}
-
-# Initialize conda (if not already initialized)
-eval "$(conda shell.bash hook)"
-
-# Run the model in the conda environment
-conda run -n {conda_env} {run_command}
-"""
-    
     script_path.write_text(script_content)
     script_path.chmod(0o755)
-    
+
     log_func(f"Generated SLURM batch script: {script_path}")
     log_func(f"  stdout: {stdout_path}")
     log_func(f"  stderr: {stderr_path}")
-    
+
     return script_path
 
 
@@ -1535,7 +1559,6 @@ def run(
     model_spec: ModelSpec,
     grid_name: str,
     case: str,
-    input_data_path: Path,
     executable_path: Path,
     run_command: str,
     inputs: Dict[str, Any],
@@ -1543,6 +1566,8 @@ def run(
     account: Optional[str] = None,
     queue: Optional[str] = None,
     wallclock_time: Optional[str] = None,
+    n_nodes: Optional[int] = None,
+    n_tasks_per_node: Optional[int] = None,
     log_func: Callable[[str], None] = print,
 ) -> None:
     """
@@ -1556,8 +1581,6 @@ def run(
         Name of the grid.
     case : str
         Case name for this run (used in job name and output directory).
-    input_data_path : Path
-        Path to the input data directory.
     executable_path : Path
         Path to the model executable.
     run_command : str
@@ -1574,6 +1597,10 @@ def run(
         Queue/partition for SLURM jobs (required for SLURMCluster).
     wallclock_time : str, optional
         Wallclock time limit for SLURM jobs in HH:MM:SS format (required for SLURMCluster).
+    n_nodes : int, optional
+        Number of nodes to request for SLURM jobs (required for SLURMCluster).
+    n_tasks_per_node : int, optional
+        Number of tasks per node to request for SLURM jobs (required for SLURMCluster).
     log_func : callable, optional
         Logging function for messages.
     
@@ -1587,6 +1614,7 @@ def run(
     if not executable_path.exists():
         raise RuntimeError(f"Executable not found: {executable_path}")
     
+    # Set default cluster type if not provided
     if cluster_type is None:
         cluster_type = _default_cluster_type()
     
@@ -1669,8 +1697,6 @@ def run(
     # Ensure executable has execute permissions
     run_executable.chmod(0o755)
     
-    
-    
     # Update run_command to use executable in run_dir
     # Replace the executable path in run_command with the run_dir executable
     run_command_updated = run_command.replace(str(executable_path), str(run_executable))
@@ -1732,7 +1758,7 @@ def run(
         if wallclock_time is None:
             raise ValueError("'wallclock_time' is required for SLURMCluster")
         
-        job_name = f"{model_spec.name}-{grid_name}-{case}"
+        job_name = f"{model_spec.name}_{grid_name}_{case}"
         
         # Generate batch script
         script_path = _generate_slurm_script(
@@ -1741,10 +1767,12 @@ def run(
             account=account,
             queue=queue,
             wallclock_time=wallclock_time,
+            n_nodes=n_nodes,
+            n_tasks_per_node=n_tasks_per_node,
             run_dir=run_dir,
-            conda_env=model_spec.conda_env,
             log_func=log_func,
         )
+
         
         # Submit the job
         log_func(f"Submitting SLURM job: {job_name}")
@@ -1828,7 +1856,22 @@ class OcnModel:
     def __post_init__(self):
         self.grid = rt.Grid(**self.grid_kwargs)
         self.spec = _load_models_yaml(config.paths.models_yaml, self.model_name)
-   
+        self.n_tasks = self.np_xi * self.np_eta
+        self.cluster_type = _default_cluster_type()
+        
+        if self.cluster_type == ClusterType.SLURM:
+            if config.machine.pes_per_node is None:
+                raise RuntimeError(
+                    f"pes_per_node not configured for system '{config.system}'. "
+                    f"Please add it to machines.yml"
+                )
+            # Use ceiling division to ensure we have enough nodes
+            self.n_nodes = math.ceil(self.n_tasks / config.machine.pes_per_node)
+            self.n_tasks_per_node = config.machine.pes_per_node
+        else:
+            self.n_nodes = None
+            self.n_tasks_per_node = None
+
     @property
     def input_data_dir(self) -> Path:
         return config.paths.input_data / f"{self.model_name}_{self.grid_name}"
@@ -1857,8 +1900,14 @@ class OcnModel:
             raise RuntimeError(
                 "Executable not built yet. Call OcnModel.build() first."
             )
-        nprocs = self.np_xi * self.np_eta
-        return f"mpirun -n {nprocs} {self.executable} {self.spec.master_settings_file}"
+        if self.cluster_type == ClusterType.LOCAL:
+            return f"mpirun -n {self.n_tasks} {self.executable} {self.spec.master_settings_file}"
+        elif self.cluster_type == ClusterType.SLURM:
+            return f"srun -n {self.n_tasks} {self.executable} {self.spec.master_settings_file}"
+        else:
+            raise NotImplementedError(
+                f"Run command is not implemented for cluster type: {self.cluster_type}"
+            )
 
     def prepare_source_data(self, clobber: bool = False):
         self.src_data = source_data.SourceData(
@@ -1965,7 +2014,6 @@ class OcnModel:
     def run(
         self,
         case: str,
-        cluster_type: Optional[str] = None,
         account: Optional[str] = None,
         queue: Optional[str] = None,
         wallclock_time: Optional[str] = None,
@@ -1973,13 +2021,10 @@ class OcnModel:
         """
         Run the model executable for this configuration.
 
-    Parameters
-    ----------
+        Parameters
+        ----------
         case : str
             Case name for this run (used in job name and output directory).
-        cluster_type : str, optional
-            Type of cluster/scheduler to use. Options: "LocalCluster", "SLURMCluster".
-            Defaults based on config.system (MacOS → LocalCluster, others → SLURMCluster).
         account : str, optional
             Account for SLURM jobs (required for SLURMCluster).
         queue : str, optional
@@ -2004,17 +2049,19 @@ class OcnModel:
                 "before running the model."
             )
         
+       
         run(
             model_spec=self.spec,
             grid_name=self.grid_name,
             case=case,
-            input_data_path=self.inputs.input_data_dir,
             executable_path=self.executable,
             run_command=self._run_command,
             inputs=self.inputs.inputs,
-            cluster_type=cluster_type,
+            cluster_type=self.cluster_type,
             account=account,
             queue=queue,
             wallclock_time=wallclock_time,
+            n_nodes=self.n_nodes,
+            n_tasks_per_node=self.n_tasks_per_node,
         )
 

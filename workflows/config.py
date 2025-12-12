@@ -5,10 +5,11 @@ from pathlib import Path
 import os
 import platform
 import socket
-from typing import Callable, Dict, Tuple
+from typing import Callable, Dict, Tuple, Optional, Any
 import argparse
 import json
 import sys
+import yaml
 
 
 def _ensure_dir(path: Path) -> Path:
@@ -41,6 +42,26 @@ class DataPaths:
     blueprints: Path
     models_yaml: Path
     builds_yaml: Path
+    machines_yaml: Path
+
+
+@dataclass(frozen=True)
+class MachineConfig:
+    """
+    Machine-specific configuration loaded from machines.yml.
+    
+    Attributes
+    ----------
+    account : str, optional
+        Account/project name for job submission.
+    pes_per_node : int, optional
+        Processing elements (cores) per node.
+    queues : dict, optional
+        Dictionary of queue names, with 'default' and optionally 'premium' keys.
+    """
+    account: Optional[str] = None
+    pes_per_node: Optional[int] = None
+    queues: Optional[Dict[str, str]] = None
 
 
 # --------------------------------------------------------
@@ -181,7 +202,8 @@ def get_data_paths() -> DataPaths:
     model_configs = here / "model-configs"
     blueprints_dir = here / "blueprints"
     models_yaml = here / "models.yml"
-    builds_yaml = here / "builds.yml"    
+    builds_yaml = here / "builds.yml"
+    machines_yaml = here / "machines.yml"
 
     # ensure everything exists
     for p in (source_data, input_data, run_dir, code_root, blueprints_dir, model_configs):
@@ -197,12 +219,55 @@ def get_data_paths() -> DataPaths:
         blueprints=blueprints_dir,
         models_yaml=models_yaml,
         builds_yaml=builds_yaml,
+        machines_yaml=machines_yaml,
     )
+
+
+# --------------------------------------------------------
+# Machine configuration loader
+# --------------------------------------------------------
+
+def load_machine_config(system_tag: str, machines_yaml_path: Path) -> MachineConfig:
+    """
+    Load machine-specific configuration from machines.yml.
+    
+    Parameters
+    ----------
+    system_tag : str
+        System tag (e.g., "NERSC_perlmutter", "RCAC_anvil").
+    machines_yaml_path : Path
+        Path to the machines.yml file.
+    
+    Returns
+    -------
+    MachineConfig
+        Machine configuration object. Returns empty config if machine not found
+        or file doesn't exist.
+    """
+    if not machines_yaml_path.exists():
+        return MachineConfig()
+    
+    try:
+        with machines_yaml_path.open("r") as f:
+            machines_data = yaml.safe_load(f) or {}
+        
+        machine_data = machines_data.get(system_tag, {})
+        
+        return MachineConfig(
+            account=machine_data.get("account"),
+            pes_per_node=machine_data.get("pes_per_node"),
+            queues=machine_data.get("queues"),
+        )
+    except Exception:
+        # If there's any error loading the config, return empty config
+        return MachineConfig()
 
 
 # Initialize canonical instance
 paths = get_data_paths()
 system = _detect_system()
+system_id = system  # Alias for compatibility
+machine = load_machine_config(system, paths.machines_yaml)
 
 
 
