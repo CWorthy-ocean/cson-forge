@@ -76,7 +76,7 @@ SRTM15_URL = f"https://topex.ucsd.edu/pub/srtm15_plus/SRTM15_{SRTM15_VERSION}.nc
 if config.system == "MacOS":
     glorys_dataset_key: str = "GLORYS_REGIONAL"
 else:
-    glorys_dataset_key: str = "GLORYS_GLOBAL"
+    glorys_dataset_key: str = "GLORYS_REGIONAL" # TODO: enable "GLORYS_GLOBAL" when memory issue is resolved
 
 glorys_dataset_id: str = "cmems_mod_glo_phy_my_0.083deg_P1D-m"
 
@@ -313,6 +313,7 @@ class SourceData:
                     end_datetime=current_date,
                     output_filename=path.name,
                     output_directory=path.parent,
+                    overwrite=True,
                     **bounds,
                 )
             else:
