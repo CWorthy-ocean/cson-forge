@@ -33,14 +33,18 @@ dependencies:
   - pip    
   - pop-tools
   - pre-commit==3.8.0
-  - pytest
-  - pytest-xdist
+  - pytest>=7.0.0
+  - pytest-cov>=4.0.0
+  - pytest-xdist>=3.0.0
+  - pyyaml>=6.0
   - rasterio
   - rioxarray
-  - roms-tools
+  - roms-tools==3.3.0
   - scipy
   - seawater
   - xarray
   - xesmf
   - xgcm
   - zarr
+  - pip:
+    - -e .

@@ -18,181 +18,147 @@ import uuid
 import yaml
 from jinja2 import Environment, FileSystemLoader, StrictUndefined
 
-import config
+from . import config
+from . import model
+from .model import ModelSpec, RepoSpec
 import roms_tools as rt
-import source_data
-
-
-# =========================================================
-# Shared data structures (repos, model spec, inputs)
-# =========================================================
-
-
-@dataclass
-class RepoSpec:
-    """
-    Specification for a code repository used in the build.
-
-    Parameters
-    ----------
-    name : str
-        Short name for the repository (e.g., "roms", "marbl").
-    url : str
-        Git URL for the repository.
-    default_dirname : str
-        Default directory name under the code root where this repo
-        will be cloned.
-    checkout : str, optional
-        Optional tag, branch, or commit to check out after cloning.
-    """
-    name: str
-    url: str
-    default_dirname: str
-    checkout: str | None = None
-
-
-@dataclass
-class ModelSpec:
-    """
-    Description of an ocean model configuration (e.g., ROMS/MARBL).
-
-    Parameters
-    ----------
-    name : str
-        Logical name of the model (e.g., "roms-marbl").
-    opt_base_dir : str
-        Relative path (under model-configs) to the base configuration
-        directory.
-    conda_env : str
-        Name of the conda environment used to build/run this model.
-    repos : dict[str, RepoSpec]
-        Mapping from repo name to its specification.
-    inputs : dict[str, dict]
-        Per-input default arguments (from models.yml["<model>"]["inputs"]).
-        These are merged with runtime arguments when constructing ROMS inputs.
-    datasets : list[str]
-        SourceData dataset keys required for this model (derived from inputs
-        or explicitly listed in models.yml).
-    settings_input_files : list[str]
-        List of input files to copy from the rendered opt directory to the
-        run directory before executing the model (e.g., ["roms.in", "marbl_in"]).
-    master_settings_file : str
-        Master settings file to append to the run command (e.g., "roms.in").
-        This file should be in the run directory when the model executes.
-    """
-    name: str
-    opt_base_dir: str
-    conda_env: str
-    repos: Dict[str, RepoSpec]
-    inputs: Dict[str, Dict[str, Any]]
-    datasets: List[str]
-    settings_input_files: List[str]
-    master_settings_file: str
-
-
-def _extract_source_name(block: Union[str, Dict[str, Any], None]) -> Optional[str]:
-    if block is None:
-        return None
-    if isinstance(block, str):
-        return block
-    if isinstance(block, dict):
-        return block.get("name")
-    return None
-
-
-def _dataset_keys_from_inputs(inputs: Dict[str, Dict[str, Any]]) -> set[str]:
-    dataset_keys: set[str] = set()
-    for cfg in inputs.values():
-        if not isinstance(cfg, dict):
-            continue
-        for field_name in ("source", "bgc_source", "topography_source"):
-            name = _extract_source_name(cfg.get(field_name))
-            if not name:
-                continue
-            dataset_key = source_data.map_source_to_dataset_key(name)
-            if dataset_key in source_data.DATASET_REGISTRY:
-                dataset_keys.add(dataset_key)
-    return dataset_keys
-
-
-def _collect_datasets(block: Dict[str, Any], inputs: Dict[str, Dict[str, Any]]) -> List[str]:
-    dataset_keys: set[str] = set()
-
-    explicit = block.get("datasets") or []
-    for item in explicit:
-        if not item:
-            continue
-        dataset_keys.add(str(item).upper())
-
-    dataset_keys.update(_dataset_keys_from_inputs(inputs))
-    return sorted(dataset_keys)
-
-
-def _load_models_yaml(path: Path, model: str) -> ModelSpec:
-    """
-    Load repository specifications, model metadata, and default input
-    arguments from a YAML file.
-
-    Parameters
-    ----------
-    path : Path
-        Path to the models.yaml file.
-    model : str
-        Name of the model block to load (e.g., "roms-marbl").
-
-    Returns
-    -------
-    ModelSpec
-        Parsed model specification including repository metadata and
-        per-input defaults.
-
-    Raises
-    ------
-    KeyError
-        If the requested model is not present in the YAML file.
-    """
-    with path.open() as f:
-        data = yaml.safe_load(f) or {}
-
-    if model not in data:
-        raise KeyError(f"Model '{model}' not found in models YAML file: {path}")
-
-    block = data[model]
-
-    repos: Dict[str, RepoSpec] = {}
-    for key, val in block.get("repos", {}).items():
-        repos[key] = RepoSpec(
-            name=key,
-            url=val["url"],
-            default_dirname=val.get("default_dirname", key),
-            checkout=val.get("checkout"),
-        )
-
-    inputs = block.get("inputs", {}) or {}
-    datasets = _collect_datasets(block, inputs)
-    settings_input_files = block.get("settings_input_files", []) or []
-    
-    if "master_settings_file" not in block:
-        raise KeyError(
-            f"Model '{model}' must specify 'master_settings_file' in models.yml"
-        )
-    master_settings_file = block["master_settings_file"]
-
-    return ModelSpec(
-        name=model,
-        opt_base_dir=block["opt_base_dir"],
-        conda_env=block["conda_env"],
-        repos=repos,
-        inputs=inputs,
-        datasets=datasets,
-        settings_input_files=settings_input_files,
-        master_settings_file=master_settings_file,
-    )
+from . import source_data
 
 
 # =========================================================
 # ROMS input generation (from former model_config.py)
 # =========================================================
+
+
+def _path_to_template(path: Union[str, Path]) -> str:
+    """
+    Convert an actual file path to a template key using config.paths.
+    
+    Parameters
+    ----------
+    path : str or Path
+        Actual file path to convert.
+        
+    Returns
+    -------
+    str
+        Template string with config.paths keys (e.g., "{INPUT_DATA}/roms-marbl_ccs-12km/file.nc").
+        If the path doesn't match any config.paths, returns the original path as a string.
+    """
+    if not isinstance(path, (str, Path)):
+        return path
+    
+    path_str = str(path)
+    
+    # If already a template, return as-is
+    if path_str.startswith("{") and "}" in path_str:
+        return path_str
+    
+    paths = config.paths
+    
+    # Check each config path and replace if it's a prefix
+    replacements = {
+        str(paths.input_data): "{INPUT_DATA}",
+        str(paths.blueprints): "{BLUEPRINTS}",
+        str(paths.source_data): "{SOURCE_DATA}",
+        str(paths.run_dir): "{RUN_DIR}",
+        str(paths.code_root): "{CODE_ROOT}",
+        str(paths.model_configs): "{MODEL_CONFIGS}",
+    }
+    
+    # Sort by length (longest first) to match most specific paths first
+    for actual_path, template_key in sorted(replacements.items(), key=lambda x: -len(x[0])):
+        if path_str.startswith(actual_path):
+            # Replace the prefix and return
+            relative = path_str[len(actual_path):].lstrip("/")
+            if relative:
+                return f"{template_key}/{relative}"
+            else:
+                return template_key
+    
+    # If no match, return as-is (might be a relative path or external path)
+    return path_str
+
+
+def _template_to_path(template: str) -> str:
+    """
+    Convert a template string with config.paths keys to an actual path.
+    
+    Parameters
+    ----------
+    template : str
+        Template string (e.g., "{INPUT_DATA}/roms-marbl_ccs-12km/file.nc").
+        
+    Returns
+    -------
+    str
+        Actual file path resolved from config.paths.
+        If the template doesn't contain any template keys, returns as-is.
+    """
+    if not isinstance(template, str):
+        return template
+    
+    # If not a template (doesn't start with {), return as-is
+    if not template.startswith("{"):
+        return template
+    
+    paths = config.paths
+    
+    replacements = {
+        "{INPUT_DATA}": str(paths.input_data),
+        "{BLUEPRINTS}": str(paths.blueprints),
+        "{SOURCE_DATA}": str(paths.source_data),
+        "{RUN_DIR}": str(paths.run_dir),
+        "{CODE_ROOT}": str(paths.code_root),
+        "{MODEL_CONFIGS}": str(paths.model_configs),
+    }
+    
+    result = template
+    for key, actual_path in replacements.items():
+        if result.startswith(key):
+            # Replace the key with actual path
+            suffix = result[len(key):].lstrip("/")
+            if suffix:
+                return f"{actual_path}/{suffix}"
+            else:
+                return actual_path
+    
+    # If no template key found, return as-is
+    return result
+
+
+def _apply_path_templates_to_value(value: Any, template_to_path: bool = False) -> Any:
+    """
+    Recursively apply path template conversion to a value (dict, list, or string).
+    
+    Parameters
+    ----------
+    value : Any
+        Value to process (can be dict, list, str, Path, etc.).
+    template_to_path : bool
+        If True, convert templates to paths. If False, convert paths to templates.
+        
+    Returns
+    -------
+    Any
+        Value with paths converted to/from templates.
+    """
+    if isinstance(value, Path):
+        value = str(value)
+    
+    if isinstance(value, str):
+        if template_to_path:
+            return _template_to_path(value)
+        else:
+            return _path_to_template(value)
+    
+    if isinstance(value, dict):
+        return {k: _apply_path_templates_to_value(v, template_to_path) for k, v in value.items()}
+    
+    if isinstance(value, (list, tuple)):
+        return type(value)(_apply_path_templates_to_value(v, template_to_path) for v in value)
+    
+    return value
 
 
 class InputStep:
@@ -711,7 +677,8 @@ class ROMSInputs:
                 return _serialize(dc_asdict(obj))
 
             if isinstance(obj, Path):
-                return str(obj)
+                # Convert path to template before serializing
+                return _path_to_template(str(obj))
 
             if isinstance(obj, (str, int, float, bool)) or obj is None:
                 return obj
@@ -747,6 +714,9 @@ class ROMSInputs:
         )
 
         data = _serialize(raw)
+        
+        # Apply path templates to the serialized data (in case any paths were already strings)
+        data = _apply_path_templates_to_value(data, template_to_path=False)
 
         with self.bp_path.open("w") as f:
             yaml.safe_dump(data, f, sort_keys=True)
@@ -1855,7 +1825,7 @@ class OcnModel:
     
     def __post_init__(self):
         self.grid = rt.Grid(**self.grid_kwargs)
-        self.spec = _load_models_yaml(config.paths.models_yaml, self.model_name)
+        self.spec = model.load_models_yaml(config.paths.models_yaml, self.model_name)
         self.n_tasks = self.np_xi * self.np_eta
         self.cluster_type = _default_cluster_type()
         

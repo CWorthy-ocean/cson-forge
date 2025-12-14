@@ -10,7 +10,7 @@ from typing import Any, Dict, List, Optional
 import yaml
 import pandas as pd
 
-import config
+from . import config
 import roms_tools as rt
 
 
@@ -77,7 +77,11 @@ class BlueprintCatalog:
             raise FileNotFoundError(f"Blueprint file not found: {blueprint_path}")
         
         with blueprint_path.open("r") as f:
-            return yaml.safe_load(f) or {}
+            data = yaml.safe_load(f) or {}
+        
+        # Apply path template resolution (convert templates to actual paths)
+        from .cson_forge import _apply_path_templates_to_value
+        return _apply_path_templates_to_value(data, template_to_path=True)
     
     def load_grid_kwargs(self, grid_yaml_path: Path) -> Dict[str, Any]:
         """

@@ -16,8 +16,8 @@ This workflow generates a `blueprint` a set of yaml files documenting the domain
 
 
 ## Available Recipes
-- [California Current System](grid_california-current-system.ipynb) - High-resolution domain off the US West Coast
-- [Hvalfjörður, Iceland](grid_hvalfjörður-iceland.ipynb) - Fjord grid in western Iceland
-- [WIO Toy Domain](grid_wio-toy.ipynb) - Western Indian Ocean toy domain
-- [Gulf of Guinea Toy Domain](grid_gulf-guinea-toy.ipynb) - Gulf of Guinea toy domain
+- [California Current System](california-current-system.ipynb) - High-resolution domain off the US West Coast
+- [Hvalfjörður, Iceland](hvalfjörður-iceland.ipynb) - Fjord grid in western Iceland
+- [WIO Toy Domain](wio-toy.ipynb) - Western Indian Ocean toy domain
+- [Gulf of Guinea Toy Domain](gulf-guinea-toy.ipynb) - Gulf of Guinea toy domain
 

@@ -11,7 +11,7 @@ import copernicusmarine
 import gdown
 import roms_tools as rt
 
-import config
+from . import config
 
 
 # -----------------------------------------

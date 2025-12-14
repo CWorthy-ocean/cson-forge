@@ -10,34 +10,34 @@ project:
      
   toc:
     - file: README.md
-    - file: workflows/docs_overview.md    
+    - file: workflows/docs/overview.md    
     
     - title: Get Started
       children:
-        - file: workflows/docs_installation.md
-        - file: workflows/docs_configuration.md
-        - file: workflows/docs_models.md
-        - file: workflows/docs_source-data.md
-        - file: workflows/docs_grid-making.md
-        - file: workflows/docs_api-ref.md
+        - file: workflows/docs/installation.md
+        - file: workflows/docs/configuration.md
+        - file: workflows/docs/models.md
+        - file: workflows/docs/source-data.md
+        - file: workflows/docs/grid-making.md
+        - file: workflows/docs/api-ref.md
     
     - title: Make a Model Blueprint
       children:
-        - file: workflows/grid_index.md      
-        - file: workflows/grid_source-data.ipynb      
-        - file: workflows/grid_california-current-system.ipynb
-        - file: workflows/grid_gulf-guinea-toy.ipynb
-        - file: workflows/grid_hvalfjörður-iceland.ipynb
-        - file: workflows/grid_wio-toy.ipynb
+        - file: workflows/generate-models/index.md      
+        - file: workflows/generate-models/source-data.ipynb      
+        - file: workflows/generate-models/california-current-system.ipynb
+        - file: workflows/generate-models/gulf-guinea-toy.ipynb
+        - file: workflows/generate-models/hvalfjörður-iceland.ipynb
+        - file: workflows/generate-models/wio-toy.ipynb
     
     - title: Use Model Blueprint
       children:
-        - file: workflows/docs_catalog.ipynb  
+        - file: workflows/docs/catalog.ipynb  
 
     - title: Analysis
       children:
-        - file: workflows/analysis_index.md
-        - file: workflows/analysis_cson-plot.ipynb
+        - file: workflows/analysis/index.md
+        - file: workflows/analysis/cson-plot.ipynb
     
 site:
   template: book-theme
