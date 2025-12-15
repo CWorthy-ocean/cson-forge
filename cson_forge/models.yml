@@ -1,23 +1,36 @@
-roms-marbl:
-  opt_base_dir: opt_base/opt_base_roms-marbl-cson-default
+cson_roms-marbl_v0.1:
+  opt_base_dir: opt_base/cson_roms-marbl_v0.1
   conda_env: roms_env
 
-  repos:
+  code:
     roms:
-      url: https://github.com/CWorthy-ocean/ucla-roms.git
-      default_dirname: ucla-roms     # directory under CODES_ROOT if ROMS_ROOT not set
+      location: https://github.com/CWorthy-ocean/ucla-roms.git
 
     marbl:
-      url: https://github.com/marbl-ecosys/MARBL.git
-      default_dirname: MARBL
-      checkout: marbl0.45.0          # tag or branch to check out
-
-  master_settings_file: roms.in
-
-  settings_input_files:
-    - roms.in
-    - marbl_in
-    - marbl_tracer_output_list
+      location: https://github.com/marbl-ecosys/MARBL.git
+      commit: marbl0.45.0  
+  
+  run_time:
+    #location: /anvil/scratch/x-seilerman/2node_test_domain
+    filter:
+      files:
+      - roms.in
+      - marbl_in
+      - marbl_tracer_output_list
+  
+  compile_time:
+    #location: /anvil/scratch/x-seilerman/2node_test_domain/compile
+    filter:
+      files:
+      - bgc.opt
+      - bulk_frc.opt
+      - cdr_frc.opt
+      - cppdefs.opt
+      - cstar_output.opt
+      - ocean_vars.opt
+      - param.opt
+      - river_frc.opt
+      - Makefile
 
   inputs:
     grid: 

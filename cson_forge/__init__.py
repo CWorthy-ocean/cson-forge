@@ -8,7 +8,7 @@ from . import config
 
 # OcnModel and source_data may not be available if dependencies aren't installed
 try:
-    from .cson_forge import OcnModel
+    from ._core import OcnModel
 except ImportError:
     OcnModel = None
 

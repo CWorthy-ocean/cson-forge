@@ -4,11 +4,9 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Union
 
-import math
 import os
 import shlex
 import shutil
-import stat
 import subprocess
 import sys
 import textwrap
@@ -18,11 +16,11 @@ import uuid
 import yaml
 from jinja2 import Environment, FileSystemLoader, StrictUndefined
 
-from . import config
-from . import model
-from .model import ModelSpec, RepoSpec
 import roms_tools as rt
+
+from . import config
 from . import source_data
+from .model import ModelSpec
 
 
 # =========================================================
@@ -168,7 +166,7 @@ class InputStep:
         self.name = name  # canonical key used for filenames & paths
         self.order = order  # execution order
         self.label = label  # human-readable label
-        self.handler = handler  # function expecting `self` (ROMSInputs instance)
+        self.handler = handler  # function expecting `self` (inputs instance)
 
 
 INPUT_REGISTRY: Dict[str, InputStep] = {}
@@ -226,7 +224,7 @@ class InputObj:
 
 
 @dataclass
-class ROMSInputs:
+class inputs:
     """
     Generate and manage ROMS input files for a given grid.
 
@@ -655,7 +653,7 @@ class ROMSInputs:
 
     def _write_inputs_blueprint(self):
         """
-        Serialize a summary of ROMSInputs state to a YAML blueprint:
+        Serialize a summary of inputs state to a YAML blueprint:
 
             blueprints/{model_name}-{grid_name}/model-inputs.yml
 
@@ -721,12 +719,103 @@ class ROMSInputs:
         with self.bp_path.open("w") as f:
             yaml.safe_dump(data, f, sort_keys=True)
 
-        print(f"📄  Wrote ROMSInputs blueprint to {self.bp_path}")
+        print(f"📄  Wrote inputs blueprint to {self.bp_path}")
 
 
 # =========================================================
 # Build logic (from former model_build.py)
 # =========================================================
+
+
+def _generate_slurm_script(
+    run_command: str,
+    job_name: str,
+    account: str,
+    queue: str,
+    wallclock_time: str,
+    n_nodes: int,
+    n_tasks_per_node: int,
+    run_dir: Path,
+    log_func: Callable[[str], None] = print,
+) -> Path:
+    """
+    Generate a SLURM batch script for running the model, with system-specific options.
+
+    Supported machines:
+        - NERSC_perlmutter
+
+    Raises NotImplementedError for all other systems.
+
+    Parameters
+    ----------
+    run_command : str
+        The command to execute (e.g., mpirun command).
+    job_name : str
+        Name for the SLURM job.
+    account : str
+        Account to charge the job to.
+    queue : str
+        Queue/partition to submit to.
+    wallclock_time : str
+        Wallclock time limit (format: HH:MM:SS).
+    n_nodes : int
+        Number of nodes to request.
+    n_tasks_per_node : int
+        Number of tasks to request.
+    run_dir : Path
+        Directory where the batch script and output files will be written.  
+    log_func : callable, optional
+        Logging function for messages.
+    
+    Returns
+    -------
+    Path
+        Path to the generated batch script.
+    """
+    
+    script_path = run_dir / f"{job_name}.run"
+    stdout_path = run_dir / f"{job_name}.out"
+    stderr_path = run_dir / f"{job_name}.err"
+
+    if config.system_id == "NERSC_perlmutter":
+        # Perlmutter (NERSC) SLURM script
+        script_content = textwrap.dedent(f"""
+            #!/bin/bash
+            #SBATCH --job-name={job_name}
+            #SBATCH --account={account}
+            #SBATCH --qos={queue}
+            #SBATCH --time={wallclock_time}
+            #SBATCH --output={stdout_path}
+            #SBATCH --error={stderr_path}
+            #SBATCH --constraint=cpu
+            #SBATCH --nodes={n_nodes}
+            #SBATCH --ntasks-per-node={n_tasks_per_node}
+
+            # Change to the run directory
+            cd {run_dir}
+
+            {run_command}
+        """).strip()
+
+    elif config.system_id == "RCAC_anvil":
+        # Anvil (RCAC) SLURM script
+        raise NotImplementedError(
+            f"SLURM job script generation is not implemented for this system: {config.system_id}"
+        )
+    
+    else:
+        raise NotImplementedError(
+            f"SLURM job script generation is not implemented for this system: {config.system_id}"
+        )
+
+    script_path.write_text(script_content)
+    script_path.chmod(0o755)
+
+    log_func(f"Generated SLURM batch script: {script_path}")
+    log_func(f"  stdout: {stdout_path}")
+    log_func(f"  stderr: {stderr_path}")
+
+    return script_path
 
 
 def _run_command(cmd: list[str], **kwargs: Any) -> str:
@@ -999,8 +1088,8 @@ def build(
     build_dir_tmp.mkdir(parents=True, exist_ok=True)
 
     roms_conda_env = model_spec.conda_env
-    if "roms" not in model_spec.repos or "marbl" not in model_spec.repos:
-        raise ValueError(f"Model spec {model_spec.name} must define at least 'roms' and 'marbl' repos.")
+    if "roms" not in model_spec.code or "marbl" not in model_spec.code:
+        raise ValueError(f"Model spec {model_spec.name} must define at least 'roms' and 'marbl' in code.")
 
     logs_dir = build_root / "logs"
     logs_dir.mkdir(parents=True, exist_ok=True)
@@ -1026,8 +1115,9 @@ def build(
             )
 
     codes_root = config.paths.code_root
-    roms_root = codes_root / model_spec.repos["roms"].default_dirname
-    marbl_root = codes_root / model_spec.repos["marbl"].default_dirname
+    # Use repo name as default directory name if not specified
+    roms_root = codes_root / "ucla-roms"
+    marbl_root = codes_root / "MARBL"
 
     log(f"Building {model_spec.name} for grid: {grid_name}")
     log(f"{model_spec.name} opt_base_dir : {opt_base_dir}")
@@ -1079,26 +1169,26 @@ def build(
     # Clone / update repos
     # -----------------------------------------------------
     if not (roms_root / ".git").is_dir():
-        log(f"Cloning ROMS from {model_spec.repos['roms'].url} into {roms_root}")
-        _run_command(["git", "clone", model_spec.repos["roms"].url, str(roms_root)])
+        log(f"Cloning ROMS from {model_spec.code['roms'].location} into {roms_root}")
+        _run_command(["git", "clone", model_spec.code["roms"].location, str(roms_root)])
     else:
         log(f"ROMS repo already present at {roms_root}")
 
-    if model_spec.repos["roms"].checkout:
-        log(f"Checking out ROMS {model_spec.repos['roms'].checkout}")
+    if model_spec.code["roms"].commit:
+        log(f"Checking out ROMS {model_spec.code['roms'].commit}")
         _run_command(["git", "fetch", "--tags"], cwd=roms_root)
-        _run_command(["git", "checkout", model_spec.repos["roms"].checkout], cwd=roms_root)
+        _run_command(["git", "checkout", model_spec.code["roms"].commit], cwd=roms_root)
 
     if not (marbl_root / ".git").is_dir():
-        log(f"Cloning MARBL from {model_spec.repos['marbl'].url} into {marbl_root}")
-        _run_command(["git", "clone", model_spec.repos["marbl"].url, str(marbl_root)])
+        log(f"Cloning MARBL from {model_spec.code['marbl'].location} into {marbl_root}")
+        _run_command(["git", "clone", model_spec.code["marbl"].location, str(marbl_root)])
     else:
         log(f"MARBL repo already present at {marbl_root}")
 
-    if model_spec.repos["marbl"].checkout:
-        log(f"Checking out MARBL {model_spec.repos['marbl'].checkout}")
+    if model_spec.code["marbl"].commit:
+        log(f"Checking out MARBL {model_spec.code['marbl'].commit}")
         _run_command(["git", "fetch", "--tags"], cwd=marbl_root)
-        _run_command(["git", "checkout", model_spec.repos["marbl"].checkout], cwd=marbl_root)
+        _run_command(["git", "checkout", model_spec.code["marbl"].commit], cwd=marbl_root)
 
     # -----------------------------------------------------
     # Sanity checks for directory trees
@@ -1184,13 +1274,12 @@ def build(
         "opt_dir": str(opt_dir),
         "roms_conda_env": roms_conda_env,
         "roms_root": str(roms_root),
-        "repos": {
+        "code": {
             name: {
-                "url": spec.url,
-                "default_dirname": spec.default_dirname,
-                "checkout": spec.checkout,
+                "location": spec.location,
+                "commit": spec.commit,
             }
-            for name, spec in model_spec.repos.items()
+            for name, spec in model_spec.code.items()
         },
     }
 
@@ -1407,123 +1496,6 @@ def build(
     return exe_token_path if exe_token_path.exists() else None
 
 
-# =========================================================
-# Model execution (run) functions
-# =========================================================
-
-
-class ClusterType:
-    """Constants for cluster/scheduler types."""
-    LOCAL = "LocalCluster"
-    SLURM = "SLURMCluster"
-    PBS = "PBSCluster"  # For future extensibility
-
-
-def _default_cluster_type() -> str:
-    """
-    Return the default cluster type based on the current system.
-    
-    Returns
-    -------
-    str
-        "LocalCluster" for MacOS, "SLURMCluster" for other systems.
-    """
-    if config.system == "MacOS":
-        return ClusterType.LOCAL
-    else:
-        return ClusterType.SLURM
-
-
-def _generate_slurm_script(
-    run_command: str,
-    job_name: str,
-    account: str,
-    queue: str,
-    wallclock_time: str,
-    n_nodes: int,
-    n_tasks_per_node: int,
-    run_dir: Path,
-    log_func: Callable[[str], None] = print,
-) -> Path:
-    """
-    Generate a SLURM batch script for running the model, with system-specific options.
-
-    Supported machines:
-        - NERSC_perlmutter
-
-    Raises NotImplementedError for all other systems.
-
-    Parameters
-    ----------
-    run_command : str
-        The command to execute (e.g., mpirun command).
-    job_name : str
-        Name for the SLURM job.
-    account : str
-        Account to charge the job to.
-    queue : str
-        Queue/partition to submit to.
-    wallclock_time : str
-        Wallclock time limit (format: HH:MM:SS).
-    n_nodes : int
-        Number of nodes to request.
-    n_tasks_per_node : int
-        Number of tasks to request.
-    run_dir : Path
-        Directory where the batch script and output files will be written.  
-    log_func : callable, optional
-        Logging function for messages.
-    
-    Returns
-    -------
-    Path
-        Path to the generated batch script.
-    """
-    
-    script_path = run_dir / f"{job_name}.run"
-    stdout_path = run_dir / f"{job_name}.out"
-    stderr_path = run_dir / f"{job_name}.err"
-
-    if config.system_id == "NERSC_perlmutter":
-        # Perlmutter (NERSC) SLURM script
-        script_content = textwrap.dedent(f"""
-            #!/bin/bash
-            #SBATCH --job-name={job_name}
-            #SBATCH --account={account}
-            #SBATCH --qos={queue}
-            #SBATCH --time={wallclock_time}
-            #SBATCH --output={stdout_path}
-            #SBATCH --error={stderr_path}
-            #SBATCH --constraint=cpu
-            #SBATCH --nodes={n_nodes}
-            #SBATCH --ntasks-per-node={n_tasks_per_node}
-
-            # Change to the run directory
-            cd {run_dir}
-
-            {run_command}
-        """).strip()
-
-    elif config.system_id == "RCAC_anvil":
-        # Anvil (RCAC) SLURM script
-        raise NotImplementedError(
-            f"SLURM job script generation is not implemented for this system: {config.system_id}"
-        )
-    
-    else:
-        raise NotImplementedError(
-            f"SLURM job script generation is not implemented for this system: {config.system_id}"
-        )
-
-    script_path.write_text(script_content)
-    script_path.chmod(0o755)
-
-    log_func(f"Generated SLURM batch script: {script_path}")
-    log_func(f"  stdout: {stdout_path}")
-    log_func(f"  stderr: {stderr_path}")
-
-    return script_path
-
 
 def run(
     model_spec: ModelSpec,
@@ -1556,7 +1528,7 @@ def run(
     run_command : str
         The command to execute (e.g., mpirun command).
     inputs : dict[str, InputObj]
-        Dictionary of ROMS inputs (from ROMSInputs.inputs) used to populate
+        Dictionary of ROMS inputs (from inputs.inputs) used to populate
         template variables in the master_settings_file.
     cluster_type : str, optional
         Type of cluster/scheduler to use. Options: "LocalCluster", "SLURMCluster".
@@ -1586,6 +1558,7 @@ def run(
     
     # Set default cluster type if not provided
     if cluster_type is None:
+        from ._core import _default_cluster_type
         cluster_type = _default_cluster_type()
     
     # Set run directory internally with case
@@ -1602,61 +1575,59 @@ def run(
             f"Please run OcnModel.build() first."
         )
     
-    # Ensure master_settings_file is included in files to copy
-    files_to_copy = list(model_spec.settings_input_files)
-    if model_spec.master_settings_file not in files_to_copy:
-        files_to_copy.append(model_spec.master_settings_file)
+    # Get files to copy and render from run_time.filter.files
+    files_to_process = list(model_spec.run_time.files)
     
-    if files_to_copy:
-        log_func(f"Copying settings input files from {opt_dir} to {run_dir}:")
-        for filename in files_to_copy:
-            src_file = opt_dir / filename
-            dst_file = run_dir / filename
-            
-            if not src_file.exists():
-                raise FileNotFoundError(
-                    f"Settings input file not found in opt directory: {src_file}"
-                )
-            
-            shutil.copy2(src_file, dst_file)
-            log_func(f"  {filename} -> {dst_file}")
+    if not files_to_process:
+        raise ValueError(
+            f"Model '{model_spec.name}' has no files specified in 'run_time.filter.files'"
+        )
     
-    # Render master_settings_file with input paths
-    master_settings_src = opt_dir / model_spec.master_settings_file
-    master_settings_dst = run_dir / model_spec.master_settings_file
-    
-    if master_settings_src.exists():
-        log_func(f"Rendering master settings file: {model_spec.master_settings_file}")
-        
-        # Build context from inputs: map each input key to its path(s)
-        context = {"CASENAME": case}
-        for key, input_obj in inputs.items():
-            if input_obj.paths is not None:
-                # Convert Path or list[Path] to string or list of strings
-                key_out = key.upper() + "_PATH"
-                if isinstance(input_obj.paths, (list, tuple)):
-                    context[key_out] = "\n".join([str(p) for p in input_obj.paths])
-                else:
-                    context[key_out] = str(input_obj.paths)
+    # Build context from inputs: map each input key to its path(s)
+    # This context is used for templating all files
+    context = {"CASENAME": case}
+    for key, input_obj in inputs.items():
+        if input_obj.paths is not None:
+            # Convert Path or list[Path] to string or list of strings
+            key_out = key.upper() + "_PATH"
+            if isinstance(input_obj.paths, (list, tuple)):
+                context[key_out] = "\n".join([str(p) for p in input_obj.paths])
             else:
-                raise ValueError(f"Input {key} has no paths")
+                context[key_out] = str(input_obj.paths)
+        else:
+            raise ValueError(f"Input {key} has no paths")
+    
+    # Set up Jinja2 environment for templating
+    env = Environment(
+        loader=FileSystemLoader(str(opt_dir)),
+        undefined=StrictUndefined,
+        autoescape=False,
+    )
+    
+    # Process each file: copy and render with template context
+    log_func(f"Processing run-time files from {opt_dir} to {run_dir}:")
+    for filename in files_to_process:
+        src_file = opt_dir / filename
+        dst_file = run_dir / filename
+        
+        if not src_file.exists():
+            raise FileNotFoundError(
+                f"Run-time file not found in opt directory: {src_file}"
+            )
         
         # Render the template
-        env = Environment(
-            loader=FileSystemLoader(str(opt_dir)),
-            undefined=StrictUndefined,
-            autoescape=False,
-        )
-        template = env.get_template(model_spec.master_settings_file)
-        rendered = template.render(**context)
-        
-        # Write to run directory
-        master_settings_dst.write_text(rendered)
-        log_func(f"  Rendered {model_spec.master_settings_file} -> {master_settings_dst}")
-    else:
-        raise FileNotFoundError(
-            f"Master settings file not found in opt directory: {master_settings_src}"
-        )
+        try:
+            template = env.get_template(filename)
+            rendered = template.render(**context)
+            
+            # Write rendered content to run directory
+            dst_file.write_text(rendered)
+            log_func(f"  Rendered {filename} -> {dst_file}")
+        except Exception as e:
+            # If templating fails, fall back to copying the file as-is
+            log_func(f"  Warning: Template rendering failed for {filename}: {e}")
+            log_func(f"  Copying file as-is: {filename} -> {dst_file}")
+            shutil.copy2(src_file, dst_file)
     
     # Copy executable to run directory
     executable_name = executable_path.name
@@ -1676,6 +1647,8 @@ def run(
     log_file = run_dir / f"{case}.{timestamp}.log"
     # Append shell redirect to send stdout and stderr to log file
     run_command_updated = f"{run_command_updated} > {log_file} 2>&1"
+    
+    from ._core import ClusterType
     
     if cluster_type == ClusterType.LOCAL:
         conda_env = model_spec.conda_env
@@ -1764,274 +1737,3 @@ def run(
             f"Unknown cluster type: {cluster_type}. "
             f"Supported types: {ClusterType.LOCAL}, {ClusterType.SLURM}, {ClusterType.PBS}"
         )
-
-
-# =========================================================
-# High-level OcnModel object
-# =========================================================
-
-
-@dataclass
-class OcnModel:
-    """
-    High-level object:
-      - model metadata from models.yml (ModelSpec),
-      - source datasets (SourceData),
-      - ROMS input generation (ROMSInputs),
-      - model build (via `build()`).
-
-    Typical usage
-    -------------
-    grid_kwargs = dict(
-        nx=10,
-        ny=10,
-        size_x=4000,
-        size_y=2000,
-        center_lon=4.0,
-        center_lat=-1.0,
-        rot=0,
-        N=5,
-    )
-
-    ocn = OcnModel(
-        model_name="roms-marbl",
-        grid_name=grid_name,
-        grid_kwargs=grid_kwargs,
-        boundaries=boundaries,
-        start_time=start_time,
-        end_time=end_time,
-        np_eta=np_eta,
-        np_xi=np_xi,
-    )
-
-    ocn.prepare_source_data()
-    ocn.generate_inputs()
-    ocn.build()
-    """
-
-    model_name: str
-    grid_name: str
-    grid_kwargs: Dict[str, Any]
-    boundaries: dict
-    start_time: object
-    end_time: object
-    np_eta: int
-    np_xi: int
-    grid: object = field(init=False)
-    spec: ModelSpec = field(init=False)
-    src_data: Optional[source_data.SourceData] = field(init=False, default=None)
-    inputs: Optional[ROMSInputs] = field(init=False, default=None)
-    executable: Optional[Path] = field(init=False, default=None)
-    
-    def __post_init__(self):
-        self.grid = rt.Grid(**self.grid_kwargs)
-        self.spec = model.load_models_yaml(config.paths.models_yaml, self.model_name)
-        self.n_tasks = self.np_xi * self.np_eta
-        self.cluster_type = _default_cluster_type()
-        
-        if self.cluster_type == ClusterType.SLURM:
-            if config.machine.pes_per_node is None:
-                raise RuntimeError(
-                    f"pes_per_node not configured for system '{config.system}'. "
-                    f"Please add it to machines.yml"
-                )
-            # Use ceiling division to ensure we have enough nodes
-            self.n_nodes = math.ceil(self.n_tasks / config.machine.pes_per_node)
-            self.n_tasks_per_node = config.machine.pes_per_node
-        else:
-            self.n_nodes = None
-            self.n_tasks_per_node = None
-
-    @property
-    def input_data_dir(self) -> Path:
-        return config.paths.input_data / f"{self.model_name}_{self.grid_name}"
-
-    @property
-    def name(self) -> str:
-        return f"{self.spec.name}_{self.grid_name}"
-
-    @property
-    def _run_command(self) -> str:
-        """
-        Return the mpirun command to execute the model.
-        
-        Returns
-        -------
-        str
-            The mpirun command string with the number of processes
-            (np_xi * np_eta), the executable path, and the master settings file.
-        
-        Raises
-        ------
-        RuntimeError
-            If the executable has not been built yet.
-        """
-        if self.executable is None:
-            raise RuntimeError(
-                "Executable not built yet. Call OcnModel.build() first."
-            )
-        if self.cluster_type == ClusterType.LOCAL:
-            return f"mpirun -n {self.n_tasks} {self.executable} {self.spec.master_settings_file}"
-        elif self.cluster_type == ClusterType.SLURM:
-            return f"srun -n {self.n_tasks} {self.executable} {self.spec.master_settings_file}"
-        else:
-            raise NotImplementedError(
-                f"Run command is not implemented for cluster type: {self.cluster_type}"
-            )
-
-    def prepare_source_data(self, clobber: bool = False):
-        self.src_data = source_data.SourceData(
-            datasets=self.spec.datasets,
-            clobber=clobber,
-            grid=self.grid,
-            grid_name=self.grid_name,
-            start_time=self.start_time,
-            end_time=self.end_time,
-        ).prepare_all()
-    
-    def generate_inputs(
-        self,
-        clobber: bool = False,
-    ) -> Dict[str, Any]:
-        """
-        Generate ROMS input files for this model/grid.
-
-        The list of inputs to generate is automatically derived from the
-        keys in models.yml["<model_name>"]["inputs"].
-
-        Parameters
-        ----------
-        clobber : bool, optional
-            Passed through to ROMSInputs to allow overwriting existing
-            NetCDF files.
-        
-        Returns
-        -------
-        dict
-            Dictionary mapping input keys to their corresponding objects
-            (e.g., grid, InitialConditions, SurfaceForcing, etc.).
-        
-        Raises
-        ------
-        RuntimeError
-            If `prepare_source_data()` has not been called yet.
-        """
-        if self.src_data is None:
-            raise RuntimeError(
-                "You must call OcnModel.prepare_source_data() "
-                "before generating inputs."
-            )
-        self.inputs = ROMSInputs(
-            model_name=self.model_name,
-            grid_name=self.grid_name,
-            grid=self.grid,
-            start_time=self.start_time,
-            end_time=self.end_time,
-            np_eta=self.np_eta,
-            np_xi=self.np_xi,
-            boundaries=self.boundaries,
-            source_data=self.src_data,
-            model_spec=self.spec,
-            clobber=clobber,
-        ).generate_all()
-
-        return self.inputs.obj
-
-    def build(
-        self, 
-        parameters: Dict[str, Dict[str, Any]], 
-        clean: bool = False, 
-        skip_inputs_check: bool = False
-    ) -> Path:
-        """
-        Build the model executable for this configuration, using the
-        lower-level `build()` helper in this module.
-
-        Parameters
-        ----------
-        parameters : dict
-            Build-time parameter overrides for the build.
-        clean : bool, optional
-            If True, clean the existing build directory before building.
-        skip_inputs_check : bool, optional
-            If True, skip the check for whether inputs have been generated. Default is False.
-        """
-        if not skip_inputs_check and self.inputs is None:
-            raise RuntimeError(
-                "You must call OcnModel.generate_inputs() before building the model. "
-                "If you wish to skip this check, pass skip_inputs_check=True to build()."
-            )
-
-        use_conda = config.system == "MacOS"
-        
-        exe_path = build(
-            model_spec=self.spec,
-            grid_name=self.grid_name,
-            input_data_path=self.input_data_dir,
-            parameters=parameters,
-            clean=clean,
-            use_conda=use_conda,
-            skip_inputs_check=skip_inputs_check,
-        )
-        if exe_path is None:
-            raise RuntimeError(
-                "Build completed but executable was not found. "
-                "Check the build logs for errors."
-            )
-        self.executable = exe_path
-        return self.executable
-
-    def run(
-        self,
-        case: str,
-        account: Optional[str] = None,
-        queue: Optional[str] = None,
-        wallclock_time: Optional[str] = None,
-    ) -> None:
-        """
-        Run the model executable for this configuration.
-
-        Parameters
-        ----------
-        case : str
-            Case name for this run (used in job name and output directory).
-        account : str, optional
-            Account for SLURM jobs (required for SLURMCluster).
-        queue : str, optional
-            Queue/partition for SLURM jobs (required for SLURMCluster).
-        wallclock_time : str, optional
-            Wallclock time limit for SLURM jobs in HH:MM:SS format (required for SLURMCluster).
-        
-        Raises
-        ------
-        RuntimeError
-            If inputs haven't been generated or executable hasn't been built.
-        """
-        if self.inputs is None:
-            raise RuntimeError(
-                "You must call OcnModel.generate_inputs() "
-                "before running the model."
-            )
-
-        if self.executable is None:
-            raise RuntimeError(
-                "You must call OcnModel.build() "
-                "before running the model."
-            )
-        
-       
-        run(
-            model_spec=self.spec,
-            grid_name=self.grid_name,
-            case=case,
-            executable_path=self.executable,
-            run_command=self._run_command,
-            inputs=self.inputs.inputs,
-            cluster_type=self.cluster_type,
-            account=account,
-            queue=queue,
-            wallclock_time=wallclock_time,
-            n_nodes=self.n_nodes,
-            n_tasks_per_node=self.n_tasks_per_node,
-        )
-
