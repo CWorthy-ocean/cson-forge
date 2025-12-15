@@ -1,0 +1,13 @@
+[tool.coverage.run]
+source = ["cson_forge"]
+omit = [
+    "**/__init__.py",
+]
+branch = true
+
+[tool.coverage.report]
+skip_covered = true
+show_missing = true
+
+[tool.coverage.xml]
+relative_files = true

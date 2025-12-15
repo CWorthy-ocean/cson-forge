@@ -1,0 +1,78 @@
+cson_roms-marbl_v0.1:
+  opt_base_dir: opt_base/cson_roms-marbl_v0.1
+  conda_env: roms_env
+
+  code:
+    roms:
+      location: https://github.com/CWorthy-ocean/ucla-roms.git
+
+    marbl:
+      location: https://github.com/marbl-ecosys/MARBL.git
+      commit: marbl0.45.0  
+  
+  run_time:
+    #location: /anvil/scratch/x-seilerman/2node_test_domain
+    filter:
+      files:
+      - roms.in
+      - marbl_in
+      - marbl_tracer_output_list
+  
+  compile_time:
+    #location: /anvil/scratch/x-seilerman/2node_test_domain/compile
+    filter:
+      files:
+      - bgc.opt
+      - bulk_frc.opt
+      - cdr_frc.opt
+      - cppdefs.opt
+      - cstar_output.opt
+      - ocean_vars.opt
+      - param.opt
+      - river_frc.opt
+      - Makefile
+
+  inputs:
+    grid: 
+      topography_source: ETOPO5
+      
+    initial_conditions:
+      source:
+        name: GLORYS
+      bgc_source: 
+        name: UNIFIED
+        climatology: true
+
+    surface_forcing:
+      source: 
+        name: ERA5
+      type: physics
+      correct_radiation: true
+
+    surface_forcing_bgc:
+      type: bgc      
+      source: 
+        name: UNIFIED
+        climatology: true
+
+    boundary_forcing:
+      type: physics      
+      source:
+        name: GLORYS
+
+    boundary_forcing_bgc:
+      type: bgc      
+      source:
+        name: UNIFIED
+        climatology: true
+
+    tidal_forcing:
+      source:
+        name: TPXO
+      ntides: 15
+
+    rivers:
+      include_bgc: true
+      source:
+        name: DAI
+        climatology: false

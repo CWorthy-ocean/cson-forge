@@ -1,11 +1,13 @@
 # C-SON Forge
 
+[![Run Tests](https://github.com/CWorthy-ocean/cson-forge/actions/workflows/tests.yaml/badge.svg)](https://github.com/CWorthy-ocean/cson-forge/actions/workflows/tests.yaml?query=branch%3Amain)
+
 A utility for generating new regional oceanographic modeling domains and creating reproducible [C-Star](https://c-star.readthedocs.io) workflows through blueprint descriptors.
 
 
 ## The C-Star Ocean Network
 <p align="center">
-  <img src="workflows/cson.png" alt="C-SON Forge Logo" style="max-width: 300px;">
+  <img src="workflows/analysis/assets/cson.png" alt="C-SON Forge Logo" style="max-width: 300px;">
 </p>
 
 

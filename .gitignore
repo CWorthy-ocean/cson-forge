@@ -134,13 +134,19 @@ dask-worker-space/
 # Vscode
 .vscode/
 
+# macOS
 .DS_Store
 
-# binarys
-workflows/builds/*/exe/*
+# binarys & temporary files
+cson_forge/builds/*/bld_tmp/*
+cson_forge/builds/*/exe/*
 *.o
 *.mod
 
+# notes
+workflows/_notes/*
+
 # MyST build outputs
 _build
-workflows/builds/*/bld_tmp/*
+
+
