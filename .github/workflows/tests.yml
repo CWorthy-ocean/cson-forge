@@ -57,11 +57,18 @@ jobs:
         echo "$HOME/bin" >> $GITHUB_PATH
         echo "Created conda wrapper at $HOME/bin/conda"
         
+    - name: Install cson_forge package
+      shell: bash -l {0}
+      working-directory: ${{ github.workspace }}
+      run: |
+        # Install cson_forge into the environment (non-editable for CI)
+        micromamba run -n cson-forge python -m pip install .
+
     - name: Set up C-Star
       shell: bash -l {0}
       working-directory: ${{ github.workspace }}
       run: |
-        # Run setup script within the conda environment
+        # Run setup script within the conda environment (after cson_forge is installed)
         micromamba run -n cson-forge bash setup_cstar.sh
         
     - name: Run tests

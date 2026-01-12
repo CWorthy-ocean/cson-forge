@@ -11,9 +11,22 @@ fi
 
 REPO_URL="https://github.com/CWorthy-ocean/C-Star.git"
 BRANCH="orchestration"
-CODE_ROOT=$(python -c "import cson_forge.config as config; paths = config.get_data_paths(); print(paths.code_root)")
+
+# Determine code root - use environment variable if set, otherwise use default
+# This avoids importing cson_forge which depends on cstar (not yet installed)
+if [ -n "$CSTAR_CODE_ROOT" ]; then
+    CODE_ROOT="$CSTAR_CODE_ROOT"
+else
+    # Default matches config.py _layout_unknown: home / "cson-forge-data" / "codes"
+    # For CI, we can use a simpler path
+    CODE_ROOT="${HOME}/cson-forge-data/codes"
+fi
+
 REPO_DIR="$CODE_ROOT/C-Star"
 CONDA_ENV="cson-forge"
+
+# Create code root directory if it doesn't exist
+mkdir -p "$CODE_ROOT"
 
 pushd "$CODE_ROOT" > /dev/null
 
