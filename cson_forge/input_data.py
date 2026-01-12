@@ -409,7 +409,7 @@ class RomsMarblInputData(InputData):
 
         self.grid.to_yaml(yaml_path)
         # Append Resource directly to blueprint_elements.grid
-        resource = cstar_models.Resource(location=out_path, partitioned=False)
+        resource = cstar_models.Resource(location=str(out_path), partitioned=False)
         self.blueprint_elements.grid.data.append(resource)
 
         self._settings_run_time["roms.in"]["grid"] = dict(
