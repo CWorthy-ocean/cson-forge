@@ -71,9 +71,9 @@ class MachineConfig:
 def _get_hostname() -> str:
     """Return lowercase hostname from multiple sources."""
     return (
-        os.environ.get("HOSTNAME")
-        or socket.gethostname()
+        socket.gethostname()
         or platform.node()
+        or os.environ.get("HOSTNAME")
         or "unknown"
     ).lower()
 
