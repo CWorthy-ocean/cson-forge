@@ -16,7 +16,7 @@
 ! nt  must be 2 or more if Salinity is defined
 
       integer, parameter ::
-     &               LLm=224, MMm=440, N=100  ! LUZON
+     &               LLm=224, MMm=440, N=60  ! LUZON
 
       integer, parameter ::
      &      NP_XI=16, NP_ETA=20, NSUB_X=1, NSUB_E=1

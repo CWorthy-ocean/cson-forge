@@ -9,7 +9,7 @@ Grid:
   center_lon: -134.5
   center_lat: 39.6
   rot: 33.3
-  N: 100
+  N: 60
   theta_s: 6.0
   theta_b: 6.0
   hc: 250.0

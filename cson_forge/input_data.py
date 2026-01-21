@@ -56,8 +56,7 @@ class InputData:
     """
     
     # Core configuration
-    model_name: str
-    grid_name: str
+    domain_name: str
     start_date: Any
     end_date: Any
     
@@ -66,7 +65,7 @@ class InputData:
     
     def __post_init__(self):
         """Initialize paths and storage."""
-        self.input_data_dir = config.paths.input_data / f"{self.model_name}_{self.grid_name}"
+        self.input_data_dir = config.paths.input_data / f"{self.domain_name}"
         self.input_data_dir.mkdir(exist_ok=True)
     
     def generate_all(self):
@@ -79,7 +78,7 @@ class InputData:
     
     def _forcing_filename(self, input_name: str) -> Path:
         """Construct the NetCDF filename for a given input name."""
-        return self.input_data_dir / f"{self.model_name}_{input_name}.nc"
+        return self.input_data_dir / f"{self.domain_name}_{input_name}.nc"
     
     def _ensure_empty_or_clobber(self, clobber: bool) -> bool:
         """
@@ -174,6 +173,9 @@ class RomsMarblInputData(InputData):
     # Settings dictionaries
     _settings_compile_time: dict = field(init=False)
     _settings_run_time: dict = field(init=False)
+    
+    # Coarse grid dimension flag (set during surface forcing generation)
+    include_coarse_dims: Optional[bool] = field(default=None)
 
     def __post_init__(self):
         """Initialize paths, storage, and input list."""
@@ -384,33 +386,7 @@ class RomsMarblInputData(InputData):
         out_path = self._forcing_filename(input_name="grid")
         yaml_path = self._yaml_filename(key)
         
-        self.grid.save(out_path)
-        
-        # -----------------------------------------------------------------------
-        # HACK: remove xi_coarse dimension if present
-        # Read file back, remove xi_coarse dimension if present, and rewrite
-        # this is a hack to get around the fact that the grid file has a 
-        # xi_coarse dimension that is not supported by the patition_netcdf function.
-        # https://github.com/CWorthy-ocean/roms-tools/issues/518
-
-        import xarray as xr
-        # Read the dataset and check for xi_coarse dimension
-        ds_modified = None
-        with xr.open_dataset(out_path) as ds:
-            if "xi_coarse" in ds.dims:
-                # Load data into memory (file will be closed when exiting context)
-                ds_loaded = ds.load()
-                # Preserve all global attributes (hc, theta_s, theta_b, etc.)
-                attrs = ds_loaded.attrs.copy()
-                ds_modified = ds_loaded.drop_dims("xi_coarse")
-                # Restore global attributes
-                ds_modified.attrs = attrs
-        
-        # File is now closed, safe to write
-        if ds_modified is not None:
-            ds_modified.to_netcdf(out_path, mode="w")
-        # -----------------------------------------------------------------------
-
+        self.grid.save(out_path)       
         self.grid.to_yaml(yaml_path)
         # Append Resource directly to blueprint_elements.grid
         resource = cstar_models.Resource(location=str(out_path), partitioned=False)
@@ -510,7 +486,33 @@ class RomsMarblInputData(InputData):
             resource = cstar_models.Resource(location=paths, partitioned=False)
             getattr(self.blueprint_elements.forcing, subkey).data.append(resource)
 
-        # TODO: Update self._settings_compile_time with related forcing parameter sets and cppdefs for surface forcing            
+        # TODO: Update self._settings_compile_time with related forcing parameter sets and cppdefs for surface forcing
+        interp_frc = 1 if frc.use_coarse_grid else 0
+        
+        # Set interp_frc in the appropriate section based on forcing type
+        # blk_frc.interp_frc is for physics surface forcing
+        # bgc.interp_frc is for bgc surface forcing
+        # Both should have the same value (enforced by check below)
+        if "blk_frc" not in self._settings_compile_time: 
+            self._settings_compile_time["blk_frc"] = {}
+        if "bgc" not in self._settings_compile_time:
+            self._settings_compile_time["bgc"] = {}
+        
+        # Check for consistency: all surface forcing types should use the same coarse grid setting
+        if "interp_frc" in self._settings_compile_time["blk_frc"]:
+            if interp_frc != self._settings_compile_time["blk_frc"]["interp_frc"]:
+                raise ValueError("Mismatch in coarse grid settings between surface forcing types")
+        if "interp_frc" in self._settings_compile_time["bgc"]:
+            if interp_frc != self._settings_compile_time["bgc"]["interp_frc"]:
+                raise ValueError("Mismatch in coarse grid settings between surface forcing types")
+        
+        # Set interp_frc for the appropriate section based on type
+        if "bgc" in type:
+            self._settings_compile_time["bgc"]["interp_frc"] = interp_frc
+        else:
+            self._settings_compile_time["blk_frc"]["interp_frc"] = interp_frc
+        
+        self.include_coarse_dims = interp_frc == 1
         
         if "forcing" not in self._settings_run_time["roms.in"]:
             self._settings_run_time["roms.in"]["forcing"] = {}
@@ -626,15 +628,23 @@ class RomsMarblInputData(InputData):
             getattr(self.blueprint_elements.forcing, subkey).data.append(resource)
 
         # updates settings_dict
-        self._settings_compile_time["river_frc"] = dict(
-            river_source = True,
-            analytical = False,
-            nriv = river.ds.sizes["nriver"],
-            rvol_vname = "river_volume",
-            rvol_tname = "river_time",
-            rtrc_vname = "river_tracer",
-            rtrc_tname = "river_time",
-        )
+        if "river_frc" not in self._settings_compile_time:            
+            self._settings_compile_time["river_frc"] = {}
+
+        self._settings_compile_time["river_frc"]["river_source"] = True
+        self._settings_compile_time["river_frc"]["analytical"] = False
+        self._settings_compile_time["river_frc"]["nriv"] = river.ds.sizes["nriver"]
+        
+        # check to make sure river_volume and river_tracer are in the dataset
+        if "river_volume" not in river.ds.variables:
+            raise ValueError("river_volume is not in the dataset")
+        if "river_tracer" not in river.ds.variables:
+            raise ValueError("river_tracer is not in the dataset")
+        
+        self._settings_compile_time["river_frc"]["rvol_vname"] = "river_volume"
+        self._settings_compile_time["river_frc"]["rvol_tname"] = "river_time"
+        self._settings_compile_time["river_frc"]["rtrc_vname"] = "river_tracer"
+        self._settings_compile_time["river_frc"]["rtrc_tname"] = "river_time"
 
         if "forcing" not in self._settings_run_time["roms.in"]:
             self._settings_run_time["roms.in"]["forcing"] = {}
@@ -684,7 +694,7 @@ class RomsMarblInputData(InputData):
             np_eta=self.partitioning.n_procs_y,
             np_xi=self.partitioning.n_procs_x,
             output_dir=self.input_data_dir,
-            include_coarse_dims=False,
+            include_coarse_dims=self.include_coarse_dims,
         )
         
         for function_key, _ in self.input_list:

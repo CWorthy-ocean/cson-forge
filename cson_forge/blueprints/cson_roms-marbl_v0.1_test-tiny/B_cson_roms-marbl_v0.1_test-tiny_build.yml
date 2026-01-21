@@ -55,42 +55,42 @@ initial_conditions:
   documentation: ''
   locked: false
   data:
-  - location: /Users/mclong/cson-forge-data/input-data/cson_roms-marbl_v0.1_test-tiny/cson_roms-marbl_v0.1_initial_conditions.nc
+  - location: /Users/mclong/cson-forge-data/input-data/cson_roms-marbl_v0.1_test-tiny/cson_roms-marbl_v0.1_test-tiny_initial_conditions.nc
     partitioned: false
 grid:
   documentation: ''
   locked: false
   data:
-  - location: /Users/mclong/cson-forge-data/input-data/cson_roms-marbl_v0.1_test-tiny/cson_roms-marbl_v0.1_grid.nc
+  - location: /Users/mclong/cson-forge-data/input-data/cson_roms-marbl_v0.1_test-tiny/cson_roms-marbl_v0.1_test-tiny_grid.nc
     partitioned: false
 forcing:
   boundary:
     documentation: ''
     locked: false
     data:
-    - location: /Users/mclong/cson-forge-data/input-data/cson_roms-marbl_v0.1_test-tiny/cson_roms-marbl_v0.1_boundary-physics_201201.nc
+    - location: /Users/mclong/cson-forge-data/input-data/cson_roms-marbl_v0.1_test-tiny/cson_roms-marbl_v0.1_test-tiny_boundary-physics_201201.nc
       partitioned: false
-    - location: /Users/mclong/cson-forge-data/input-data/cson_roms-marbl_v0.1_test-tiny/cson_roms-marbl_v0.1_boundary-bgc_clim.nc
+    - location: /Users/mclong/cson-forge-data/input-data/cson_roms-marbl_v0.1_test-tiny/cson_roms-marbl_v0.1_test-tiny_boundary-bgc_clim.nc
       partitioned: false
   surface:
     documentation: ''
     locked: false
     data:
-    - location: /Users/mclong/cson-forge-data/input-data/cson_roms-marbl_v0.1_test-tiny/cson_roms-marbl_v0.1_surface-physics_201201.nc
+    - location: /Users/mclong/cson-forge-data/input-data/cson_roms-marbl_v0.1_test-tiny/cson_roms-marbl_v0.1_test-tiny_surface-physics_201201.nc
       partitioned: false
-    - location: /Users/mclong/cson-forge-data/input-data/cson_roms-marbl_v0.1_test-tiny/cson_roms-marbl_v0.1_surface-bgc_clim.nc
+    - location: /Users/mclong/cson-forge-data/input-data/cson_roms-marbl_v0.1_test-tiny/cson_roms-marbl_v0.1_test-tiny_surface-bgc_clim.nc
       partitioned: false
   tidal:
     documentation: ''
     locked: false
     data:
-    - location: /Users/mclong/cson-forge-data/input-data/cson_roms-marbl_v0.1_test-tiny/cson_roms-marbl_v0.1_tidal.nc
+    - location: /Users/mclong/cson-forge-data/input-data/cson_roms-marbl_v0.1_test-tiny/cson_roms-marbl_v0.1_test-tiny_tidal.nc
       partitioned: false
   river:
     documentation: ''
     locked: false
     data:
-    - location: /Users/mclong/cson-forge-data/input-data/cson_roms-marbl_v0.1_test-tiny/cson_roms-marbl_v0.1_river.nc
+    - location: /Users/mclong/cson-forge-data/input-data/cson_roms-marbl_v0.1_test-tiny/cson_roms-marbl_v0.1_test-tiny_river.nc
       partitioned: false
   corrections: null
 partitioning:

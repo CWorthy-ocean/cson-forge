@@ -1374,8 +1374,7 @@ class CstarSpecBuilder(BaseModel):
             
             # Create inputs instance
             blueprint_elements, settings_compile_time, settings_run_time = input_data.RomsMarblInputData(
-                model_name=self.model_name,
-                grid_name=self.grid_name,
+                domain_name=self.name,
                 start_date=self.start_date,
                 end_date=self.end_date,
                 model_spec=self._model_spec,

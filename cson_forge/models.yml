@@ -60,10 +60,12 @@ cson_roms-marbl_v0.1:
             name: ERA5
           type: physics
           correct_radiation: true
+          coarse_grid_mode: "never"
         - source: 
             name: UNIFIED
             climatology: true
           type: bgc
+          coarse_grid_mode: "never"
           
       boundary:
         - source:

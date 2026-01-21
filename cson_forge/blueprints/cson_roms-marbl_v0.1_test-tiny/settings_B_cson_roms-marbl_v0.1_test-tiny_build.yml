@@ -13,7 +13,7 @@ compile_time:
     output_period_avg_dia: 60
     nrpf_avg_dia: 1
     nbgc_flx: 2
-    interp_frc: 1
+    interp_frc: 0
   blk_frc:
     interp_frc: 0
   cppdefs:
@@ -136,13 +136,13 @@ run_time:
       theta_b: 2.0
       theta_s: 5.0
     grid:
-      grid_file: /Users/mclong/cson-forge-data/input-data/cson_roms-marbl_v0.1_test-tiny/cson_roms-marbl_v0.1_grid.nc
+      grid_file: /Users/mclong/cson-forge-data/input-data/cson_roms-marbl_v0.1_test-tiny/cson_roms-marbl_v0.1_test-tiny_grid.nc
     forcing:
-      surface_forcing_path: /Users/mclong/cson-forge-data/input-data/cson_roms-marbl_v0.1_test-tiny/cson_roms-marbl_v0.1_surface-physics_201201.nc
-      surface_forcing_bgc_path: /Users/mclong/cson-forge-data/input-data/cson_roms-marbl_v0.1_test-tiny/cson_roms-marbl_v0.1_surface-bgc_clim.nc
-      boundary_forcing_path: /Users/mclong/cson-forge-data/input-data/cson_roms-marbl_v0.1_test-tiny/cson_roms-marbl_v0.1_boundary-physics_201201.nc
-      boundary_forcing_bgc_path: /Users/mclong/cson-forge-data/input-data/cson_roms-marbl_v0.1_test-tiny/cson_roms-marbl_v0.1_boundary-bgc_clim.nc
-      river_path: /Users/mclong/cson-forge-data/input-data/cson_roms-marbl_v0.1_test-tiny/cson_roms-marbl_v0.1_river.nc
+      surface_forcing_path: /Users/mclong/cson-forge-data/input-data/cson_roms-marbl_v0.1_test-tiny/cson_roms-marbl_v0.1_test-tiny_surface-physics_201201.nc
+      surface_forcing_bgc_path: /Users/mclong/cson-forge-data/input-data/cson_roms-marbl_v0.1_test-tiny/cson_roms-marbl_v0.1_test-tiny_surface-bgc_clim.nc
+      boundary_forcing_path: /Users/mclong/cson-forge-data/input-data/cson_roms-marbl_v0.1_test-tiny/cson_roms-marbl_v0.1_test-tiny_boundary-physics_201201.nc
+      boundary_forcing_bgc_path: /Users/mclong/cson-forge-data/input-data/cson_roms-marbl_v0.1_test-tiny/cson_roms-marbl_v0.1_test-tiny_boundary-bgc_clim.nc
+      river_path: /Users/mclong/cson-forge-data/input-data/cson_roms-marbl_v0.1_test-tiny/cson_roms-marbl_v0.1_test-tiny_river.nc
     lateral_visc:
       visc2: 0.0
       visc4: 0.0
@@ -166,4 +166,4 @@ run_time:
     ubind: 0.1
     initial:
       nrrec: 1
-      initial_file: /Users/mclong/cson-forge-data/input-data/cson_roms-marbl_v0.1_test-tiny/cson_roms-marbl_v0.1_initial_conditions.nc
+      initial_file: /Users/mclong/cson-forge-data/input-data/cson_roms-marbl_v0.1_test-tiny/cson_roms-marbl_v0.1_test-tiny_initial_conditions.nc

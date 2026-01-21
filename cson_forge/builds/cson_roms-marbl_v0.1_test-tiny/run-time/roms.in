@@ -13,18 +13,18 @@ S-coord: THETA_S,   THETA_B,    TCLINE (m)
           5.0D0        2.0D0    250D0
 
 grid:  filename
-      /Users/mclong/cson-forge-data/input-data/cson_roms-marbl_v0.1_test-tiny/cson_roms-marbl_v0.1_grid.nc
+      /Users/mclong/cson-forge-data/input-data/cson_roms-marbl_v0.1_test-tiny/cson_roms-marbl_v0.1_test-tiny_grid.nc
 
 forcing: filename
-      /Users/mclong/cson-forge-data/input-data/cson_roms-marbl_v0.1_test-tiny/cson_roms-marbl_v0.1_surface-physics_201201.nc
-      /Users/mclong/cson-forge-data/input-data/cson_roms-marbl_v0.1_test-tiny/cson_roms-marbl_v0.1_surface-bgc_clim.nc
-      /Users/mclong/cson-forge-data/input-data/cson_roms-marbl_v0.1_test-tiny/cson_roms-marbl_v0.1_boundary-physics_201201.nc
-      /Users/mclong/cson-forge-data/input-data/cson_roms-marbl_v0.1_test-tiny/cson_roms-marbl_v0.1_boundary-bgc_clim.nc
-      /Users/mclong/cson-forge-data/input-data/cson_roms-marbl_v0.1_test-tiny/cson_roms-marbl_v0.1_river.nc
+      /Users/mclong/cson-forge-data/input-data/cson_roms-marbl_v0.1_test-tiny/cson_roms-marbl_v0.1_test-tiny_surface-physics_201201.nc
+      /Users/mclong/cson-forge-data/input-data/cson_roms-marbl_v0.1_test-tiny/cson_roms-marbl_v0.1_test-tiny_surface-bgc_clim.nc
+      /Users/mclong/cson-forge-data/input-data/cson_roms-marbl_v0.1_test-tiny/cson_roms-marbl_v0.1_test-tiny_boundary-physics_201201.nc
+      /Users/mclong/cson-forge-data/input-data/cson_roms-marbl_v0.1_test-tiny/cson_roms-marbl_v0.1_test-tiny_boundary-bgc_clim.nc
+      /Users/mclong/cson-forge-data/input-data/cson_roms-marbl_v0.1_test-tiny/cson_roms-marbl_v0.1_test-tiny_river.nc
 
 initial: NRREC  filename
       1
-      /Users/mclong/cson-forge-data/input-data/cson_roms-marbl_v0.1_test-tiny/cson_roms-marbl_v0.1_initial_conditions.nc
+      /Users/mclong/cson-forge-data/input-data/cson_roms-marbl_v0.1_test-tiny/cson_roms-marbl_v0.1_test-tiny_initial_conditions.nc
 
 output_root_name:
       /Users/mclong/cson-forge-data/cson-forge-run/cson_roms-marbl_v0.1_test-tiny_20120101-20120102/output/cson_roms-marbl_v0.1_test-tiny_20120101-20120102

@@ -16,7 +16,6 @@ from pydantic import BaseModel, ConfigDict, Field, HttpUrl, PrivateAttr, model_v
 import cstar.orchestration.models as models
 from cstar.orchestration.models import CodeRepository, ROMSCompositeCodeRepository
 from . import config
-from . import config
 
         
 
@@ -83,6 +82,9 @@ class SurfaceForcingItem(BaseModel):
         Type of forcing: "physics" or "bgc".
     correct_radiation : bool, optional
         Whether to correct radiation. Default is False.
+    coarse_grid_mode : Optional[str], optional
+        Coarse grid mode for interpolation. Default is "auto".
+        Common values: "auto", "always", "never".
     """
     
     model_config = ConfigDict(extra="forbid")
@@ -90,6 +92,7 @@ class SurfaceForcingItem(BaseModel):
     source: SourceSpec
     type: str = Field(pattern="^(physics|bgc)$")
     correct_radiation: bool = Field(default=False, validate_default=False)
+    coarse_grid_mode: Optional[str] = Field(default="auto", validate_default=False)
 
 
 class BoundaryForcingItem(BaseModel):
