@@ -1867,7 +1867,14 @@ class CstarSpecBuilder(BaseModel):
         self._cstar_simulation.build(rebuild=rebuild)
         return self._cstar_simulation
 
-    def run(self, walltime: str = "06:00:00", run_time_settings: Optional[cstar_models.RuntimeParameterSet] = None, **kwargs):
+    def run(
+        self, 
+        account_key: Optional[str] = None,
+        queue_name: Optional[str] = None,
+        walltime: str = "06:00:00",         
+        run_time_settings: Optional[cstar_models.RuntimeParameterSet] = None, 
+        **kwargs
+    ):
         """
         Run the model executable and advance blueprint to RUN stage.
         
@@ -1893,6 +1900,17 @@ class CstarSpecBuilder(BaseModel):
         
         Parameters
         ----------
+        account_key : str, optional
+            The user's account key on the system (required if using a job scheduler).
+            If not provided, defaults to the account from machine configuration.
+            Default is None.
+        queue_name : str, optional
+            The name of the scheduler queue to submit the job to.
+            If not provided, defaults to the default queue from machine configuration.
+            Default is None.
+        walltime : str, optional
+            Maximum allowed execution time for a scheduler job in HH:MM:SS format.
+            Default is "06:00:00".
         run_time_settings : RuntimeParameterSet, optional
             Runtime parameters for the simulation. **Not currently supported.**
             If provided, raises NotImplementedError. The C-Star simulation object
@@ -1941,18 +1959,24 @@ class CstarSpecBuilder(BaseModel):
         self._stage = BlueprintStage.RUN
         self.persist()
         
-        # Get account from machine config for HPC systems
-        account_key = config.machine_config.account
-        queue_name = config.machine_config.queues["default"]
+        # Get account and queue from machine config if not provided
+        machine_config = config.machine_config
         if account_key is None:
-            return self._cstar_simulation.run()
-        else:
-            return self._cstar_simulation.run(
-                account_key=account_key, 
-                walltime=walltime, 
-                queue_name=queue_name, 
-                job_name=self.casename,
-            )
+            account_key = machine_config.account
+        if queue_name is None and machine_config.queues:
+            queue_name = machine_config.queues.get("default")
+        
+        # Build run arguments
+        run_kwargs = {
+            "account_key": account_key,
+            "queue_name": queue_name,
+            "walltime": walltime,
+            "job_name": self.casename,
+        }
+        
+        
+        # Run the simulation
+        return self._cstar_simulation.run(**run_kwargs)
     
     def pre_run(self) -> None:
         """
