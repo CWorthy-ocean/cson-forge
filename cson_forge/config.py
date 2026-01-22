@@ -11,6 +11,9 @@ import json
 import sys
 import yaml
 
+USER = os.environ.get("USER", None)
+if USER is None:
+    raise ValueError("USER environment variable is not set")
 
 def _ensure_dir(path: Path) -> Path:
     """Create directory if needed and return it."""
@@ -27,7 +30,6 @@ class DataPaths:
     - source_data
     - input_data
     - run_dir
-    - code_root
     - blueprints
     - models_yaml
     - builds_yaml
@@ -38,7 +40,6 @@ class DataPaths:
     source_data: Path
     input_data: Path
     run_dir: Path
-    code_root: Path
     blueprints: Path
     models_yaml: Path
     builds_yaml: Path
@@ -110,9 +111,9 @@ def _detect_system() -> str:
 # System layout registry (pluggable)
 # --------------------------------------------------------
 
-# Now each layout returns 4 paths:
-# (source_data, input_data, run_dir, code_root)
-SystemLayoutFn = Callable[[Path, dict], Tuple[Path, Path, Path, Path]]
+# Now each layout returns 3 paths:
+# (source_data, input_data, run_dir)
+SystemLayoutFn = Callable[[Path, dict], Tuple[Path, Path, Path]]
 SYSTEM_LAYOUT_REGISTRY: Dict[str, SystemLayoutFn] = {}
 
 
@@ -121,7 +122,7 @@ def register_system(tag: str) -> Callable[[SystemLayoutFn], SystemLayoutFn]:
     Decorator to register a system-specific path layout.
 
     The decorated function must accept (home: Path, env: dict)
-    and return (source_data, input_data, run_dir, code_root).
+    and return (source_data, input_data, run_dir).
     """
     def decorator(func: SystemLayoutFn) -> SystemLayoutFn:
         SYSTEM_LAYOUT_REGISTRY[tag] = func
@@ -135,49 +136,44 @@ def register_system(tag: str) -> Callable[[SystemLayoutFn], SystemLayoutFn]:
 # --------------------------------------------------------
 
 @register_system("MacOS")
-def _layout_mac(home: Path, env: dict) -> Tuple[Path, Path, Path, Path]:
+def _layout_mac(home: Path, env: dict) -> Tuple[Path, Path, Path]:
     base = home / "cson-forge-data"
     source_data = base / "source-data"
     input_data = base / "input-data"
     run_dir = base / "cson-forge-run"
-    code_root = base / "codes"
-    return source_data, input_data, run_dir, code_root
+    return source_data, input_data, run_dir
 
 
 @register_system("RCAC_anvil")
-def _layout_RCAC_anvil(home: Path, env: dict) -> Tuple[Path, Path, Path, Path]:
+def _layout_RCAC_anvil(home: Path, env: dict) -> Tuple[Path, Path, Path]:
     work = Path(env.get("WORK", home / "work"))
     scratch_root = Path(env.get("SCRATCH", work / "scratch"))
-    base = work / "cson-forge-data"
 
+    base = work / "cson-forge-data"
     source_data = base / "source-data"
-    input_data = base / "input-data"
+    input_data = base / USER / "input-data"
     run_dir = scratch_root / "cson-forge-run"
-    code_root = base / "codes"
-    return source_data, input_data, run_dir, code_root
+    return source_data, input_data, run_dir
 
 
 @register_system("NERSC_perlmutter")
-def _layout_NERSC_perlmutter(home: Path, env: dict) -> Tuple[Path, Path, Path, Path]:
+def _layout_NERSC_perlmutter(home: Path, env: dict) -> Tuple[Path, Path, Path]:
     scratch_root = Path(env.get("SCRATCH", home / "scratch"))
     base = scratch_root / "cson-forge-data"
 
     source_data = base / "source-data"
-    input_data = base / "input-data"
+    input_data = base / USER / "input-data"
     run_dir = base / "cson-forge-run"
-    code_root = base / "codes"
-    return source_data, input_data, run_dir, code_root
+    return source_data, input_data, run_dir
 
 
 @register_system("unknown")
-def _layout_unknown(home: Path, env: dict) -> Tuple[Path, Path, Path, Path]:
+def _layout_unknown(home: Path, env: dict) -> Tuple[Path, Path, Path]:
     base = home / "cson-forge-data"
-
     source_data = base / "source-data"
     input_data = base / "input-data"
     run_dir = base / "cson-forge-run"
-    code_root = base / "codes"
-    return source_data, input_data, run_dir, code_root
+    return source_data, input_data, run_dir
 
 
 # --------------------------------------------------------
@@ -196,7 +192,7 @@ def get_data_paths() -> DataPaths:
         system_tag, SYSTEM_LAYOUT_REGISTRY["unknown"]
     )
 
-    source_data, input_data, run_dir, code_root = layout_fn(home, env)
+    source_data, input_data, run_dir = layout_fn(home, env)
 
     here = Path(__file__).resolve().parent
     model_configs = here / "model-configs"
@@ -206,7 +202,7 @@ def get_data_paths() -> DataPaths:
     machines_yaml = here / "machines.yml"
 
     # ensure everything exists
-    for p in (source_data, input_data, run_dir, code_root, blueprints_dir, model_configs):
+    for p in (source_data, input_data, run_dir, blueprints_dir, model_configs):
         _ensure_dir(p)
 
     return DataPaths(
@@ -215,7 +211,6 @@ def get_data_paths() -> DataPaths:
         source_data=source_data,
         input_data=input_data,
         run_dir=run_dir,
-        code_root=code_root,
         blueprints=blueprints_dir,
         models_yaml=models_yaml,
         builds_yaml=builds_yaml,

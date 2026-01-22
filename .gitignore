@@ -143,6 +143,12 @@ cson_forge/builds/*/exe/*
 *.o
 *.mod
 
+# external dependencies
+external/
+
+# local binaries (micromamba)
+bin/
+
 # notes
 workflows/_notes/*
 

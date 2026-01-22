@@ -100,7 +100,7 @@ compile_time:
     nrpf: 7
     diag_uv: false
     diag_trc: false
-    diag_pflx: false
+    diag_pflx: true
     timescale: 86400
     diag_prec: nf90_double
   tracers:
@@ -122,6 +122,21 @@ compile_time:
     cdr_loc_dep: cdr_dep
     cdr_scl_hor: cdr_hsc
     cdr_scl_vrt: cdr_vsc
+  sponge_tune:
+    pflx_w_vname: up_west
+    pflx_w_tname: bry_time
+    pflx_e_vname: up_east
+    pflx_e_tname: bry_time
+    pflx_s_vname: vp_south
+    pflx_s_tname: bry_time
+    pflx_n_vname: vp_north
+    pflx_n_tname: bry_time
+    ub_tune: false
+    spn_avg: true
+    sp_timscale: 86400
+    wrt_sponge: true
+    nrpf: 7
+    output_period: 86400
 run_time:
   roms.in:
     title:

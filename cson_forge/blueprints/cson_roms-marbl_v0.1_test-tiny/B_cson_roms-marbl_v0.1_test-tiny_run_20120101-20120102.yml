@@ -41,6 +41,7 @@ code:
       - ocean_vars.opt
       - param.opt
       - river_frc.opt
+      - sponge_tune.opt
       - surf_flux.opt
       - tides.opt
       - tracers.opt

@@ -234,6 +234,20 @@ class CstarSpecBuilder(BaseModel):
     def run_output_dir(self) -> Path:
         """Return the output directory path."""
         return config.paths.run_dir / self.casename
+    
+    @property
+    def default_runtime_params(self) -> cstar_models.RuntimeParameterSet:
+        """
+        Get default runtime parameters.
+        
+        Returns a RuntimeParameterSet with default values based on the builder's
+        configuration (start_date, end_date, output_dir).
+        """
+        return cstar_models.RuntimeParameterSet(
+            start_date=self.start_date,
+            end_date=self.end_date,
+            output_dir=self.run_output_dir,
+        )
 
     @property
     def blueprint_dir(self) -> Path:
@@ -1235,7 +1249,7 @@ class CstarSpecBuilder(BaseModel):
             warnings.filterwarnings('ignore', category=FutureWarning, module='xarray')
             return [xr.open_dataset(location, decode_timedelta=False) for location in location_strs]
     
-    def ensure_source_data(self, clobber: bool = False, include_streamable: bool = False):
+    def ensure_source_data(self, include_streamable: bool = False):
         """
         Ensure source data is prepared and ready for input file generation.
         
@@ -1252,9 +1266,6 @@ class CstarSpecBuilder(BaseModel):
         
         Parameters
         ----------
-        clobber : bool, optional
-            If True, overwrite existing prepared datasets even if they exist.
-            Default is False.
         include_streamable : bool, optional
             If True, include streamable datasets in preparation (datasets that
             can be accessed on-demand rather than pre-downloaded).
@@ -1276,7 +1287,7 @@ class CstarSpecBuilder(BaseModel):
         
         self.src_data = source_data.SourceData(
             datasets=self._model_spec.datasets,
-            clobber=clobber,
+            clobber=False,
             grid=self.grid,
             grid_name=self.grid_name,
             start_time=self.start_date,
@@ -1370,7 +1381,7 @@ class CstarSpecBuilder(BaseModel):
             
             # Prepare source data if not already done
             if self.src_data is None:
-                self.ensure_source_data(clobber=False, include_streamable=False)
+                self.ensure_source_data(include_streamable=False)
             
             # Create inputs instance
             blueprint_elements, settings_compile_time, settings_run_time = input_data.RomsMarblInputData(
@@ -2344,7 +2355,6 @@ class CstarSpecEngine:
         self,
         domain_name: str,
         overrides: Optional[Dict[str, Any]] = None,
-        clobber_source_data: bool = False,
         clobber_inputs: bool = True,
         partition_files: bool = False,
         test: bool = False,
@@ -2367,8 +2377,6 @@ class CstarSpecEngine:
             Name of the grid/domain to process.
         overrides : Optional[Dict[str, Any]], optional
             Dictionary of configuration overrides to apply. Default is None.
-        clobber_source_data : bool, optional
-            If True, overwrite existing source data. Default is False.
         clobber_inputs : bool, optional
             If True, overwrite existing input files. Default is True.
         partition_files : bool, optional
@@ -2389,7 +2397,7 @@ class CstarSpecEngine:
         builder = self._create_builder(domain_name, overrides=overrides)
         
         # Execute workflow
-        builder.ensure_source_data(clobber=clobber_source_data)
+        builder.ensure_source_data()
         builder.generate_inputs(
             clobber=clobber_inputs,
             partition_files=partition_files,
@@ -2407,7 +2415,6 @@ class CstarSpecEngine:
     def generate_all(
         self,
         overrides: Optional[Dict[str, Any]] = None,
-        clobber_source_data: bool = False,
         clobber_inputs: bool = True,
         partition_files: bool = False,
         test: bool = False,
@@ -2425,8 +2432,6 @@ class CstarSpecEngine:
         ----------
         overrides : Optional[Dict[str, Any]], optional
             Dictionary of configuration overrides to apply to all domains. Default is None.
-        clobber_source_data : bool, optional
-            If True, overwrite existing source data. Default is False.
         clobber_inputs : bool, optional
             If True, overwrite existing input files. Default is True.
         partition_files : bool, optional
@@ -2463,7 +2468,6 @@ class CstarSpecEngine:
                 builders[grid_name] = self.generate_domain(
                     domain_name=grid_name,
                     overrides=overrides,
-                    clobber_source_data=clobber_source_data,
                     clobber_inputs=clobber_inputs,
                     partition_files=partition_files,
                     test=test,

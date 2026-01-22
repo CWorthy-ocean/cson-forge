@@ -12,6 +12,7 @@ cson_roms-marbl_v0.1:
         - ocean_vars.opt.j2
         - param.opt.j2
         - river_frc.opt.j2
+        - sponge_tune.opt.j2
         - surf_flux.opt.j2
         - tides.opt.j2
         - tracers.opt.j2

@@ -24,7 +24,7 @@
 
       logical, parameter, public :: diag_uv       = .false.   ! Momentum diagnostics
       logical, parameter, public :: diag_trc      = .false.   ! Selected tracers diagnostics
-      logical, parameter, public :: diag_pflx     = .false.    ! Baroclinic pressure fluxes
+      logical, parameter, public :: diag_pflx     = .true.    ! Baroclinic pressure fluxes
 
       real,    parameter         :: timescale     = 86400 ! timescale for filtering (in seconds)
 
