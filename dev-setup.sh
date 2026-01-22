@@ -44,29 +44,10 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 LOCAL_BIN_DIR="$SCRIPT_DIR/bin"
 LOCAL_MICROMAMBA="$LOCAL_BIN_DIR/micromamba"
 
-# Discover local Python packages (directories with __init__.py files)
-# Exclude test directories and hidden directories
-LOCAL_PYTHON_PACKAGES=()
-while IFS= read -r package_file; do
-  # Get the directory containing the __init__.py file
-  package_dir=$(dirname "$package_file")
-  # Get the package name (directory name)
-  package_name=$(basename "$package_dir")
-  # Get relative path from SCRIPT_DIR for easier matching
-  rel_path="${package_dir#$SCRIPT_DIR/}"
-  # Skip test-related directories, hidden directories, and build directories
-  if [[ ! "$rel_path" =~ ^(tests|\.git|_build|external|bin)/ ]] && \
-     [[ ! "$package_name" =~ ^\. ]] && \
-     [[ "$package_name" != "tests" ]] && \
-     [[ "$package_name" != "bin" ]] && \
-     [[ "$package_dir" != "$SCRIPT_DIR" ]]; then
-    LOCAL_PYTHON_PACKAGES+=("$package_name")
-  fi
-done < <(find "$SCRIPT_DIR" -maxdepth 2 -type f -name "__init__.py" 2>/dev/null)
-# If no packages found, fall back to KERNEL_NAME-based package name
-if [[ ${#LOCAL_PYTHON_PACKAGES[@]} -eq 0 ]]; then
-  LOCAL_PYTHON_PACKAGES=("${KERNEL_NAME//-/_}")
-fi
+# List of local Python packages to install in editable mode
+# Each entry is a directory path relative to SCRIPT_DIR
+# Use "." for the current repository root (installs from pyproject.toml)
+LOCAL_PYTHON_PACKAGES=(".")
 
 # Determine OS and architecture for micromamba download
 OS_TYPE=""
@@ -115,10 +96,8 @@ echo "    • No root access required"
 echo ""
 echo "  Environment:"
 echo "    • Environment Name: $KERNEL_NAME"
-if [[ ${#LOCAL_PYTHON_PACKAGES[@]} -eq 0 ]]; then
-  echo "    • Python Packages:  (none found)"
-elif [[ ${#LOCAL_PYTHON_PACKAGES[@]} -eq 1 ]]; then
-  echo "    • Python Packages:  ${LOCAL_PYTHON_PACKAGES[0]}"
+if [[ ${#LOCAL_PYTHON_PACKAGES[@]} -eq 1 ]] && [[ "${LOCAL_PYTHON_PACKAGES[0]}" == "." ]]; then
+  echo "    • Python Package:   cson-forge (from current directory)"
 else
   echo "    • Python Packages:"
   for pkg in "${LOCAL_PYTHON_PACKAGES[@]}"; do
@@ -383,69 +362,40 @@ else
 fi
 
 # Install local Python packages in editable mode
-# Check if any package needs to be installed
-NEEDS_INSTALL=false
-MISSING_PACKAGES=()
-for package_name in "${LOCAL_PYTHON_PACKAGES[@]}"; do
-  if ! python - "$package_name" <<'PY'
-import importlib.util
-import sys
-package_name = sys.argv[1]
-spec = importlib.util.find_spec(package_name)
-# Check if the package is actually importable (not just a namespace)
-if spec is None or spec.origin is None:
-    sys.exit(1)
-# Verify it's actually installed (not just a namespace package)
-try:
-    __import__(package_name)
-    sys.exit(0)
-except ImportError:
-    sys.exit(1)
-PY
-  then
-    NEEDS_INSTALL=true
-    MISSING_PACKAGES+=("$package_name")
+echo "Installing local Python packages in editable mode..."
+for package_dir in "${LOCAL_PYTHON_PACKAGES[@]}"; do
+  # Resolve to absolute path
+  if [[ "$package_dir" == "." ]]; then
+    install_dir="$SCRIPT_DIR"
+    package_display="cson-forge (current directory)"
+  else
+    install_dir="$SCRIPT_DIR/$package_dir"
+    package_display="$package_dir"
   fi
-done
-
-if [[ "$NEEDS_INSTALL" == "true" ]]; then
-  echo "Installing local Python packages in editable mode..."
-  echo "  Missing packages: ${MISSING_PACKAGES[*]}"
-  # Install from root directory (uses pyproject.toml or setup.py)
-  # This installs all packages defined in the project configuration
+  
+  if [[ ! -d "$install_dir" ]]; then
+    echo "  ✗ Warning: Package directory not found: $install_dir"
+    continue
+  fi
+  
+  echo "  Installing: $package_display"
+  cd "$install_dir"
   pip install -e .
   
-  # Verify installation succeeded
-  INSTALL_FAILED=false
-  for package_name in "${MISSING_PACKAGES[@]}"; do
-    if ! python - "$package_name" <<'PY'
-import importlib.util
-import sys
-package_name = sys.argv[1]
-try:
-    __import__(package_name)
-    sys.exit(0)
-except ImportError:
-    sys.exit(1)
-PY
-    then
-      echo "  ✓ $package_name installed successfully"
+  # Verify installation by checking if the package can be imported
+  # For the root package, check for cson_forge module
+  if [[ "$package_dir" == "." ]]; then
+    if python -c "import cson_forge" 2>/dev/null; then
+      echo "  ✓ cson-forge installed successfully"
     else
-      echo "  ✗ $package_name installation failed"
-      INSTALL_FAILED=true
+      echo "  ✗ cson-forge installation failed (cannot import cson_forge)"
     fi
-  done
-  
-  if [[ "$INSTALL_FAILED" == "false" ]]; then
-    echo "✓ Local package installation completed successfully!"
   else
-    echo "⚠ Warning: Some packages may not have installed correctly"
+    echo "  ✓ $package_display installed"
   fi
-else
-  for package_name in "${LOCAL_PYTHON_PACKAGES[@]}"; do
-    echo "✓ $package_name is already installed"
-  done
-fi
+done
+cd "$SCRIPT_DIR"
+echo "✓ Local package installation completed!"
 
 #--------------------------------------------------------
 # Jupyter kernel setup
@@ -491,7 +441,8 @@ fi
 # Install kernel if it doesn't exist
 if [[ "$KERNEL_EXISTS" == "false" ]]; then
   echo "Installing Jupyter kernel: $KERNEL_NAME"
-  python -m ipykernel install --sys-prefix --name "$KERNEL_NAME" --display-name "$KERNEL_NAME"
+  # Use --user flag to make kernel visible globally (not just within the environment)
+  python -m ipykernel install --user --name "$KERNEL_NAME" --display-name "$KERNEL_NAME"
   echo "✓ Jupyter kernel installation completed successfully!"
 fi
 
