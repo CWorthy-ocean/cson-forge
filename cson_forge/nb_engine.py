@@ -28,6 +28,7 @@ except ImportError:  # pragma: no cover - exercised via explicit error path
 
 from .parsers import load_app_config, load_yaml_params
 from . import compute
+from . import config
 
 logger = logging.getLogger(__name__)
 
@@ -61,22 +62,7 @@ def save_notebook_copy(notebook_name: str = None):
         Name of the notebook file. If None, attempts to detect from kernel.
     """
     # Detect OS and set subdirectory
-    system = platform.system().lower()
-    if system == "darwin":
-        os_dir = "macos"
-    elif system == "linux":
-        # Check if it's Ubuntu (common case)
-        try:
-            with open("/etc/os-release", "r") as f:
-                os_release = f.read()
-                if "ubuntu" in os_release.lower():
-                    os_dir = "ubuntu"
-                else:
-                    os_dir = "linux"  # Generic Linux fallback
-        except:
-            os_dir = "linux"
-    else:
-        os_dir = system  # Fallback to system name
+    os_dir = config.system_id
     
     # Get notebook filename
     if notebook_name is None:
