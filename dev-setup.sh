@@ -39,15 +39,34 @@ if [[ -z ${KERNEL_NAME:-} ]]; then
   exit 1
 fi
 
-# Determine local Python package name from KERNEL_NAME
-# This is the package that will be installed in editable mode
-# Replace "-" with "_" to convert environment name to Python package name
-LOCAL_PYPACKAGE="${LOCAL_PYPACKAGE:-${KERNEL_NAME//-/_}}"
-
 # Get the directory where this script is located
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 LOCAL_BIN_DIR="$SCRIPT_DIR/bin"
 LOCAL_MICROMAMBA="$LOCAL_BIN_DIR/micromamba"
+
+# Discover local Python packages (directories with __init__.py files)
+# Exclude test directories and hidden directories
+LOCAL_PYTHON_PACKAGES=()
+while IFS= read -r package_file; do
+  # Get the directory containing the __init__.py file
+  package_dir=$(dirname "$package_file")
+  # Get the package name (directory name)
+  package_name=$(basename "$package_dir")
+  # Get relative path from SCRIPT_DIR for easier matching
+  rel_path="${package_dir#$SCRIPT_DIR/}"
+  # Skip test-related directories, hidden directories, and build directories
+  if [[ ! "$rel_path" =~ ^(tests|\.git|_build|external|bin)/ ]] && \
+     [[ ! "$package_name" =~ ^\. ]] && \
+     [[ "$package_name" != "tests" ]] && \
+     [[ "$package_name" != "bin" ]] && \
+     [[ "$package_dir" != "$SCRIPT_DIR" ]]; then
+    LOCAL_PYTHON_PACKAGES+=("$package_name")
+  fi
+done < <(find "$SCRIPT_DIR" -maxdepth 2 -type f -name "__init__.py" 2>/dev/null)
+# If no packages found, fall back to KERNEL_NAME-based package name
+if [[ ${#LOCAL_PYTHON_PACKAGES[@]} -eq 0 ]]; then
+  LOCAL_PYTHON_PACKAGES=("${KERNEL_NAME//-/_}")
+fi
 
 # Determine OS and architecture for micromamba download
 OS_TYPE=""
@@ -96,7 +115,16 @@ echo "    • No root access required"
 echo ""
 echo "  Environment:"
 echo "    • Environment Name: $KERNEL_NAME"
-echo "    • Python Package:   $LOCAL_PYPACKAGE"
+if [[ ${#LOCAL_PYTHON_PACKAGES[@]} -eq 0 ]]; then
+  echo "    • Python Packages:  (none found)"
+elif [[ ${#LOCAL_PYTHON_PACKAGES[@]} -eq 1 ]]; then
+  echo "    • Python Packages:  ${LOCAL_PYTHON_PACKAGES[0]}"
+else
+  echo "    • Python Packages:"
+  for pkg in "${LOCAL_PYTHON_PACKAGES[@]}"; do
+    echo "      - $pkg"
+  done
+fi
 echo "    • Environment File: $env_file"
 echo ""
 echo "  Clean Mode:"
@@ -298,16 +326,32 @@ else
   fi
 fi
 
-if ! python - "$LOCAL_PYPACKAGE" <<'PY'
+# Install local Python packages in editable mode
+# Check if any package needs to be installed
+NEEDS_INSTALL=false
+for package_name in "${LOCAL_PYTHON_PACKAGES[@]}"; do
+  if ! python - "$package_name" <<'PY'
 import importlib.util
 import sys
 package_name = sys.argv[1]
 sys.exit(0 if importlib.util.find_spec(package_name) else 1)
 PY
-then
-  echo "Installing $LOCAL_PYPACKAGE in editable mode..."
+  then
+    NEEDS_INSTALL=true
+    break
+  fi
+done
+
+if [[ "$NEEDS_INSTALL" == "true" ]]; then
+  echo "Installing local Python packages in editable mode..."
+  # Install from root directory (uses pyproject.toml or setup.py)
+  # This installs all packages defined in the project configuration
   pip install -e .
-  echo "✓ $LOCAL_PYPACKAGE installation completed successfully!"
+  echo "✓ Local package installation completed successfully!"
+else
+  for package_name in "${LOCAL_PYTHON_PACKAGES[@]}"; do
+    echo "✓ $package_name is already installed"
+  done
 fi
 
 #--------------------------------------------------------
