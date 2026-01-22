@@ -204,7 +204,12 @@ if [[ "$PACKAGE_MANAGER" == "micromamba" ]]; then
   # Remove environment if --clean is specified and it exists
   if [[ "$CLEAN_MODE" == "true" && "$ENV_EXISTS" == "true" ]]; then
     echo "Removing existing $PACKAGE_MANAGER environment: $KERNEL_NAME"
-    "$MICROMAMBA_CMD" env remove -n "$KERNEL_NAME" -y
+    # Suppress harmless error about mamba_trash.txt (directory may be removed before file write)
+    # This error occurs when the conda-meta directory is removed before micromamba can write the trash file
+    # Capture stderr, filter out the harmless error, and allow the command to complete
+    { "$MICROMAMBA_CMD" env remove -n "$KERNEL_NAME" -y 2>&1; } | grep -v "mamba_trash.txt" || true
+    # Small delay to ensure cleanup completes
+    sleep 0.5
     ENV_EXISTS="false"
   fi
   
@@ -234,7 +239,11 @@ else
   # Remove environment if --clean is specified and it exists
   if [[ "$CLEAN_MODE" == "true" && "$ENV_EXISTS" == "true" ]]; then
     echo "Removing existing $PACKAGE_MANAGER environment: $KERNEL_NAME"
-    conda env remove -n "$KERNEL_NAME" -y
+    # Suppress harmless error about mamba_trash.txt (directory may be removed before file write)
+    # The environment removal still succeeds despite this error
+    conda env remove -n "$KERNEL_NAME" -y 2>&1 | grep -v "mamba_trash.txt" || true
+    # Small delay to ensure cleanup completes
+    sleep 0.5
     ENV_EXISTS="false"
   fi
   
