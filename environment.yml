@@ -13,7 +13,6 @@ dependencies:
   - dask
   - dask-jobqueue
   - distributed
-  - esmpy
   - ffmpeg
   - flake8
   - h5py
@@ -38,11 +37,12 @@ dependencies:
   - pyyaml>=6.0
   - rasterio
   - rioxarray
+  - roms-tools==3.3.0
   - scipy
   - seawater
   - xarray
-  - xesmf
   - xgcm
   - zarr
-  - pip:
-    - roms-tools==3.3.0
+  - pip
+  
+    

@@ -271,13 +271,14 @@ if [[ "$(uname)" == "Darwin" ]]; then
     fi
   fi
   
-  echo "Detected macOS - installing compilers from conda-forge..."
+  echo "Detected macOS - installing compilers and ESMF packages from conda-forge..."
   # Package manager install may run deactivation scripts that reference unset variables
   # set +u is already active from the initialization section above
+  # These packages are only installed on macOS; on HPC systems, we rely on system modules
   if [[ "$PACKAGE_MANAGER" == "micromamba" ]]; then
-    micromamba install -y -c conda-forge compilers mpich netcdf-fortran
+    micromamba install -y -c conda-forge compilers mpich netcdf-fortran esmpy xesmf
   else
-    conda install -y -c conda-forge compilers mpich netcdf-fortran
+    conda install -y -c conda-forge compilers mpich netcdf-fortran esmpy xesmf
   fi
   echo "✓ Compiler installation completed successfully!"
 else
