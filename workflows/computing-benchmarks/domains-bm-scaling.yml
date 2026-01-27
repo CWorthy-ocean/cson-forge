@@ -114,7 +114,7 @@ ccs-12km_352procs:
     n_procs_x: 16
     n_procs_y: 22
 
-ccs-12km_1120procs:
+ccs-12km_1232procs:
   description: "California Current System"
   model_name: "cson_roms-marbl_v0.1"
   grid_name: "ccs-12km"
@@ -141,4 +141,4 @@ ccs-12km_1120procs:
     west: true
   partitioning:
     n_procs_x: 28
-    n_procs_y: 40
+    n_procs_y: 44
