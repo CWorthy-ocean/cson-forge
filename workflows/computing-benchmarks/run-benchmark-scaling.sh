@@ -5,8 +5,8 @@
 #SBATCH --error=output/logs/benchmark-scaling-%j.err
 #SBATCH --time=24:00:00
 #SBATCH --nodes=1
-#SBATCH --ntasks-per-node=1
-#SBATCH --mem=16G
+#SBATCH --ntasks-per-node=16
+#SBATCH --mem=32G
 #SBATCH --account=ees250129
 
 # Exit on error (but allow unset variables for conda/micromamba operations)
