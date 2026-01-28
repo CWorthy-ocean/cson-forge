@@ -7,6 +7,7 @@
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
 #SBATCH --mem=16G
+#SBATCH --account=ees250129
 
 # Exit on error
 set -euo pipefail
