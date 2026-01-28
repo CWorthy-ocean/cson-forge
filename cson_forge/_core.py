@@ -159,7 +159,7 @@ class CstarSpecBuilder(BaseModel):
     start_date: datetime = Field(alias="start_time")
     end_date: datetime = Field(alias="end_time")
     cdr_forcing: Optional[cstar_models.Dataset] = Field(default=None, validate_default=False)
-    
+    ensemble_id: Optional[int] = Field(default=None, validate_default=False)
     # Internal attributes (computed/loaded)
     blueprint: Optional[cstar_models.RomsMarblBlueprint] = Field(
         default=None,
@@ -218,7 +218,8 @@ class CstarSpecBuilder(BaseModel):
         
         This property sets blueprint.name when the blueprint is created.
         """
-        return f"{self._model_spec.name}_{self.grid_name}_{self.n_procs}procs"
+        ensemble_str = f"_{self.ensemble_id:03d}" if self.ensemble_id is not None else ""
+        return f"{self._model_spec.name}_{self.grid_name}_{self.n_procs}procs{ensemble_str}"
 
     @property
     def n_procs(self) -> int:
@@ -2347,7 +2348,8 @@ class CstarSpecEngine:
     def _create_builder(
         self,
         domain_name: str,
-        overrides: Optional[Dict[str, Any]] = None
+        overrides: Optional[Dict[str, Any]] = None,
+        ensemble_id: Optional[int] = None
     ) -> CstarSpecBuilder:
         """
         Create a CstarSpecBuilder instance from domain configuration.
@@ -2359,6 +2361,9 @@ class CstarSpecEngine:
         overrides : Optional[Dict[str, Any]], optional
             Dictionary of configuration overrides to apply. These will
             override values from the domain configuration. Default is None.
+        ensemble_id : Optional[int], optional
+            Ensemble ID to use for this builder. If None, uses default (1).
+            Default is None.
         
         Returns
         -------
@@ -2366,6 +2371,10 @@ class CstarSpecEngine:
             Configured CstarSpecBuilder instance.
         """
         config_dict = self._get_domain_config(domain_name).copy()
+        
+        # Apply ensemble_id if provided
+        if ensemble_id is not None:
+            config_dict["ensemble_id"] = ensemble_id
         
         # Apply overrides if provided
         if overrides:
@@ -2399,6 +2408,7 @@ class CstarSpecEngine:
         test: bool = False,
         compile_time_settings: Optional[Dict[str, Any]] = None,
         run_time_settings: Optional[Dict[str, Any]] = None,
+        ensemble_id: Optional[int] = None,
     ) -> CstarSpecBuilder:
         """
         Execute the complete workflow for a domain.
@@ -2426,6 +2436,9 @@ class CstarSpecEngine:
             Compile-time settings overrides. Default is None.
         run_time_settings : Optional[Dict[str, Any]], optional
             Run-time settings overrides. Default is None.
+        ensemble_id : Optional[int], optional
+            Ensemble ID to use for this domain. If None, uses default (1).
+            Default is None.
         
         Returns
         -------
@@ -2433,7 +2446,7 @@ class CstarSpecEngine:
             The CstarSpecBuilder instance after completing the workflow.
         """
         # Create builder from domain configuration
-        builder = self._create_builder(domain_name, overrides=overrides)
+        builder = self._create_builder(domain_name, overrides=overrides, ensemble_id=ensemble_id)
         
         # Execute workflow
         builder.ensure_source_data()
@@ -2459,6 +2472,7 @@ class CstarSpecEngine:
         test: bool = False,
         compile_time_settings: Optional[Dict[str, Any]] = None,
         run_time_settings: Optional[Dict[str, Any]] = None,
+        ensemble_id: Optional[int] = None,
     ) -> Dict[str, CstarSpecBuilder]:
         """
         Execute the complete workflow for all domains (generation only).
@@ -2481,6 +2495,9 @@ class CstarSpecEngine:
             Compile-time settings overrides. Default is None.
         run_time_settings : Optional[Dict[str, Any]], optional
             Run-time settings overrides. Default is None.
+        ensemble_id : Optional[int], optional
+            Ensemble ID to use for all domains. If None, uses default (1).
+            Default is None.
         
         Returns
         -------
@@ -2512,6 +2529,7 @@ class CstarSpecEngine:
                     test=test,
                     compile_time_settings=compile_time_settings,
                     run_time_settings=run_time_settings,
+                    ensemble_id=ensemble_id,
                 )
                 print(f"\n✓ Successfully completed domain: {grid_name}")
             except Exception as e:

@@ -58,6 +58,13 @@ def main():
         help="Enable verbose output",
     )
     
+    parser.add_argument(
+        "--ensemble-id",
+        type=int,
+        default=None,
+        help="Ensemble ID to use for all domains (default: 1 if not specified)",
+    )
+    
     args = parser.parse_args()
     
     # Resolve domains file path
@@ -77,6 +84,8 @@ def main():
         print(f"Using domains file: {domains_file}")
         print(f"Clobber inputs: {args.clobber_inputs}")
         print(f"Generate only: {args.generate_only}")
+        if args.ensemble_id is not None:
+            print(f"Ensemble ID: {args.ensemble_id}")
         print()
     
     try:
@@ -88,7 +97,10 @@ def main():
         print("\n" + "=" * 80)
         print("Generating all domain configurations...")
         print("=" * 80)
-        builders = engine.generate_all(clobber_inputs=args.clobber_inputs)
+        builders = engine.generate_all(
+            clobber_inputs=args.clobber_inputs,
+            ensemble_id=args.ensemble_id
+        )
         
         print(f"\n✓ Generated {len(builders)} domain configuration(s)")
         for grid_name in builders.keys():
