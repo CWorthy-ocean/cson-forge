@@ -3,7 +3,7 @@ ccs-12km_20procs:
   model_name: "cson_roms-marbl_v0.1"
   grid_name: "ccs-12km"
   start_time: "2024-01-01"
-  end_time: "2024-01-02"
+  end_time: "2024-01-10"
   grid_kwargs:
     nx: 224
     ny: 440
@@ -32,7 +32,7 @@ ccs-12km_70procs:
   model_name: "cson_roms-marbl_v0.1"
   grid_name: "ccs-12km"
   start_time: "2024-01-01"
-  end_time: "2024-01-02"
+  end_time: "2024-01-10"
   grid_kwargs:
     nx: 224
     ny: 440
@@ -61,7 +61,7 @@ ccs-12km_280procs:
   model_name: "cson_roms-marbl_v0.1"
   grid_name: "ccs-12km"
   start_time: "2024-01-01"
-  end_time: "2024-01-02"
+  end_time: "2024-01-10"
   grid_kwargs:
     nx: 224
     ny: 440
@@ -90,7 +90,7 @@ ccs-12km_352procs:
   model_name: "cson_roms-marbl_v0.1"
   grid_name: "ccs-12km"
   start_time: "2024-01-01"
-  end_time: "2024-01-02"
+  end_time: "2024-01-10"
   grid_kwargs:
     nx: 224
     ny: 440
@@ -119,7 +119,7 @@ ccs-12km_1232procs:
   model_name: "cson_roms-marbl_v0.1"
   grid_name: "ccs-12km"
   start_time: "2024-01-01"
-  end_time: "2024-01-02"
+  end_time: "2024-01-10"
   grid_kwargs:
     nx: 224
     ny: 440

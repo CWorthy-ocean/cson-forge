@@ -1763,10 +1763,10 @@ class CstarSpecBuilder(BaseModel):
             
         # Render templates and get location and file list
         # Get n_tracers from model_spec properties
-        if self._model_spec.settings and self._model_spec.settings.properties:
+        if self._model_spec.settings.properties is not None:
             n_tracers = self._model_spec.settings.properties.n_tracers
         else:
-            raise ValueError("Model spec must have properties.n_tracers")
+            raise ValueError("Model spec must have settings.properties.n_tracers")
         
         compile_time_code = render_roms_settings(
             template_files=self._model_spec.templates.compile_time.filter.files,

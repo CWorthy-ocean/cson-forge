@@ -319,11 +319,14 @@ class PropertiesSpec(BaseModel):
     ----------
     n_tracers : int
         Number of tracers for the model configuration.
+    marbl : bool
+        Whether the model includes MARBL biogeochemistry.
     """
     
     model_config = ConfigDict(extra="forbid")
     
     n_tracers: int = Field(description="Number of tracers")
+    marbl: bool = Field(default=False, description="Whether the model includes MARBL biogeochemistry")
 
 
 class SettingsSpec(BaseModel):
@@ -379,7 +382,7 @@ class ModelSpec(BaseModel):
         Logical name of the model (e.g., "cson_roms-marbl_v0.1").
     templates : Optional[TemplatesSpec]
         Template specifications containing compile_time and run_time stages (as CodeRepository).
-    settings : Optional[SettingsSpec]
+    settings : SettingsSpec
         Settings specifications containing compile_time and run_time stages.
     code : ROMSCompositeCodeRepository
         Composite code repository containing roms, run_time, compile_time, and optionally marbl.
@@ -394,7 +397,7 @@ class ModelSpec(BaseModel):
     
     name: str
     templates: Optional[TemplatesSpec] = None
-    settings: Optional[SettingsSpec] = None
+    settings: SettingsSpec
     code: ROMSCompositeCodeRepository
     inputs: ModelInputs
     datasets: List[str]
@@ -767,8 +770,8 @@ def load_models_yaml(path: Path, model_name: str) -> ModelSpec:
                 run_time=run_time_repo
             )
     
-    # Parse settings (optional) as SettingsSpec
-    settings_spec: Optional[SettingsSpec] = None
+    # Parse settings as SettingsSpec (required; build empty if missing)
+    settings_spec: SettingsSpec
     if "settings" in block:
         settings_dict = block["settings"]
         properties_spec = None
@@ -812,6 +815,10 @@ def load_models_yaml(path: Path, model_name: str) -> ModelSpec:
                 compile_time=compile_time_settings,
                 run_time=run_time_settings
             )
+        else:
+            settings_spec = SettingsSpec()
+    else:
+        settings_spec = SettingsSpec()
     
     # Create placeholder CodeRepository objects for run_time and compile_time
     # These will be populated with actual files and locations during build()

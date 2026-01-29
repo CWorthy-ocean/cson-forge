@@ -489,25 +489,31 @@ class RomsMarblInputData(InputData):
         # TODO: Update self._settings_compile_time with related forcing parameter sets and cppdefs for surface forcing
         interp_frc = 1 if frc.use_coarse_grid else 0
         
+        # Only touch 'bgc' if the model has MARBL/BGC (from PropertiesSpec).
+        has_bgc_compile = (
+            self.model_spec.settings.properties is not None
+            and self.model_spec.settings.properties.marbl
+        )
+        
         # Set interp_frc in the appropriate section based on forcing type
         # blk_frc.interp_frc is for physics surface forcing
-        # bgc.interp_frc is for bgc surface forcing
-        # Both should have the same value (enforced by check below)
-        if "blk_frc" not in self._settings_compile_time: 
+        # bgc.interp_frc is for bgc surface forcing (only if model has bgc)
+        # Both should have the same value when present (enforced by check below)
+        if "blk_frc" not in self._settings_compile_time:
             self._settings_compile_time["blk_frc"] = {}
-        if "bgc" not in self._settings_compile_time:
+        if has_bgc_compile and "bgc" not in self._settings_compile_time:
             self._settings_compile_time["bgc"] = {}
         
         # Check for consistency: all surface forcing types should use the same coarse grid setting
         if "interp_frc" in self._settings_compile_time["blk_frc"]:
             if interp_frc != self._settings_compile_time["blk_frc"]["interp_frc"]:
                 raise ValueError("Mismatch in coarse grid settings between surface forcing types")
-        if "interp_frc" in self._settings_compile_time["bgc"]:
+        if has_bgc_compile and "interp_frc" in self._settings_compile_time["bgc"]:
             if interp_frc != self._settings_compile_time["bgc"]["interp_frc"]:
                 raise ValueError("Mismatch in coarse grid settings between surface forcing types")
         
-        # Set interp_frc for the appropriate section based on type
-        if "bgc" in type:
+        # Set interp_frc for the appropriate section based on type (only set bgc if model has bgc)
+        if "bgc" in type and has_bgc_compile:
             self._settings_compile_time["bgc"]["interp_frc"] = interp_frc
         else:
             self._settings_compile_time["blk_frc"]["interp_frc"] = interp_frc

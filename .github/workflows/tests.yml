@@ -72,7 +72,7 @@ jobs:
         # Install C-Star (required by tests that import cstar.orchestration.models)
         # Skip Jupyter kernel setup and compiler installation for CI
         REPO_URL="https://github.com/CWorthy-ocean/C-Star.git"
-        BRANCH="orchestration"
+        BRANCH="main"
         CODE_ROOT="${{ github.workspace }}/external"
         REPO_DIR="$CODE_ROOT/C-Star"
         
