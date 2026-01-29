@@ -28,6 +28,7 @@ dependencies = [
     "roms-tools>=3.3.0",
     "copernicusmarine",
     "gdown",
+    "cstar-ocean>=0.1.0",
 ]
 
 [tool.setuptools]
