@@ -490,7 +490,10 @@ class RomsMarblInputData(InputData):
         interp_frc = 1 if frc.use_coarse_grid else 0
         
         # Only touch 'bgc' if the model has MARBL/BGC (from PropertiesSpec).
-        has_bgc_compile = self.model_spec.settings.properties.marbl
+        has_bgc_compile = (
+            self.model_spec.settings.properties is not None
+            and self.model_spec.settings.properties.marbl
+        )
         
         # Set interp_frc in the appropriate section based on forcing type
         # blk_frc.interp_frc is for physics surface forcing
