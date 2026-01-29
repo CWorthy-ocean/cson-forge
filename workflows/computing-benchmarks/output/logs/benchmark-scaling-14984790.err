@@ -1,0 +1,240 @@
+INFO - 2026-01-28T13:57:22Z - Selected dataset version: "202311"
+INFO - 2026-01-28T13:57:22Z - Selected dataset part: "default"
+  0%|                                                                                                                                | 0/38 [00:00<?, ?it/s]  3%|███▏                                                                                                                    | 1/38 [00:01<01:13,  1.99s/it][WARNING] Connection pool is full, discarding connection: s3.waw3-1.cloudferro.com. Connection pool size: 10
+[WARNING] Connection pool is full, discarding connection: s3.waw3-1.cloudferro.com. Connection pool size: 10
+[WARNING] Connection pool is full, discarding connection: s3.waw3-1.cloudferro.com. Connection pool size: 10
+[WARNING] Connection pool is full, discarding connection: s3.waw3-1.cloudferro.com. Connection pool size: 10
+[WARNING] Connection pool is full, discarding connection: s3.waw3-1.cloudferro.com. Connection pool size: 10
+[WARNING] Connection pool is full, discarding connection: s3.waw3-1.cloudferro.com. Connection pool size: 10
+[WARNING] Connection pool is full, discarding connection: s3.waw3-1.cloudferro.com. Connection pool size: 10
+[WARNING] Connection pool is full, discarding connection: s3.waw3-1.cloudferro.com. Connection pool size: 10
+[WARNING] Connection pool is full, discarding connection: s3.waw3-1.cloudferro.com. Connection pool size: 10
+[WARNING] Connection pool is full, discarding connection: s3.waw3-1.cloudferro.com. Connection pool size: 10
+[WARNING] Connection pool is full, discarding connection: s3.waw3-1.cloudferro.com. Connection pool size: 10
+  8%|█████████▍                                                                                                              | 3/38 [00:04<00:45,  1.29s/it][WARNING] Connection pool is full, discarding connection: s3.waw3-1.cloudferro.com. Connection pool size: 10
+[WARNING] Connection pool is full, discarding connection: s3.waw3-1.cloudferro.com. Connection pool size: 10
+[WARNING] Connection pool is full, discarding connection: s3.waw3-1.cloudferro.com. Connection pool size: 10
+[WARNING] Connection pool is full, discarding connection: s3.waw3-1.cloudferro.com. Connection pool size: 10
+[WARNING] Connection pool is full, discarding connection: s3.waw3-1.cloudferro.com. Connection pool size: 10
+[WARNING] Connection pool is full, discarding connection: s3.waw3-1.cloudferro.com. Connection pool size: 10
+[WARNING] Connection pool is full, discarding connection: s3.waw3-1.cloudferro.com. Connection pool size: 10
+[WARNING] Connection pool is full, discarding connection: s3.waw3-1.cloudferro.com. Connection pool size: 10
+[WARNING] Connection pool is full, discarding connection: s3.waw3-1.cloudferro.com. Connection pool size: 10
+[WARNING] Connection pool is full, discarding connection: s3.waw3-1.cloudferro.com. Connection pool size: 10
+ 13%|███████████████▊                                                                                                        | 5/38 [00:04<00:21,  1.51it/s][WARNING] Connection pool is full, discarding connection: s3.waw3-1.cloudferro.com. Connection pool size: 10
+ 18%|██████████████████████                                                                                                  | 7/38 [00:04<00:14,  2.19it/s] 24%|████████████████████████████▍                                                                                           | 9/38 [00:04<00:08,  3.28it/s] 45%|█████████████████████████████████████████████████████▏                                                                 | 17/38 [00:04<00:02,  9.33it/s] 61%|████████████████████████████████████████████████████████████████████████                                               | 23/38 [00:04<00:01, 13.63it/s] 95%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████▋      | 36/38 [00:05<00:00, 26.78it/s]100%|███████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 38/38 [00:05<00:00,  7.47it/s]
+INFO - 2026-01-28T13:57:37Z - Selected dataset version: "202311"
+INFO - 2026-01-28T13:57:37Z - Selected dataset part: "default"
+  0%|                                                                                                                                | 0/38 [00:00<?, ?it/s]  3%|███▏                                                                                                                    | 1/38 [00:01<01:12,  1.96s/it][WARNING] Connection pool is full, discarding connection: s3.waw3-1.cloudferro.com. Connection pool size: 10
+[WARNING] Connection pool is full, discarding connection: s3.waw3-1.cloudferro.com. Connection pool size: 10
+[WARNING] Connection pool is full, discarding connection: s3.waw3-1.cloudferro.com. Connection pool size: 10
+[WARNING] Connection pool is full, discarding connection: s3.waw3-1.cloudferro.com. Connection pool size: 10
+[WARNING] Connection pool is full, discarding connection: s3.waw3-1.cloudferro.com. Connection pool size: 10
+[WARNING] Connection pool is full, discarding connection: s3.waw3-1.cloudferro.com. Connection pool size: 10
+[WARNING] Connection pool is full, discarding connection: s3.waw3-1.cloudferro.com. Connection pool size: 10
+[WARNING] Connection pool is full, discarding connection: s3.waw3-1.cloudferro.com. Connection pool size: 10
+[WARNING] Connection pool is full, discarding connection: s3.waw3-1.cloudferro.com. Connection pool size: 10
+[WARNING] Connection pool is full, discarding connection: s3.waw3-1.cloudferro.com. Connection pool size: 10
+[WARNING] Connection pool is full, discarding connection: s3.waw3-1.cloudferro.com. Connection pool size: 10
+[WARNING] Connection pool is full, discarding connection: s3.waw3-1.cloudferro.com. Connection pool size: 10
+[WARNING] Connection pool is full, discarding connection: s3.waw3-1.cloudferro.com. Connection pool size: 10
+[WARNING] Connection pool is full, discarding connection: s3.waw3-1.cloudferro.com. Connection pool size: 10
+[WARNING] Connection pool is full, discarding connection: s3.waw3-1.cloudferro.com. Connection pool size: 10
+[WARNING] Connection pool is full, discarding connection: s3.waw3-1.cloudferro.com. Connection pool size: 10
+[WARNING] Connection pool is full, discarding connection: s3.waw3-1.cloudferro.com. Connection pool size: 10
+[WARNING] Connection pool is full, discarding connection: s3.waw3-1.cloudferro.com. Connection pool size: 10
+[WARNING] Connection pool is full, discarding connection: s3.waw3-1.cloudferro.com. Connection pool size: 10
+  8%|█████████▍                                                                                                              | 3/38 [00:03<00:43,  1.25s/it][WARNING] Connection pool is full, discarding connection: s3.waw3-1.cloudferro.com. Connection pool size: 10
+[WARNING] Connection pool is full, discarding connection: s3.waw3-1.cloudferro.com. Connection pool size: 10
+[WARNING] Connection pool is full, discarding connection: s3.waw3-1.cloudferro.com. Connection pool size: 10
+ 13%|███████████████▊                                                                                                        | 5/38 [00:04<00:22,  1.49it/s] 18%|██████████████████████                                                                                                  | 7/38 [00:04<00:13,  2.30it/s] 34%|████████████████████████████████████████▋                                                                              | 13/38 [00:04<00:04,  5.52it/s] 55%|█████████████████████████████████████████████████████████████████▊                                                     | 21/38 [00:04<00:01, 11.08it/s] 66%|██████████████████████████████████████████████████████████████████████████████▎                                        | 25/38 [00:04<00:01, 12.86it/s]100%|███████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 38/38 [00:05<00:00,  7.54it/s]
+INFO - 2026-01-28T13:57:51Z - Selected dataset version: "202311"
+INFO - 2026-01-28T13:57:51Z - Selected dataset part: "default"
+  0%|                                                                                                                                | 0/38 [00:00<?, ?it/s]  3%|███▏                                                                                                                    | 1/38 [00:01<00:58,  1.58s/it][WARNING] Connection pool is full, discarding connection: s3.waw3-1.cloudferro.com. Connection pool size: 10
+[WARNING] Connection pool is full, discarding connection: s3.waw3-1.cloudferro.com. Connection pool size: 10
+[WARNING] Connection pool is full, discarding connection: s3.waw3-1.cloudferro.com. Connection pool size: 10
+[WARNING] Connection pool is full, discarding connection: s3.waw3-1.cloudferro.com. Connection pool size: 10
+[WARNING] Connection pool is full, discarding connection: s3.waw3-1.cloudferro.com. Connection pool size: 10
+[WARNING] Connection pool is full, discarding connection: s3.waw3-1.cloudferro.com. Connection pool size: 10
+[WARNING] Connection pool is full, discarding connection: s3.waw3-1.cloudferro.com. Connection pool size: 10
+[WARNING] Connection pool is full, discarding connection: s3.waw3-1.cloudferro.com. Connection pool size: 10
+[WARNING] Connection pool is full, discarding connection: s3.waw3-1.cloudferro.com. Connection pool size: 10
+[WARNING] Connection pool is full, discarding connection: s3.waw3-1.cloudferro.com. Connection pool size: 10
+[WARNING] Connection pool is full, discarding connection: s3.waw3-1.cloudferro.com. Connection pool size: 10
+[WARNING] Connection pool is full, discarding connection: s3.waw3-1.cloudferro.com. Connection pool size: 10
+[WARNING] Connection pool is full, discarding connection: s3.waw3-1.cloudferro.com. Connection pool size: 10
+[WARNING] Connection pool is full, discarding connection: s3.waw3-1.cloudferro.com. Connection pool size: 10
+[WARNING] Connection pool is full, discarding connection: s3.waw3-1.cloudferro.com. Connection pool size: 10
+[WARNING] Connection pool is full, discarding connection: s3.waw3-1.cloudferro.com. Connection pool size: 10
+[WARNING] Connection pool is full, discarding connection: s3.waw3-1.cloudferro.com. Connection pool size: 10
+[WARNING] Connection pool is full, discarding connection: s3.waw3-1.cloudferro.com. Connection pool size: 10
+[WARNING] Connection pool is full, discarding connection: s3.waw3-1.cloudferro.com. Connection pool size: 10
+[WARNING] Connection pool is full, discarding connection: s3.waw3-1.cloudferro.com. Connection pool size: 10
+  8%|█████████▍                                                                                                              | 3/38 [00:04<00:49,  1.40s/it][WARNING] Connection pool is full, discarding connection: s3.waw3-1.cloudferro.com. Connection pool size: 10
+ 24%|████████████████████████████▍                                                                                           | 9/38 [00:04<00:10,  2.85it/s] 34%|████████████████████████████████████████▋                                                                              | 13/38 [00:04<00:05,  4.63it/s] 42%|██████████████████████████████████████████████████                                                                     | 16/38 [00:04<00:03,  6.17it/s] 63%|███████████████████████████████████████████████████████████████████████████▏                                           | 24/38 [00:04<00:01, 11.98it/s][WARNING] Connection pool is full, discarding connection: s3.waw3-1.cloudferro.com. Connection pool size: 10
+ 82%|█████████████████████████████████████████████████████████████████████████████████████████████████                      | 31/38 [00:04<00:00, 17.02it/s] 95%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████▋      | 36/38 [00:05<00:00, 19.33it/s]100%|███████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 38/38 [00:05<00:00,  7.47it/s]
+INFO - 2026-01-28T13:58:06Z - Selected dataset version: "202311"
+INFO - 2026-01-28T13:58:06Z - Selected dataset part: "default"
+  0%|                                                                                                                                | 0/38 [00:00<?, ?it/s]  3%|███▏                                                                                                                    | 1/38 [00:01<01:00,  1.62s/it][WARNING] Connection pool is full, discarding connection: s3.waw3-1.cloudferro.com. Connection pool size: 10
+[WARNING] Connection pool is full, discarding connection: s3.waw3-1.cloudferro.com. Connection pool size: 10
+[WARNING] Connection pool is full, discarding connection: s3.waw3-1.cloudferro.com. Connection pool size: 10
+[WARNING] Connection pool is full, discarding connection: s3.waw3-1.cloudferro.com. Connection pool size: 10
+[WARNING] Connection pool is full, discarding connection: s3.waw3-1.cloudferro.com. Connection pool size: 10
+[WARNING] Connection pool is full, discarding connection: s3.waw3-1.cloudferro.com. Connection pool size: 10
+[WARNING] Connection pool is full, discarding connection: s3.waw3-1.cloudferro.com. Connection pool size: 10
+[WARNING] Connection pool is full, discarding connection: s3.waw3-1.cloudferro.com. Connection pool size: 10
+[WARNING] Connection pool is full, discarding connection: s3.waw3-1.cloudferro.com. Connection pool size: 10
+[WARNING] Connection pool is full, discarding connection: s3.waw3-1.cloudferro.com. Connection pool size: 10
+[WARNING] Connection pool is full, discarding connection: s3.waw3-1.cloudferro.com. Connection pool size: 10
+[WARNING] Connection pool is full, discarding connection: s3.waw3-1.cloudferro.com. Connection pool size: 10
+[WARNING] Connection pool is full, discarding connection: s3.waw3-1.cloudferro.com. Connection pool size: 10
+[WARNING] Connection pool is full, discarding connection: s3.waw3-1.cloudferro.com. Connection pool size: 10
+[WARNING] Connection pool is full, discarding connection: s3.waw3-1.cloudferro.com. Connection pool size: 10
+[WARNING] Connection pool is full, discarding connection: s3.waw3-1.cloudferro.com. Connection pool size: 10
+[WARNING] Connection pool is full, discarding connection: s3.waw3-1.cloudferro.com. Connection pool size: 10
+[WARNING] Connection pool is full, discarding connection: s3.waw3-1.cloudferro.com. Connection pool size: 10
+[WARNING] Connection pool is full, discarding connection: s3.waw3-1.cloudferro.com. Connection pool size: 10
+[WARNING] Connection pool is full, discarding connection: s3.waw3-1.cloudferro.com. Connection pool size: 10
+[WARNING] Connection pool is full, discarding connection: s3.waw3-1.cloudferro.com. Connection pool size: 10
+  8%|█████████▍                                                                                                              | 3/38 [00:04<00:50,  1.46s/it][WARNING] Connection pool is full, discarding connection: s3.waw3-1.cloudferro.com. Connection pool size: 10
+ 18%|██████████████████████                                                                                                  | 7/38 [00:04<00:15,  2.02it/s] 24%|████████████████████████████▍                                                                                           | 9/38 [00:04<00:10,  2.83it/s] 39%|██████████████████████████████████████████████▉                                                                        | 15/38 [00:04<00:03,  6.37it/s] 50%|███████████████████████████████████████████████████████████▌                                                           | 19/38 [00:04<00:02,  8.84it/s] 89%|██████████████████████████████████████████████████████████████████████████████████████████████████████████▍            | 34/38 [00:05<00:00, 22.29it/s]100%|███████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 38/38 [00:05<00:00,  7.47it/s]
+INFO - 2026-01-28T13:58:24Z - Selected dataset version: "202311"
+INFO - 2026-01-28T13:58:24Z - Selected dataset part: "default"
+  0%|                                                                                                                                | 0/38 [00:00<?, ?it/s]  3%|███▏                                                                                                                    | 1/38 [00:01<00:58,  1.57s/it][WARNING] Connection pool is full, discarding connection: s3.waw3-1.cloudferro.com. Connection pool size: 10
+[WARNING] Connection pool is full, discarding connection: s3.waw3-1.cloudferro.com. Connection pool size: 10
+[WARNING] Connection pool is full, discarding connection: s3.waw3-1.cloudferro.com. Connection pool size: 10
+[WARNING] Connection pool is full, discarding connection: s3.waw3-1.cloudferro.com. Connection pool size: 10
+[WARNING] Connection pool is full, discarding connection: s3.waw3-1.cloudferro.com. Connection pool size: 10
+[WARNING] Connection pool is full, discarding connection: s3.waw3-1.cloudferro.com. Connection pool size: 10
+[WARNING] Connection pool is full, discarding connection: s3.waw3-1.cloudferro.com. Connection pool size: 10
+[WARNING] Connection pool is full, discarding connection: s3.waw3-1.cloudferro.com. Connection pool size: 10
+[WARNING] Connection pool is full, discarding connection: s3.waw3-1.cloudferro.com. Connection pool size: 10
+[WARNING] Connection pool is full, discarding connection: s3.waw3-1.cloudferro.com. Connection pool size: 10
+[WARNING] Connection pool is full, discarding connection: s3.waw3-1.cloudferro.com. Connection pool size: 10
+[WARNING] Connection pool is full, discarding connection: s3.waw3-1.cloudferro.com. Connection pool size: 10
+[WARNING] Connection pool is full, discarding connection: s3.waw3-1.cloudferro.com. Connection pool size: 10
+[WARNING] Connection pool is full, discarding connection: s3.waw3-1.cloudferro.com. Connection pool size: 10
+[WARNING] Connection pool is full, discarding connection: s3.waw3-1.cloudferro.com. Connection pool size: 10
+[WARNING] Connection pool is full, discarding connection: s3.waw3-1.cloudferro.com. Connection pool size: 10
+[WARNING] Connection pool is full, discarding connection: s3.waw3-1.cloudferro.com. Connection pool size: 10
+[WARNING] Connection pool is full, discarding connection: s3.waw3-1.cloudferro.com. Connection pool size: 10
+[WARNING] Connection pool is full, discarding connection: s3.waw3-1.cloudferro.com. Connection pool size: 10
+  8%|█████████▍                                                                                                              | 3/38 [00:04<00:47,  1.35s/it][WARNING] Connection pool is full, discarding connection: s3.waw3-1.cloudferro.com. Connection pool size: 10
+[WARNING] Connection pool is full, discarding connection: s3.waw3-1.cloudferro.com. Connection pool size: 10
+[WARNING] Connection pool is full, discarding connection: s3.waw3-1.cloudferro.com. Connection pool size: 10
+ 18%|██████████████████████                                                                                                  | 7/38 [00:04<00:14,  2.20it/s] 29%|██████████████████████████████████▍                                                                                    | 11/38 [00:04<00:06,  4.09it/s] 53%|██████████████████████████████████████████████████████████████▋                                                        | 20/38 [00:04<00:01,  9.65it/s] 68%|█████████████████████████████████████████████████████████████████████████████████▍                                     | 26/38 [00:04<00:00, 13.25it/s] 87%|███████████████████████████████████████████████████████████████████████████████████████████████████████▎               | 33/38 [00:04<00:00, 19.08it/s]100%|███████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 38/38 [00:04<00:00,  7.93it/s]
+INFO - 2026-01-28T13:58:38Z - Selected dataset version: "202311"
+INFO - 2026-01-28T13:58:38Z - Selected dataset part: "default"
+  0%|                                                                                                                                | 0/38 [00:00<?, ?it/s]  3%|███▏                                                                                                                    | 1/38 [00:01<01:01,  1.66s/it][WARNING] Connection pool is full, discarding connection: s3.waw3-1.cloudferro.com. Connection pool size: 10
+[WARNING] Connection pool is full, discarding connection: s3.waw3-1.cloudferro.com. Connection pool size: 10
+[WARNING] Connection pool is full, discarding connection: s3.waw3-1.cloudferro.com. Connection pool size: 10
+[WARNING] Connection pool is full, discarding connection: s3.waw3-1.cloudferro.com. Connection pool size: 10
+[WARNING] Connection pool is full, discarding connection: s3.waw3-1.cloudferro.com. Connection pool size: 10
+[WARNING] Connection pool is full, discarding connection: s3.waw3-1.cloudferro.com. Connection pool size: 10
+[WARNING] Connection pool is full, discarding connection: s3.waw3-1.cloudferro.com. Connection pool size: 10
+[WARNING] Connection pool is full, discarding connection: s3.waw3-1.cloudferro.com. Connection pool size: 10
+[WARNING] Connection pool is full, discarding connection: s3.waw3-1.cloudferro.com. Connection pool size: 10
+[WARNING] Connection pool is full, discarding connection: s3.waw3-1.cloudferro.com. Connection pool size: 10
+[WARNING] Connection pool is full, discarding connection: s3.waw3-1.cloudferro.com. Connection pool size: 10
+[WARNING] Connection pool is full, discarding connection: s3.waw3-1.cloudferro.com. Connection pool size: 10
+[WARNING] Connection pool is full, discarding connection: s3.waw3-1.cloudferro.com. Connection pool size: 10
+[WARNING] Connection pool is full, discarding connection: s3.waw3-1.cloudferro.com. Connection pool size: 10
+[WARNING] Connection pool is full, discarding connection: s3.waw3-1.cloudferro.com. Connection pool size: 10
+  8%|█████████▍                                                                                                              | 3/38 [00:04<00:47,  1.36s/it][WARNING] Connection pool is full, discarding connection: s3.waw3-1.cloudferro.com. Connection pool size: 10
+[WARNING] Connection pool is full, discarding connection: s3.waw3-1.cloudferro.com. Connection pool size: 10
+[WARNING] Connection pool is full, discarding connection: s3.waw3-1.cloudferro.com. Connection pool size: 10
+[WARNING] Connection pool is full, discarding connection: s3.waw3-1.cloudferro.com. Connection pool size: 10
+[WARNING] Connection pool is full, discarding connection: s3.waw3-1.cloudferro.com. Connection pool size: 10
+[WARNING] Connection pool is full, discarding connection: s3.waw3-1.cloudferro.com. Connection pool size: 10
+[WARNING] Connection pool is full, discarding connection: s3.waw3-1.cloudferro.com. Connection pool size: 10
+ 18%|██████████████████████                                                                                                  | 7/38 [00:04<00:14,  2.19it/s] 24%|████████████████████████████▍                                                                                           | 9/38 [00:04<00:09,  3.06it/s] 34%|████████████████████████████████████████▋                                                                              | 13/38 [00:04<00:04,  5.17it/s] 39%|██████████████████████████████████████████████▉                                                                        | 15/38 [00:04<00:03,  6.33it/s] 66%|██████████████████████████████████████████████████████████████████████████████▎                                        | 25/38 [00:04<00:00, 15.81it/s] 79%|█████████████████████████████████████████████████████████████████████████████████████████████▉                         | 30/38 [00:04<00:00, 19.74it/s]100%|███████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 38/38 [00:04<00:00,  7.63it/s]
+INFO - 2026-01-28T13:58:54Z - Selected dataset version: "202311"
+INFO - 2026-01-28T13:58:54Z - Selected dataset part: "default"
+  0%|                                                                                                                                | 0/38 [00:00<?, ?it/s]  3%|███▏                                                                                                                    | 1/38 [00:01<01:01,  1.66s/it][WARNING] Connection pool is full, discarding connection: s3.waw3-1.cloudferro.com. Connection pool size: 10
+[WARNING] Connection pool is full, discarding connection: s3.waw3-1.cloudferro.com. Connection pool size: 10
+[WARNING] Connection pool is full, discarding connection: s3.waw3-1.cloudferro.com. Connection pool size: 10
+[WARNING] Connection pool is full, discarding connection: s3.waw3-1.cloudferro.com. Connection pool size: 10
+[WARNING] Connection pool is full, discarding connection: s3.waw3-1.cloudferro.com. Connection pool size: 10
+[WARNING] Connection pool is full, discarding connection: s3.waw3-1.cloudferro.com. Connection pool size: 10
+[WARNING] Connection pool is full, discarding connection: s3.waw3-1.cloudferro.com. Connection pool size: 10
+[WARNING] Connection pool is full, discarding connection: s3.waw3-1.cloudferro.com. Connection pool size: 10
+[WARNING] Connection pool is full, discarding connection: s3.waw3-1.cloudferro.com. Connection pool size: 10
+[WARNING] Connection pool is full, discarding connection: s3.waw3-1.cloudferro.com. Connection pool size: 10
+[WARNING] Connection pool is full, discarding connection: s3.waw3-1.cloudferro.com. Connection pool size: 10
+[WARNING] Connection pool is full, discarding connection: s3.waw3-1.cloudferro.com. Connection pool size: 10
+[WARNING] Connection pool is full, discarding connection: s3.waw3-1.cloudferro.com. Connection pool size: 10
+[WARNING] Connection pool is full, discarding connection: s3.waw3-1.cloudferro.com. Connection pool size: 10
+[WARNING] Connection pool is full, discarding connection: s3.waw3-1.cloudferro.com. Connection pool size: 10
+[WARNING] Connection pool is full, discarding connection: s3.waw3-1.cloudferro.com. Connection pool size: 10
+[WARNING] Connection pool is full, discarding connection: s3.waw3-1.cloudferro.com. Connection pool size: 10
+[WARNING] Connection pool is full, discarding connection: s3.waw3-1.cloudferro.com. Connection pool size: 10
+[WARNING] Connection pool is full, discarding connection: s3.waw3-1.cloudferro.com. Connection pool size: 10
+[WARNING] Connection pool is full, discarding connection: s3.waw3-1.cloudferro.com. Connection pool size: 10
+  8%|█████████▍                                                                                                              | 3/38 [00:04<00:48,  1.40s/it][WARNING] Connection pool is full, discarding connection: s3.waw3-1.cloudferro.com. Connection pool size: 10
+ 24%|████████████████████████████▍                                                                                           | 9/38 [00:04<00:10,  2.86it/s][WARNING] Connection pool is full, discarding connection: s3.waw3-1.cloudferro.com. Connection pool size: 10
+ 39%|██████████████████████████████████████████████▉                                                                        | 15/38 [00:04<00:04,  5.65it/s] 63%|███████████████████████████████████████████████████████████████████████████▏                                           | 24/38 [00:04<00:01, 10.85it/s] 87%|███████████████████████████████████████████████████████████████████████████████████████████████████████▎               | 33/38 [00:04<00:00, 17.32it/s]100%|███████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 38/38 [00:04<00:00,  7.92it/s]
+INFO - 2026-01-28T13:59:09Z - Selected dataset version: "202311"
+INFO - 2026-01-28T13:59:09Z - Selected dataset part: "default"
+  0%|                                                                                                                                | 0/38 [00:00<?, ?it/s]  3%|███▏                                                                                                                    | 1/38 [00:01<01:01,  1.66s/it][WARNING] Connection pool is full, discarding connection: s3.waw3-1.cloudferro.com. Connection pool size: 10
+[WARNING] Connection pool is full, discarding connection: s3.waw3-1.cloudferro.com. Connection pool size: 10
+[WARNING] Connection pool is full, discarding connection: s3.waw3-1.cloudferro.com. Connection pool size: 10
+[WARNING] Connection pool is full, discarding connection: s3.waw3-1.cloudferro.com. Connection pool size: 10
+[WARNING] Connection pool is full, discarding connection: s3.waw3-1.cloudferro.com. Connection pool size: 10
+[WARNING] Connection pool is full, discarding connection: s3.waw3-1.cloudferro.com. Connection pool size: 10
+[WARNING] Connection pool is full, discarding connection: s3.waw3-1.cloudferro.com. Connection pool size: 10
+[WARNING] Connection pool is full, discarding connection: s3.waw3-1.cloudferro.com. Connection pool size: 10
+[WARNING] Connection pool is full, discarding connection: s3.waw3-1.cloudferro.com. Connection pool size: 10
+[WARNING] Connection pool is full, discarding connection: s3.waw3-1.cloudferro.com. Connection pool size: 10
+[WARNING] Connection pool is full, discarding connection: s3.waw3-1.cloudferro.com. Connection pool size: 10
+[WARNING] Connection pool is full, discarding connection: s3.waw3-1.cloudferro.com. Connection pool size: 10
+[WARNING] Connection pool is full, discarding connection: s3.waw3-1.cloudferro.com. Connection pool size: 10
+[WARNING] Connection pool is full, discarding connection: s3.waw3-1.cloudferro.com. Connection pool size: 10
+[WARNING] Connection pool is full, discarding connection: s3.waw3-1.cloudferro.com. Connection pool size: 10
+[WARNING] Connection pool is full, discarding connection: s3.waw3-1.cloudferro.com. Connection pool size: 10
+[WARNING] Connection pool is full, discarding connection: s3.waw3-1.cloudferro.com. Connection pool size: 10
+[WARNING] Connection pool is full, discarding connection: s3.waw3-1.cloudferro.com. Connection pool size: 10
+[WARNING] Connection pool is full, discarding connection: s3.waw3-1.cloudferro.com. Connection pool size: 10
+[WARNING] Connection pool is full, discarding connection: s3.waw3-1.cloudferro.com. Connection pool size: 10
+[WARNING] Connection pool is full, discarding connection: s3.waw3-1.cloudferro.com. Connection pool size: 10
+[WARNING] Connection pool is full, discarding connection: s3.waw3-1.cloudferro.com. Connection pool size: 10
+  8%|█████████▍                                                                                                              | 3/38 [00:04<00:47,  1.36s/it] 18%|██████████████████████                                                                                                  | 7/38 [00:04<00:14,  2.19it/s] 34%|████████████████████████████████████████▋                                                                              | 13/38 [00:04<00:04,  5.08it/s] 55%|█████████████████████████████████████████████████████████████████▊                                                     | 21/38 [00:04<00:01,  9.98it/s] 87%|███████████████████████████████████████████████████████████████████████████████████████████████████████▎               | 33/38 [00:04<00:00, 19.21it/s]100%|███████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 38/38 [00:04<00:00,  8.15it/s]
+[WARNING] The northern boundary is divided by land. It would be safer (but slower and more memory-intensive) to use `apply_2d_horizontal_fill = True`.
+[WARNING] No records found at or after the end_time: 2024-01-10 00:00:00.
+[WARNING] The northern boundary is divided by land. It would be safer (but slower and more memory-intensive) to use `apply_2d_horizontal_fill = True`.
+[WARNING] No records found at or after the end_time: 2024-01-10 00:00:00.
+[WARNING] The northern boundary is divided by land. It would be safer (but slower and more memory-intensive) to use `apply_2d_horizontal_fill = True`.
+[WARNING] No records found at or after the end_time: 2024-01-10 00:00:00.
+[WARNING] The northern boundary is divided by land. It would be safer (but slower and more memory-intensive) to use `apply_2d_horizontal_fill = True`.
+[WARNING] No records found at or after the end_time: 2024-01-10 00:00:00.
+[WARNING] The northern boundary is divided by land. It would be safer (but slower and more memory-intensive) to use `apply_2d_horizontal_fill = True`.
+[WARNING] No records found at or after the end_time: 2024-01-10 00:00:00.
+[WARNING] The northern boundary is divided by land. It would be safer (but slower and more memory-intensive) to use `apply_2d_horizontal_fill = True`.
+[WARNING] No records found at or after the end_time: 2024-01-10 00:00:00.
+[WARNING] The northern boundary is divided by land. It would be safer (but slower and more memory-intensive) to use `apply_2d_horizontal_fill = True`.
+[WARNING] No records found at or after the end_time: 2024-01-10 00:00:00.
+[WARNING] The northern boundary is divided by land. It would be safer (but slower and more memory-intensive) to use `apply_2d_horizontal_fill = True`.
+[WARNING] No records found at or after the end_time: 2024-01-10 00:00:00.
+[WARNING] The northern boundary is divided by land. It would be safer (but slower and more memory-intensive) to use `apply_2d_horizontal_fill = True`.
+[WARNING] No records found at or after the end_time: 2024-01-10 00:00:00.
+[WARNING] The northern boundary is divided by land. It would be safer (but slower and more memory-intensive) to use `apply_2d_horizontal_fill = True`.
+[WARNING] No records found at or after the end_time: 2024-01-10 00:00:00.
+[WARNING] The northern boundary is divided by land. It would be safer (but slower and more memory-intensive) to use `apply_2d_horizontal_fill = True`.
+[WARNING] No records found at or after the end_time: 2024-01-10 00:00:00.
+[WARNING] The northern boundary is divided by land. It would be safer (but slower and more memory-intensive) to use `apply_2d_horizontal_fill = True`.
+[WARNING] No records found at or after the end_time: 2024-01-10 00:00:00.
+[WARNING] The northern boundary is divided by land. It would be safer (but slower and more memory-intensive) to use `apply_2d_horizontal_fill = True`.
+[WARNING] No records found at or after the end_time: 2024-01-10 00:00:00.
+[WARNING] The northern boundary is divided by land. It would be safer (but slower and more memory-intensive) to use `apply_2d_horizontal_fill = True`.
+[WARNING] No records found at or after the end_time: 2024-01-10 00:00:00.
+[WARNING] The northern boundary is divided by land. It would be safer (but slower and more memory-intensive) to use `apply_2d_horizontal_fill = True`.
+[WARNING] No records found at or after the end_time: 2024-01-10 00:00:00.
+[WARNING] The northern boundary is divided by land. It would be safer (but slower and more memory-intensive) to use `apply_2d_horizontal_fill = True`.
+[WARNING] No records found at or after the end_time: 2024-01-10 00:00:00.
+[WARNING] The northern boundary is divided by land. It would be safer (but slower and more memory-intensive) to use `apply_2d_horizontal_fill = True`.
+[WARNING] No records found at or after the end_time: 2024-01-10 00:00:00.
+[WARNING] The northern boundary is divided by land. It would be safer (but slower and more memory-intensive) to use `apply_2d_horizontal_fill = True`.
+[WARNING] No records found at or after the end_time: 2024-01-10 00:00:00.
+[WARNING] The northern boundary is divided by land. It would be safer (but slower and more memory-intensive) to use `apply_2d_horizontal_fill = True`.
+[WARNING] No records found at or after the end_time: 2024-01-10 00:00:00.
+[WARNING] The northern boundary is divided by land. It would be safer (but slower and more memory-intensive) to use `apply_2d_horizontal_fill = True`.
+[WARNING] No records found at or after the end_time: 2024-01-10 00:00:00.

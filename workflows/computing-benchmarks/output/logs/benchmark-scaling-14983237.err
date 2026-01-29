@@ -1,0 +1,14 @@
+/home/x-mlong/codes/cson-forge/workflows/computing-benchmarks/benchmark_scaling.py:106: UserWarning: Error processing domain ccs-12km_1232procs: Blueprint mismatch detected, but input files exist. Set clobber=True to overwrite existing input files.
+  builders = engine.generate_all(
+[WARNING] The northern boundary is divided by land. It would be safer (but slower and more memory-intensive) to use `apply_2d_horizontal_fill = True`.
+[WARNING] No records found at or after the end_time: 2024-01-02 00:00:00.
+[WARNING] The northern boundary is divided by land. It would be safer (but slower and more memory-intensive) to use `apply_2d_horizontal_fill = True`.
+[WARNING] No records found at or after the end_time: 2024-01-02 00:00:00.
+[WARNING] The northern boundary is divided by land. It would be safer (but slower and more memory-intensive) to use `apply_2d_horizontal_fill = True`.
+[WARNING] No records found at or after the end_time: 2024-01-02 00:00:00.
+[WARNING] The northern boundary is divided by land. It would be safer (but slower and more memory-intensive) to use `apply_2d_horizontal_fill = True`.
+[WARNING] No records found at or after the end_time: 2024-01-02 00:00:00.
+/home/x-mlong/codes/cson-forge/workflows/computing-benchmarks/benchmark_scaling.py:106: UserWarning: 1 domain(s) failed during generation: ccs-12km_1232procs
+  builders = engine.generate_all(
+/var/spool/slurm/job14983237/slurm_script: line 80: 827437 Killed                  "$PYTHON_EXE" "$SCRIPT_DIR/benchmark_scaling.py" --ensemble-id "${ensemble_id}" --domains-file "$SCRIPT_DIR/domains-bm-scaling.yml" ${clobber_inputs_flag}
+[2026-01-27T22:47:20.258] error: Detected 1 oom_kill event in StepId=14983237.batch. Some of the step tasks have been OOM Killed.
