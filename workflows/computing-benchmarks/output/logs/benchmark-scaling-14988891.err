@@ -1,0 +1,90 @@
+[WARNING] The northern boundary is divided by land. It would be safer (but slower and more memory-intensive) to use `apply_2d_horizontal_fill = True`.
+[WARNING] No records found at or after the end_time: 2024-01-10 00:00:00.
+/home/x-mlong/codes/cson-forge/workflows/computing-benchmarks/benchmark_scaling.py:106: UserWarning: Error processing domain ccs-12km_1232procs: Unknown compile-time setting key: 'bgc'. Valid keys are: ['blk_frc', 'cdr_frc', 'cppdefs', 'diagnostics', 'ocean_vars', 'param', 'river_frc', 'sponge_tune', 'surf_flux', 'tides', 'tracers']
+  builders = engine.generate_all(
+[WARNING] The northern boundary is divided by land. It would be safer (but slower and more memory-intensive) to use `apply_2d_horizontal_fill = True`.
+[WARNING] No records found at or after the end_time: 2024-01-10 00:00:00.
+/home/x-mlong/codes/cson-forge/workflows/computing-benchmarks/benchmark_scaling.py:106: UserWarning: Error processing domain ccs-12km_20procs: Unknown compile-time setting key: 'bgc'. Valid keys are: ['blk_frc', 'cdr_frc', 'cppdefs', 'diagnostics', 'ocean_vars', 'param', 'river_frc', 'sponge_tune', 'surf_flux', 'tides', 'tracers']
+  builders = engine.generate_all(
+[WARNING] The northern boundary is divided by land. It would be safer (but slower and more memory-intensive) to use `apply_2d_horizontal_fill = True`.
+[WARNING] No records found at or after the end_time: 2024-01-10 00:00:00.
+/home/x-mlong/codes/cson-forge/workflows/computing-benchmarks/benchmark_scaling.py:106: UserWarning: Error processing domain ccs-12km_280procs: Unknown compile-time setting key: 'bgc'. Valid keys are: ['blk_frc', 'cdr_frc', 'cppdefs', 'diagnostics', 'ocean_vars', 'param', 'river_frc', 'sponge_tune', 'surf_flux', 'tides', 'tracers']
+  builders = engine.generate_all(
+[WARNING] The northern boundary is divided by land. It would be safer (but slower and more memory-intensive) to use `apply_2d_horizontal_fill = True`.
+[WARNING] No records found at or after the end_time: 2024-01-10 00:00:00.
+/home/x-mlong/codes/cson-forge/workflows/computing-benchmarks/benchmark_scaling.py:106: UserWarning: Error processing domain ccs-12km_352procs: Unknown compile-time setting key: 'bgc'. Valid keys are: ['blk_frc', 'cdr_frc', 'cppdefs', 'diagnostics', 'ocean_vars', 'param', 'river_frc', 'sponge_tune', 'surf_flux', 'tides', 'tracers']
+  builders = engine.generate_all(
+[WARNING] The northern boundary is divided by land. It would be safer (but slower and more memory-intensive) to use `apply_2d_horizontal_fill = True`.
+[WARNING] No records found at or after the end_time: 2024-01-10 00:00:00.
+/home/x-mlong/codes/cson-forge/workflows/computing-benchmarks/benchmark_scaling.py:106: UserWarning: Error processing domain ccs-12km_70procs: Unknown compile-time setting key: 'bgc'. Valid keys are: ['blk_frc', 'cdr_frc', 'cppdefs', 'diagnostics', 'ocean_vars', 'param', 'river_frc', 'sponge_tune', 'surf_flux', 'tides', 'tracers']
+  builders = engine.generate_all(
+/home/x-mlong/codes/cson-forge/workflows/computing-benchmarks/benchmark_scaling.py:106: UserWarning: 5 domain(s) failed during generation: ccs-12km_1232procs, ccs-12km_20procs, ccs-12km_280procs, ccs-12km_352procs, ccs-12km_70procs
+  builders = engine.generate_all(
+[WARNING] The northern boundary is divided by land. It would be safer (but slower and more memory-intensive) to use `apply_2d_horizontal_fill = True`.
+[WARNING] No records found at or after the end_time: 2024-01-10 00:00:00.
+/home/x-mlong/codes/cson-forge/workflows/computing-benchmarks/benchmark_scaling.py:106: UserWarning: Error processing domain ccs-12km_1232procs: Unknown compile-time setting key: 'bgc'. Valid keys are: ['blk_frc', 'cdr_frc', 'cppdefs', 'diagnostics', 'ocean_vars', 'param', 'river_frc', 'sponge_tune', 'surf_flux', 'tides', 'tracers']
+  builders = engine.generate_all(
+[WARNING] The northern boundary is divided by land. It would be safer (but slower and more memory-intensive) to use `apply_2d_horizontal_fill = True`.
+[WARNING] No records found at or after the end_time: 2024-01-10 00:00:00.
+/home/x-mlong/codes/cson-forge/workflows/computing-benchmarks/benchmark_scaling.py:106: UserWarning: Error processing domain ccs-12km_20procs: Unknown compile-time setting key: 'bgc'. Valid keys are: ['blk_frc', 'cdr_frc', 'cppdefs', 'diagnostics', 'ocean_vars', 'param', 'river_frc', 'sponge_tune', 'surf_flux', 'tides', 'tracers']
+  builders = engine.generate_all(
+[WARNING] The northern boundary is divided by land. It would be safer (but slower and more memory-intensive) to use `apply_2d_horizontal_fill = True`.
+[WARNING] No records found at or after the end_time: 2024-01-10 00:00:00.
+/home/x-mlong/codes/cson-forge/workflows/computing-benchmarks/benchmark_scaling.py:106: UserWarning: Error processing domain ccs-12km_280procs: Unknown compile-time setting key: 'bgc'. Valid keys are: ['blk_frc', 'cdr_frc', 'cppdefs', 'diagnostics', 'ocean_vars', 'param', 'river_frc', 'sponge_tune', 'surf_flux', 'tides', 'tracers']
+  builders = engine.generate_all(
+[WARNING] The northern boundary is divided by land. It would be safer (but slower and more memory-intensive) to use `apply_2d_horizontal_fill = True`.
+[WARNING] No records found at or after the end_time: 2024-01-10 00:00:00.
+/home/x-mlong/codes/cson-forge/workflows/computing-benchmarks/benchmark_scaling.py:106: UserWarning: Error processing domain ccs-12km_352procs: Unknown compile-time setting key: 'bgc'. Valid keys are: ['blk_frc', 'cdr_frc', 'cppdefs', 'diagnostics', 'ocean_vars', 'param', 'river_frc', 'sponge_tune', 'surf_flux', 'tides', 'tracers']
+  builders = engine.generate_all(
+[WARNING] The northern boundary is divided by land. It would be safer (but slower and more memory-intensive) to use `apply_2d_horizontal_fill = True`.
+[WARNING] No records found at or after the end_time: 2024-01-10 00:00:00.
+/home/x-mlong/codes/cson-forge/workflows/computing-benchmarks/benchmark_scaling.py:106: UserWarning: Error processing domain ccs-12km_70procs: Unknown compile-time setting key: 'bgc'. Valid keys are: ['blk_frc', 'cdr_frc', 'cppdefs', 'diagnostics', 'ocean_vars', 'param', 'river_frc', 'sponge_tune', 'surf_flux', 'tides', 'tracers']
+  builders = engine.generate_all(
+/home/x-mlong/codes/cson-forge/workflows/computing-benchmarks/benchmark_scaling.py:106: UserWarning: 5 domain(s) failed during generation: ccs-12km_1232procs, ccs-12km_20procs, ccs-12km_280procs, ccs-12km_352procs, ccs-12km_70procs
+  builders = engine.generate_all(
+/home/x-mlong/.conda/envs/cson-forge-v0/lib/python3.13/site-packages/dask/array/reductions.py:292: RuntimeWarning: All-NaN slice encountered
+  return np.nanmin(x_chunk, axis=axis, keepdims=keepdims)
+[WARNING] The northern boundary is divided by land. It would be safer (but slower and more memory-intensive) to use `apply_2d_horizontal_fill = True`.
+[WARNING] No records found at or after the end_time: 2024-01-10 00:00:00.
+/home/x-mlong/codes/cson-forge/workflows/computing-benchmarks/benchmark_scaling.py:106: UserWarning: Error processing domain ccs-12km_1232procs: Unknown compile-time setting key: 'bgc'. Valid keys are: ['blk_frc', 'cdr_frc', 'cppdefs', 'diagnostics', 'ocean_vars', 'param', 'river_frc', 'sponge_tune', 'surf_flux', 'tides', 'tracers']
+  builders = engine.generate_all(
+[WARNING] The northern boundary is divided by land. It would be safer (but slower and more memory-intensive) to use `apply_2d_horizontal_fill = True`.
+[WARNING] No records found at or after the end_time: 2024-01-10 00:00:00.
+/home/x-mlong/codes/cson-forge/workflows/computing-benchmarks/benchmark_scaling.py:106: UserWarning: Error processing domain ccs-12km_20procs: Unknown compile-time setting key: 'bgc'. Valid keys are: ['blk_frc', 'cdr_frc', 'cppdefs', 'diagnostics', 'ocean_vars', 'param', 'river_frc', 'sponge_tune', 'surf_flux', 'tides', 'tracers']
+  builders = engine.generate_all(
+[WARNING] The northern boundary is divided by land. It would be safer (but slower and more memory-intensive) to use `apply_2d_horizontal_fill = True`.
+[WARNING] No records found at or after the end_time: 2024-01-10 00:00:00.
+/home/x-mlong/codes/cson-forge/workflows/computing-benchmarks/benchmark_scaling.py:106: UserWarning: Error processing domain ccs-12km_280procs: Unknown compile-time setting key: 'bgc'. Valid keys are: ['blk_frc', 'cdr_frc', 'cppdefs', 'diagnostics', 'ocean_vars', 'param', 'river_frc', 'sponge_tune', 'surf_flux', 'tides', 'tracers']
+  builders = engine.generate_all(
+[WARNING] The northern boundary is divided by land. It would be safer (but slower and more memory-intensive) to use `apply_2d_horizontal_fill = True`.
+[WARNING] No records found at or after the end_time: 2024-01-10 00:00:00.
+/home/x-mlong/codes/cson-forge/workflows/computing-benchmarks/benchmark_scaling.py:106: UserWarning: Error processing domain ccs-12km_352procs: Unknown compile-time setting key: 'bgc'. Valid keys are: ['blk_frc', 'cdr_frc', 'cppdefs', 'diagnostics', 'ocean_vars', 'param', 'river_frc', 'sponge_tune', 'surf_flux', 'tides', 'tracers']
+  builders = engine.generate_all(
+[WARNING] The northern boundary is divided by land. It would be safer (but slower and more memory-intensive) to use `apply_2d_horizontal_fill = True`.
+[WARNING] No records found at or after the end_time: 2024-01-10 00:00:00.
+/home/x-mlong/codes/cson-forge/workflows/computing-benchmarks/benchmark_scaling.py:106: UserWarning: Error processing domain ccs-12km_70procs: Unknown compile-time setting key: 'bgc'. Valid keys are: ['blk_frc', 'cdr_frc', 'cppdefs', 'diagnostics', 'ocean_vars', 'param', 'river_frc', 'sponge_tune', 'surf_flux', 'tides', 'tracers']
+  builders = engine.generate_all(
+/home/x-mlong/codes/cson-forge/workflows/computing-benchmarks/benchmark_scaling.py:106: UserWarning: 5 domain(s) failed during generation: ccs-12km_1232procs, ccs-12km_20procs, ccs-12km_280procs, ccs-12km_352procs, ccs-12km_70procs
+  builders = engine.generate_all(
+[WARNING] The northern boundary is divided by land. It would be safer (but slower and more memory-intensive) to use `apply_2d_horizontal_fill = True`.
+[WARNING] No records found at or after the end_time: 2024-01-10 00:00:00.
+/home/x-mlong/codes/cson-forge/workflows/computing-benchmarks/benchmark_scaling.py:106: UserWarning: Error processing domain ccs-12km_1232procs: Unknown compile-time setting key: 'bgc'. Valid keys are: ['blk_frc', 'cdr_frc', 'cppdefs', 'diagnostics', 'ocean_vars', 'param', 'river_frc', 'sponge_tune', 'surf_flux', 'tides', 'tracers']
+  builders = engine.generate_all(
+[WARNING] The northern boundary is divided by land. It would be safer (but slower and more memory-intensive) to use `apply_2d_horizontal_fill = True`.
+[WARNING] No records found at or after the end_time: 2024-01-10 00:00:00.
+/home/x-mlong/codes/cson-forge/workflows/computing-benchmarks/benchmark_scaling.py:106: UserWarning: Error processing domain ccs-12km_20procs: Unknown compile-time setting key: 'bgc'. Valid keys are: ['blk_frc', 'cdr_frc', 'cppdefs', 'diagnostics', 'ocean_vars', 'param', 'river_frc', 'sponge_tune', 'surf_flux', 'tides', 'tracers']
+  builders = engine.generate_all(
+[WARNING] The northern boundary is divided by land. It would be safer (but slower and more memory-intensive) to use `apply_2d_horizontal_fill = True`.
+[WARNING] No records found at or after the end_time: 2024-01-10 00:00:00.
+/home/x-mlong/codes/cson-forge/workflows/computing-benchmarks/benchmark_scaling.py:106: UserWarning: Error processing domain ccs-12km_280procs: Unknown compile-time setting key: 'bgc'. Valid keys are: ['blk_frc', 'cdr_frc', 'cppdefs', 'diagnostics', 'ocean_vars', 'param', 'river_frc', 'sponge_tune', 'surf_flux', 'tides', 'tracers']
+  builders = engine.generate_all(
+[WARNING] The northern boundary is divided by land. It would be safer (but slower and more memory-intensive) to use `apply_2d_horizontal_fill = True`.
+[WARNING] No records found at or after the end_time: 2024-01-10 00:00:00.
+/home/x-mlong/codes/cson-forge/workflows/computing-benchmarks/benchmark_scaling.py:106: UserWarning: Error processing domain ccs-12km_352procs: Unknown compile-time setting key: 'bgc'. Valid keys are: ['blk_frc', 'cdr_frc', 'cppdefs', 'diagnostics', 'ocean_vars', 'param', 'river_frc', 'sponge_tune', 'surf_flux', 'tides', 'tracers']
+  builders = engine.generate_all(
+[WARNING] The northern boundary is divided by land. It would be safer (but slower and more memory-intensive) to use `apply_2d_horizontal_fill = True`.
+[WARNING] No records found at or after the end_time: 2024-01-10 00:00:00.
+/home/x-mlong/codes/cson-forge/workflows/computing-benchmarks/benchmark_scaling.py:106: UserWarning: Error processing domain ccs-12km_70procs: Unknown compile-time setting key: 'bgc'. Valid keys are: ['blk_frc', 'cdr_frc', 'cppdefs', 'diagnostics', 'ocean_vars', 'param', 'river_frc', 'sponge_tune', 'surf_flux', 'tides', 'tracers']
+  builders = engine.generate_all(
+/home/x-mlong/codes/cson-forge/workflows/computing-benchmarks/benchmark_scaling.py:106: UserWarning: 5 domain(s) failed during generation: ccs-12km_1232procs, ccs-12km_20procs, ccs-12km_280procs, ccs-12km_352procs, ccs-12km_70procs
+  builders = engine.generate_all(

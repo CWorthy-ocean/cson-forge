@@ -1,0 +1,1014 @@
+Using Python: /home/x-mlong/.conda/envs/cson-forge-v0/bin/python
+Python version: Python 3.13.11
+CONDA_PREFIX: /home/x-mlong/.conda/envs/cson-forge-v0
+==========================================
+Running benchmark scaling for ensemble_id=10
+Current directory: /home/x-mlong/codes/cson-forge/workflows/computing-benchmarks
+==========================================
+Using domains file: /home/x-mlong/codes/cson-forge/workflows/computing-benchmarks/domains-bm-scaling.yml
+Clobber inputs: False
+Generate only: False
+Ensemble ID: 10
+
+System Configuration:
+  System ID: RCAC_anvil
+  Paths:
+    here: /home/x-mlong/codes/cson-forge/cson_forge
+    source_data: /anvil/projects/x-ees250129/cson-forge-data/source-data
+    input_data: /anvil/projects/x-ees250129/cson-forge-data/x-mlong/input-data
+    scratch: /anvil/scratch/x-mlong/cson-forge-run
+    blueprints: /home/x-mlong/codes/cson-forge/cson_forge/blueprints
+    model_configs: /home/x-mlong/codes/cson-forge/cson_forge/model-configs
+
+Initializing CstarSpecEngine with domains file: /home/x-mlong/codes/cson-forge/workflows/computing-benchmarks/domains-bm-scaling.yml
+
+================================================================================
+Generating all domain configurations...
+================================================================================
+
+================================================================================
+Starting generation for 5 domain(s)
+================================================================================
+
+
+--------------------------------------------------------------------------------
+[1/5] Processing domain: ccs-12km_1232procs
+--------------------------------------------------------------------------------
+✔️  Using existing GLORYS_REGIONAL file for 2024-01-01: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240101.nc
+✔️  Using existing GLORYS_REGIONAL file for 2024-01-02: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240102.nc
+✔️  Using existing GLORYS_REGIONAL file for 2024-01-03: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240103.nc
+✔️  Using existing GLORYS_REGIONAL file for 2024-01-04: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240104.nc
+✔️  Using existing GLORYS_REGIONAL file for 2024-01-05: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240105.nc
+✔️  Using existing GLORYS_REGIONAL file for 2024-01-06: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240106.nc
+✔️  Using existing GLORYS_REGIONAL file for 2024-01-07: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240107.nc
+✔️  Using existing GLORYS_REGIONAL file for 2024-01-08: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240108.nc
+✔️  Using existing GLORYS_REGIONAL file for 2024-01-09: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240109.nc
+✔️  Using existing GLORYS_REGIONAL file for 2024-01-10: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240110.nc
+✔️  TPXO dataset verified at: /anvil/projects/x-ees250129/cson-forge-data/source-data/TPXO/TPXO10.v2
+✔️  Using existing BGC dataset: /anvil/projects/x-ees250129/cson-forge-data/source-data/UNIFIED_BGC/BGCdataset.nc
+ℹ️  Using existing blueprint from file: B_cson_roms-marbl_v0.1_ccs-12km_1232procs_010_postconfig.yml
+[INFO] 🛠️ Configuring ROMSSimulation
+[INFO] 🔧 Setting up ROMSExternalCodeBase...
+[INFO] 🔧 Setting up MARBLExternalCodeBase...
+[INFO] 📦 Fetching compile-time code...
+[INFO] 📦 Fetching runtime code... 
+[INFO] 📦 Fetching input datasets...
+[INFO] Partitioning /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_1232procs_010_20240101-20240110/input/input_datasets/cson_roms-marbl_v0.1_ccs-12km_1232procs_010_grid.nc into (28,44)
+[INFO] Partitioning /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_1232procs_010_20240101-20240110/input/input_datasets/cson_roms-marbl_v0.1_ccs-12km_1232procs_010_initial_conditions.nc into (28,44)
+[INFO] Partitioning /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_1232procs_010_20240101-20240110/input/input_datasets/cson_roms-marbl_v0.1_ccs-12km_1232procs_010_tidal.nc into (28,44)
+[INFO] Partitioning /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_1232procs_010_20240101-20240110/input/input_datasets/cson_roms-marbl_v0.1_ccs-12km_1232procs_010_river.nc into (28,44)
+[INFO] Partitioning /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_1232procs_010_20240101-20240110/input/input_datasets/cson_roms-marbl_v0.1_ccs-12km_1232procs_010_boundary-physics_202401.nc into (28,44)
+[INFO] Partitioning /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_1232procs_010_20240101-20240110/input/input_datasets/cson_roms-marbl_v0.1_ccs-12km_1232procs_010_boundary-bgc_clim.nc into (28,44)
+[INFO] Partitioning /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_1232procs_010_20240101-20240110/input/input_datasets/cson_roms-marbl_v0.1_ccs-12km_1232procs_010_surface-physics_202401.nc into (28,44)
+[INFO] Partitioning /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_1232procs_010_20240101-20240110/input/input_datasets/cson_roms-marbl_v0.1_ccs-12km_1232procs_010_surface-bgc_clim.nc into (28,44)
+
+✓ Successfully completed domain: ccs-12km_1232procs
+
+--------------------------------------------------------------------------------
+[2/5] Processing domain: ccs-12km_20procs
+--------------------------------------------------------------------------------
+✔️  Using existing GLORYS_REGIONAL file for 2024-01-01: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240101.nc
+✔️  Using existing GLORYS_REGIONAL file for 2024-01-02: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240102.nc
+✔️  Using existing GLORYS_REGIONAL file for 2024-01-03: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240103.nc
+✔️  Using existing GLORYS_REGIONAL file for 2024-01-04: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240104.nc
+✔️  Using existing GLORYS_REGIONAL file for 2024-01-05: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240105.nc
+✔️  Using existing GLORYS_REGIONAL file for 2024-01-06: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240106.nc
+✔️  Using existing GLORYS_REGIONAL file for 2024-01-07: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240107.nc
+✔️  Using existing GLORYS_REGIONAL file for 2024-01-08: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240108.nc
+✔️  Using existing GLORYS_REGIONAL file for 2024-01-09: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240109.nc
+✔️  Using existing GLORYS_REGIONAL file for 2024-01-10: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240110.nc
+✔️  TPXO dataset verified at: /anvil/projects/x-ees250129/cson-forge-data/source-data/TPXO/TPXO10.v2
+✔️  Using existing BGC dataset: /anvil/projects/x-ees250129/cson-forge-data/source-data/UNIFIED_BGC/BGCdataset.nc
+ℹ️  Using existing blueprint from file: B_cson_roms-marbl_v0.1_ccs-12km_20procs_010_postconfig.yml
+[INFO] 🛠️ Configuring ROMSSimulation
+[INFO] 🔧 Setting up ROMSExternalCodeBase...
+[INFO] 🔧 Setting up MARBLExternalCodeBase...
+[INFO] 📦 Fetching compile-time code...
+[INFO] 📦 Fetching runtime code... 
+[INFO] 📦 Fetching input datasets...
+[INFO] Partitioning /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_20procs_010_20240101-20240110/input/input_datasets/cson_roms-marbl_v0.1_ccs-12km_20procs_010_grid.nc into (4,5)
+[INFO] Partitioning /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_20procs_010_20240101-20240110/input/input_datasets/cson_roms-marbl_v0.1_ccs-12km_20procs_010_initial_conditions.nc into (4,5)
+[INFO] Partitioning /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_20procs_010_20240101-20240110/input/input_datasets/cson_roms-marbl_v0.1_ccs-12km_20procs_010_tidal.nc into (4,5)
+[INFO] Partitioning /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_20procs_010_20240101-20240110/input/input_datasets/cson_roms-marbl_v0.1_ccs-12km_20procs_010_river.nc into (4,5)
+[INFO] Partitioning /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_20procs_010_20240101-20240110/input/input_datasets/cson_roms-marbl_v0.1_ccs-12km_20procs_010_boundary-physics_202401.nc into (4,5)
+[INFO] Partitioning /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_20procs_010_20240101-20240110/input/input_datasets/cson_roms-marbl_v0.1_ccs-12km_20procs_010_boundary-bgc_clim.nc into (4,5)
+[INFO] Partitioning /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_20procs_010_20240101-20240110/input/input_datasets/cson_roms-marbl_v0.1_ccs-12km_20procs_010_surface-physics_202401.nc into (4,5)
+[INFO] Partitioning /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_20procs_010_20240101-20240110/input/input_datasets/cson_roms-marbl_v0.1_ccs-12km_20procs_010_surface-bgc_clim.nc into (4,5)
+
+✓ Successfully completed domain: ccs-12km_20procs
+
+--------------------------------------------------------------------------------
+[3/5] Processing domain: ccs-12km_280procs
+--------------------------------------------------------------------------------
+✔️  Using existing GLORYS_REGIONAL file for 2024-01-01: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240101.nc
+✔️  Using existing GLORYS_REGIONAL file for 2024-01-02: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240102.nc
+✔️  Using existing GLORYS_REGIONAL file for 2024-01-03: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240103.nc
+✔️  Using existing GLORYS_REGIONAL file for 2024-01-04: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240104.nc
+✔️  Using existing GLORYS_REGIONAL file for 2024-01-05: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240105.nc
+✔️  Using existing GLORYS_REGIONAL file for 2024-01-06: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240106.nc
+✔️  Using existing GLORYS_REGIONAL file for 2024-01-07: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240107.nc
+✔️  Using existing GLORYS_REGIONAL file for 2024-01-08: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240108.nc
+✔️  Using existing GLORYS_REGIONAL file for 2024-01-09: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240109.nc
+✔️  Using existing GLORYS_REGIONAL file for 2024-01-10: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240110.nc
+✔️  TPXO dataset verified at: /anvil/projects/x-ees250129/cson-forge-data/source-data/TPXO/TPXO10.v2
+✔️  Using existing BGC dataset: /anvil/projects/x-ees250129/cson-forge-data/source-data/UNIFIED_BGC/BGCdataset.nc
+ℹ️  Using existing blueprint from file: B_cson_roms-marbl_v0.1_ccs-12km_280procs_010_postconfig.yml
+[INFO] 🛠️ Configuring ROMSSimulation
+[INFO] 🔧 Setting up ROMSExternalCodeBase...
+[INFO] 🔧 Setting up MARBLExternalCodeBase...
+[INFO] 📦 Fetching compile-time code...
+[INFO] 📦 Fetching runtime code... 
+[INFO] 📦 Fetching input datasets...
+[INFO] Partitioning /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_280procs_010_20240101-20240110/input/input_datasets/cson_roms-marbl_v0.1_ccs-12km_280procs_010_grid.nc into (14,20)
+[INFO] Partitioning /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_280procs_010_20240101-20240110/input/input_datasets/cson_roms-marbl_v0.1_ccs-12km_280procs_010_initial_conditions.nc into (14,20)
+[INFO] Partitioning /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_280procs_010_20240101-20240110/input/input_datasets/cson_roms-marbl_v0.1_ccs-12km_280procs_010_tidal.nc into (14,20)
+[INFO] Partitioning /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_280procs_010_20240101-20240110/input/input_datasets/cson_roms-marbl_v0.1_ccs-12km_280procs_010_river.nc into (14,20)
+[INFO] Partitioning /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_280procs_010_20240101-20240110/input/input_datasets/cson_roms-marbl_v0.1_ccs-12km_280procs_010_boundary-physics_202401.nc into (14,20)
+[INFO] Partitioning /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_280procs_010_20240101-20240110/input/input_datasets/cson_roms-marbl_v0.1_ccs-12km_280procs_010_boundary-bgc_clim.nc into (14,20)
+[INFO] Partitioning /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_280procs_010_20240101-20240110/input/input_datasets/cson_roms-marbl_v0.1_ccs-12km_280procs_010_surface-physics_202401.nc into (14,20)
+[INFO] Partitioning /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_280procs_010_20240101-20240110/input/input_datasets/cson_roms-marbl_v0.1_ccs-12km_280procs_010_surface-bgc_clim.nc into (14,20)
+
+✓ Successfully completed domain: ccs-12km_280procs
+
+--------------------------------------------------------------------------------
+[4/5] Processing domain: ccs-12km_352procs
+--------------------------------------------------------------------------------
+✔️  Using existing GLORYS_REGIONAL file for 2024-01-01: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240101.nc
+✔️  Using existing GLORYS_REGIONAL file for 2024-01-02: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240102.nc
+✔️  Using existing GLORYS_REGIONAL file for 2024-01-03: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240103.nc
+✔️  Using existing GLORYS_REGIONAL file for 2024-01-04: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240104.nc
+✔️  Using existing GLORYS_REGIONAL file for 2024-01-05: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240105.nc
+✔️  Using existing GLORYS_REGIONAL file for 2024-01-06: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240106.nc
+✔️  Using existing GLORYS_REGIONAL file for 2024-01-07: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240107.nc
+✔️  Using existing GLORYS_REGIONAL file for 2024-01-08: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240108.nc
+✔️  Using existing GLORYS_REGIONAL file for 2024-01-09: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240109.nc
+✔️  Using existing GLORYS_REGIONAL file for 2024-01-10: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240110.nc
+✔️  TPXO dataset verified at: /anvil/projects/x-ees250129/cson-forge-data/source-data/TPXO/TPXO10.v2
+✔️  Using existing BGC dataset: /anvil/projects/x-ees250129/cson-forge-data/source-data/UNIFIED_BGC/BGCdataset.nc
+ℹ️  Using existing blueprint from file: B_cson_roms-marbl_v0.1_ccs-12km_352procs_010_postconfig.yml
+[INFO] 🛠️ Configuring ROMSSimulation
+[INFO] 🔧 Setting up ROMSExternalCodeBase...
+[INFO] 🔧 Setting up MARBLExternalCodeBase...
+[INFO] 📦 Fetching compile-time code...
+[INFO] 📦 Fetching runtime code... 
+[INFO] 📦 Fetching input datasets...
+[INFO] Partitioning /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_352procs_010_20240101-20240110/input/input_datasets/cson_roms-marbl_v0.1_ccs-12km_352procs_010_grid.nc into (16,22)
+[INFO] Partitioning /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_352procs_010_20240101-20240110/input/input_datasets/cson_roms-marbl_v0.1_ccs-12km_352procs_010_initial_conditions.nc into (16,22)
+[INFO] Partitioning /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_352procs_010_20240101-20240110/input/input_datasets/cson_roms-marbl_v0.1_ccs-12km_352procs_010_tidal.nc into (16,22)
+[INFO] Partitioning /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_352procs_010_20240101-20240110/input/input_datasets/cson_roms-marbl_v0.1_ccs-12km_352procs_010_river.nc into (16,22)
+[INFO] Partitioning /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_352procs_010_20240101-20240110/input/input_datasets/cson_roms-marbl_v0.1_ccs-12km_352procs_010_boundary-physics_202401.nc into (16,22)
+[INFO] Partitioning /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_352procs_010_20240101-20240110/input/input_datasets/cson_roms-marbl_v0.1_ccs-12km_352procs_010_boundary-bgc_clim.nc into (16,22)
+[INFO] Partitioning /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_352procs_010_20240101-20240110/input/input_datasets/cson_roms-marbl_v0.1_ccs-12km_352procs_010_surface-physics_202401.nc into (16,22)
+[INFO] Partitioning /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_352procs_010_20240101-20240110/input/input_datasets/cson_roms-marbl_v0.1_ccs-12km_352procs_010_surface-bgc_clim.nc into (16,22)
+
+✓ Successfully completed domain: ccs-12km_352procs
+
+--------------------------------------------------------------------------------
+[5/5] Processing domain: ccs-12km_70procs
+--------------------------------------------------------------------------------
+✔️  Using existing GLORYS_REGIONAL file for 2024-01-01: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240101.nc
+✔️  Using existing GLORYS_REGIONAL file for 2024-01-02: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240102.nc
+✔️  Using existing GLORYS_REGIONAL file for 2024-01-03: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240103.nc
+✔️  Using existing GLORYS_REGIONAL file for 2024-01-04: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240104.nc
+✔️  Using existing GLORYS_REGIONAL file for 2024-01-05: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240105.nc
+✔️  Using existing GLORYS_REGIONAL file for 2024-01-06: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240106.nc
+✔️  Using existing GLORYS_REGIONAL file for 2024-01-07: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240107.nc
+✔️  Using existing GLORYS_REGIONAL file for 2024-01-08: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240108.nc
+✔️  Using existing GLORYS_REGIONAL file for 2024-01-09: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240109.nc
+✔️  Using existing GLORYS_REGIONAL file for 2024-01-10: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240110.nc
+✔️  TPXO dataset verified at: /anvil/projects/x-ees250129/cson-forge-data/source-data/TPXO/TPXO10.v2
+✔️  Using existing BGC dataset: /anvil/projects/x-ees250129/cson-forge-data/source-data/UNIFIED_BGC/BGCdataset.nc
+ℹ️  Using existing blueprint from file: B_cson_roms-marbl_v0.1_ccs-12km_70procs_010_postconfig.yml
+[INFO] 🛠️ Configuring ROMSSimulation
+[INFO] 🔧 Setting up ROMSExternalCodeBase...
+[INFO] 🔧 Setting up MARBLExternalCodeBase...
+[INFO] 📦 Fetching compile-time code...
+[INFO] 📦 Fetching runtime code... 
+[INFO] 📦 Fetching input datasets...
+[INFO] Partitioning /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_70procs_010_20240101-20240110/input/input_datasets/cson_roms-marbl_v0.1_ccs-12km_70procs_010_grid.nc into (7,10)
+[INFO] Partitioning /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_70procs_010_20240101-20240110/input/input_datasets/cson_roms-marbl_v0.1_ccs-12km_70procs_010_initial_conditions.nc into (7,10)
+[INFO] Partitioning /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_70procs_010_20240101-20240110/input/input_datasets/cson_roms-marbl_v0.1_ccs-12km_70procs_010_tidal.nc into (7,10)
+[INFO] Partitioning /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_70procs_010_20240101-20240110/input/input_datasets/cson_roms-marbl_v0.1_ccs-12km_70procs_010_river.nc into (7,10)
+[INFO] Partitioning /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_70procs_010_20240101-20240110/input/input_datasets/cson_roms-marbl_v0.1_ccs-12km_70procs_010_boundary-physics_202401.nc into (7,10)
+[INFO] Partitioning /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_70procs_010_20240101-20240110/input/input_datasets/cson_roms-marbl_v0.1_ccs-12km_70procs_010_boundary-bgc_clim.nc into (7,10)
+[INFO] Partitioning /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_70procs_010_20240101-20240110/input/input_datasets/cson_roms-marbl_v0.1_ccs-12km_70procs_010_surface-physics_202401.nc into (7,10)
+[INFO] Partitioning /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_70procs_010_20240101-20240110/input/input_datasets/cson_roms-marbl_v0.1_ccs-12km_70procs_010_surface-bgc_clim.nc into (7,10)
+
+✓ Successfully completed domain: ccs-12km_70procs
+
+================================================================================
+Completed generation for all 5 domain(s)
+================================================================================
+
+
+✓ Generated 5 domain configuration(s)
+  - ccs-12km_1232procs
+  - ccs-12km_20procs
+  - ccs-12km_280procs
+  - ccs-12km_352procs
+  - ccs-12km_70procs
+
+================================================================================
+Running all simulations...
+================================================================================
+
+--------------------------------------------------------------------------------
+[1/5] Running simulation: ccs-12km_1232procs
+--------------------------------------------------------------------------------
+[INFO] Running srun -n 1232 /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_1232procs_010_20240101-20240110/input/compile_time_code/roms /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_1232procs_010_20240101-20240110/input/runtime_code/cson_roms-marbl_v0.1_ccs-12km_1232procs_010.in
+[INFO] Submitting job: sbatch /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_1232procs_010_20240101-20240110/work/cson_roms-marbl_v0-1_ccs-12km_1232procs_010_20240101-20240110.sh
+Execution handler: <cstar.execution.scheduler_job.SlurmJob object at 0x1538b3c9b230>
+
+--------------------------------------------------------------------------------
+[2/5] Running simulation: ccs-12km_20procs
+--------------------------------------------------------------------------------
+[INFO] Running srun -n 20 /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_20procs_010_20240101-20240110/input/compile_time_code/roms /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_20procs_010_20240101-20240110/input/runtime_code/cson_roms-marbl_v0.1_ccs-12km_20procs_010.in
+[INFO] Submitting job: sbatch /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_20procs_010_20240101-20240110/work/cson_roms-marbl_v0-1_ccs-12km_20procs_010_20240101-20240110.sh
+Execution handler: <cstar.execution.scheduler_job.SlurmJob object at 0x1538b3a74190>
+
+--------------------------------------------------------------------------------
+[3/5] Running simulation: ccs-12km_280procs
+--------------------------------------------------------------------------------
+[INFO] Running srun -n 280 /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_280procs_010_20240101-20240110/input/compile_time_code/roms /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_280procs_010_20240101-20240110/input/runtime_code/cson_roms-marbl_v0.1_ccs-12km_280procs_010.in
+[INFO] Submitting job: sbatch /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_280procs_010_20240101-20240110/work/cson_roms-marbl_v0-1_ccs-12km_280procs_010_20240101-20240110.sh
+Execution handler: <cstar.execution.scheduler_job.SlurmJob object at 0x1538718ec690>
+
+--------------------------------------------------------------------------------
+[4/5] Running simulation: ccs-12km_352procs
+--------------------------------------------------------------------------------
+[INFO] Running srun -n 352 /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_352procs_010_20240101-20240110/input/compile_time_code/roms /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_352procs_010_20240101-20240110/input/runtime_code/cson_roms-marbl_v0.1_ccs-12km_352procs_010.in
+[INFO] Submitting job: sbatch /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_352procs_010_20240101-20240110/work/cson_roms-marbl_v0-1_ccs-12km_352procs_010_20240101-20240110.sh
+Execution handler: <cstar.execution.scheduler_job.SlurmJob object at 0x1538b3cab360>
+
+--------------------------------------------------------------------------------
+[5/5] Running simulation: ccs-12km_70procs
+--------------------------------------------------------------------------------
+[INFO] Running srun -n 70 /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_70procs_010_20240101-20240110/input/compile_time_code/roms /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_70procs_010_20240101-20240110/input/runtime_code/cson_roms-marbl_v0.1_ccs-12km_70procs_010.in
+[INFO] Submitting job: sbatch /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_70procs_010_20240101-20240110/work/cson_roms-marbl_v0-1_ccs-12km_70procs_010_20240101-20240110.sh
+Execution handler: <cstar.execution.scheduler_job.SlurmJob object at 0x1538717d6650>
+
+================================================================================
+All simulations submitted.
+================================================================================
+
+Completed ensemble_id=10
+
+==========================================
+Running benchmark scaling for ensemble_id=20
+Current directory: /home/x-mlong/codes/cson-forge/workflows/computing-benchmarks
+==========================================
+Using domains file: /home/x-mlong/codes/cson-forge/workflows/computing-benchmarks/domains-bm-scaling.yml
+Clobber inputs: False
+Generate only: False
+Ensemble ID: 20
+
+System Configuration:
+  System ID: RCAC_anvil
+  Paths:
+    here: /home/x-mlong/codes/cson-forge/cson_forge
+    source_data: /anvil/projects/x-ees250129/cson-forge-data/source-data
+    input_data: /anvil/projects/x-ees250129/cson-forge-data/x-mlong/input-data
+    scratch: /anvil/scratch/x-mlong/cson-forge-run
+    blueprints: /home/x-mlong/codes/cson-forge/cson_forge/blueprints
+    model_configs: /home/x-mlong/codes/cson-forge/cson_forge/model-configs
+
+Initializing CstarSpecEngine with domains file: /home/x-mlong/codes/cson-forge/workflows/computing-benchmarks/domains-bm-scaling.yml
+
+================================================================================
+Generating all domain configurations...
+================================================================================
+
+================================================================================
+Starting generation for 5 domain(s)
+================================================================================
+
+
+--------------------------------------------------------------------------------
+[1/5] Processing domain: ccs-12km_1232procs
+--------------------------------------------------------------------------------
+✔️  Using existing GLORYS_REGIONAL file for 2024-01-01: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240101.nc
+✔️  Using existing GLORYS_REGIONAL file for 2024-01-02: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240102.nc
+✔️  Using existing GLORYS_REGIONAL file for 2024-01-03: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240103.nc
+✔️  Using existing GLORYS_REGIONAL file for 2024-01-04: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240104.nc
+✔️  Using existing GLORYS_REGIONAL file for 2024-01-05: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240105.nc
+✔️  Using existing GLORYS_REGIONAL file for 2024-01-06: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240106.nc
+✔️  Using existing GLORYS_REGIONAL file for 2024-01-07: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240107.nc
+✔️  Using existing GLORYS_REGIONAL file for 2024-01-08: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240108.nc
+✔️  Using existing GLORYS_REGIONAL file for 2024-01-09: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240109.nc
+✔️  Using existing GLORYS_REGIONAL file for 2024-01-10: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240110.nc
+✔️  TPXO dataset verified at: /anvil/projects/x-ees250129/cson-forge-data/source-data/TPXO/TPXO10.v2
+✔️  Using existing BGC dataset: /anvil/projects/x-ees250129/cson-forge-data/source-data/UNIFIED_BGC/BGCdataset.nc
+ℹ️  Using existing blueprint from file: B_cson_roms-marbl_v0.1_ccs-12km_1232procs_020_postconfig.yml
+[INFO] 🛠️ Configuring ROMSSimulation
+[INFO] 🔧 Setting up ROMSExternalCodeBase...
+[INFO] 🔧 Setting up MARBLExternalCodeBase...
+[INFO] 📦 Fetching compile-time code...
+[INFO] 📦 Fetching runtime code... 
+[INFO] 📦 Fetching input datasets...
+[INFO] Partitioning /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_1232procs_020_20240101-20240110/input/input_datasets/cson_roms-marbl_v0.1_ccs-12km_1232procs_020_grid.nc into (28,44)
+[INFO] Partitioning /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_1232procs_020_20240101-20240110/input/input_datasets/cson_roms-marbl_v0.1_ccs-12km_1232procs_020_initial_conditions.nc into (28,44)
+[INFO] Partitioning /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_1232procs_020_20240101-20240110/input/input_datasets/cson_roms-marbl_v0.1_ccs-12km_1232procs_020_tidal.nc into (28,44)
+[INFO] Partitioning /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_1232procs_020_20240101-20240110/input/input_datasets/cson_roms-marbl_v0.1_ccs-12km_1232procs_020_river.nc into (28,44)
+[INFO] Partitioning /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_1232procs_020_20240101-20240110/input/input_datasets/cson_roms-marbl_v0.1_ccs-12km_1232procs_020_boundary-physics_202401.nc into (28,44)
+[INFO] Partitioning /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_1232procs_020_20240101-20240110/input/input_datasets/cson_roms-marbl_v0.1_ccs-12km_1232procs_020_boundary-bgc_clim.nc into (28,44)
+[INFO] Partitioning /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_1232procs_020_20240101-20240110/input/input_datasets/cson_roms-marbl_v0.1_ccs-12km_1232procs_020_surface-physics_202401.nc into (28,44)
+[INFO] Partitioning /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_1232procs_020_20240101-20240110/input/input_datasets/cson_roms-marbl_v0.1_ccs-12km_1232procs_020_surface-bgc_clim.nc into (28,44)
+
+✓ Successfully completed domain: ccs-12km_1232procs
+
+--------------------------------------------------------------------------------
+[2/5] Processing domain: ccs-12km_20procs
+--------------------------------------------------------------------------------
+✔️  Using existing GLORYS_REGIONAL file for 2024-01-01: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240101.nc
+✔️  Using existing GLORYS_REGIONAL file for 2024-01-02: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240102.nc
+✔️  Using existing GLORYS_REGIONAL file for 2024-01-03: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240103.nc
+✔️  Using existing GLORYS_REGIONAL file for 2024-01-04: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240104.nc
+✔️  Using existing GLORYS_REGIONAL file for 2024-01-05: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240105.nc
+✔️  Using existing GLORYS_REGIONAL file for 2024-01-06: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240106.nc
+✔️  Using existing GLORYS_REGIONAL file for 2024-01-07: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240107.nc
+✔️  Using existing GLORYS_REGIONAL file for 2024-01-08: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240108.nc
+✔️  Using existing GLORYS_REGIONAL file for 2024-01-09: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240109.nc
+✔️  Using existing GLORYS_REGIONAL file for 2024-01-10: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240110.nc
+✔️  TPXO dataset verified at: /anvil/projects/x-ees250129/cson-forge-data/source-data/TPXO/TPXO10.v2
+✔️  Using existing BGC dataset: /anvil/projects/x-ees250129/cson-forge-data/source-data/UNIFIED_BGC/BGCdataset.nc
+ℹ️  Using existing blueprint from file: B_cson_roms-marbl_v0.1_ccs-12km_20procs_020_postconfig.yml
+[INFO] 🛠️ Configuring ROMSSimulation
+[INFO] 🔧 Setting up ROMSExternalCodeBase...
+[INFO] 🔧 Setting up MARBLExternalCodeBase...
+[INFO] 📦 Fetching compile-time code...
+[INFO] 📦 Fetching runtime code... 
+[INFO] 📦 Fetching input datasets...
+[INFO] Partitioning /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_20procs_020_20240101-20240110/input/input_datasets/cson_roms-marbl_v0.1_ccs-12km_20procs_020_grid.nc into (4,5)
+[INFO] Partitioning /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_20procs_020_20240101-20240110/input/input_datasets/cson_roms-marbl_v0.1_ccs-12km_20procs_020_initial_conditions.nc into (4,5)
+[INFO] Partitioning /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_20procs_020_20240101-20240110/input/input_datasets/cson_roms-marbl_v0.1_ccs-12km_20procs_020_tidal.nc into (4,5)
+[INFO] Partitioning /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_20procs_020_20240101-20240110/input/input_datasets/cson_roms-marbl_v0.1_ccs-12km_20procs_020_river.nc into (4,5)
+[INFO] Partitioning /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_20procs_020_20240101-20240110/input/input_datasets/cson_roms-marbl_v0.1_ccs-12km_20procs_020_boundary-physics_202401.nc into (4,5)
+[INFO] Partitioning /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_20procs_020_20240101-20240110/input/input_datasets/cson_roms-marbl_v0.1_ccs-12km_20procs_020_boundary-bgc_clim.nc into (4,5)
+[INFO] Partitioning /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_20procs_020_20240101-20240110/input/input_datasets/cson_roms-marbl_v0.1_ccs-12km_20procs_020_surface-physics_202401.nc into (4,5)
+[INFO] Partitioning /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_20procs_020_20240101-20240110/input/input_datasets/cson_roms-marbl_v0.1_ccs-12km_20procs_020_surface-bgc_clim.nc into (4,5)
+
+✓ Successfully completed domain: ccs-12km_20procs
+
+--------------------------------------------------------------------------------
+[3/5] Processing domain: ccs-12km_280procs
+--------------------------------------------------------------------------------
+✔️  Using existing GLORYS_REGIONAL file for 2024-01-01: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240101.nc
+✔️  Using existing GLORYS_REGIONAL file for 2024-01-02: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240102.nc
+✔️  Using existing GLORYS_REGIONAL file for 2024-01-03: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240103.nc
+✔️  Using existing GLORYS_REGIONAL file for 2024-01-04: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240104.nc
+✔️  Using existing GLORYS_REGIONAL file for 2024-01-05: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240105.nc
+✔️  Using existing GLORYS_REGIONAL file for 2024-01-06: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240106.nc
+✔️  Using existing GLORYS_REGIONAL file for 2024-01-07: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240107.nc
+✔️  Using existing GLORYS_REGIONAL file for 2024-01-08: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240108.nc
+✔️  Using existing GLORYS_REGIONAL file for 2024-01-09: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240109.nc
+✔️  Using existing GLORYS_REGIONAL file for 2024-01-10: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240110.nc
+✔️  TPXO dataset verified at: /anvil/projects/x-ees250129/cson-forge-data/source-data/TPXO/TPXO10.v2
+✔️  Using existing BGC dataset: /anvil/projects/x-ees250129/cson-forge-data/source-data/UNIFIED_BGC/BGCdataset.nc
+ℹ️  Using existing blueprint from file: B_cson_roms-marbl_v0.1_ccs-12km_280procs_020_postconfig.yml
+[INFO] 🛠️ Configuring ROMSSimulation
+[INFO] 🔧 Setting up ROMSExternalCodeBase...
+[INFO] 🔧 Setting up MARBLExternalCodeBase...
+[INFO] 📦 Fetching compile-time code...
+[INFO] 📦 Fetching runtime code... 
+[INFO] 📦 Fetching input datasets...
+[INFO] Partitioning /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_280procs_020_20240101-20240110/input/input_datasets/cson_roms-marbl_v0.1_ccs-12km_280procs_020_grid.nc into (14,20)
+[INFO] Partitioning /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_280procs_020_20240101-20240110/input/input_datasets/cson_roms-marbl_v0.1_ccs-12km_280procs_020_initial_conditions.nc into (14,20)
+[INFO] Partitioning /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_280procs_020_20240101-20240110/input/input_datasets/cson_roms-marbl_v0.1_ccs-12km_280procs_020_tidal.nc into (14,20)
+[INFO] Partitioning /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_280procs_020_20240101-20240110/input/input_datasets/cson_roms-marbl_v0.1_ccs-12km_280procs_020_river.nc into (14,20)
+[INFO] Partitioning /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_280procs_020_20240101-20240110/input/input_datasets/cson_roms-marbl_v0.1_ccs-12km_280procs_020_boundary-physics_202401.nc into (14,20)
+[INFO] Partitioning /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_280procs_020_20240101-20240110/input/input_datasets/cson_roms-marbl_v0.1_ccs-12km_280procs_020_boundary-bgc_clim.nc into (14,20)
+[INFO] Partitioning /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_280procs_020_20240101-20240110/input/input_datasets/cson_roms-marbl_v0.1_ccs-12km_280procs_020_surface-physics_202401.nc into (14,20)
+[INFO] Partitioning /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_280procs_020_20240101-20240110/input/input_datasets/cson_roms-marbl_v0.1_ccs-12km_280procs_020_surface-bgc_clim.nc into (14,20)
+
+✓ Successfully completed domain: ccs-12km_280procs
+
+--------------------------------------------------------------------------------
+[4/5] Processing domain: ccs-12km_352procs
+--------------------------------------------------------------------------------
+✔️  Using existing GLORYS_REGIONAL file for 2024-01-01: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240101.nc
+✔️  Using existing GLORYS_REGIONAL file for 2024-01-02: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240102.nc
+✔️  Using existing GLORYS_REGIONAL file for 2024-01-03: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240103.nc
+✔️  Using existing GLORYS_REGIONAL file for 2024-01-04: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240104.nc
+✔️  Using existing GLORYS_REGIONAL file for 2024-01-05: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240105.nc
+✔️  Using existing GLORYS_REGIONAL file for 2024-01-06: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240106.nc
+✔️  Using existing GLORYS_REGIONAL file for 2024-01-07: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240107.nc
+✔️  Using existing GLORYS_REGIONAL file for 2024-01-08: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240108.nc
+✔️  Using existing GLORYS_REGIONAL file for 2024-01-09: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240109.nc
+✔️  Using existing GLORYS_REGIONAL file for 2024-01-10: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240110.nc
+✔️  TPXO dataset verified at: /anvil/projects/x-ees250129/cson-forge-data/source-data/TPXO/TPXO10.v2
+✔️  Using existing BGC dataset: /anvil/projects/x-ees250129/cson-forge-data/source-data/UNIFIED_BGC/BGCdataset.nc
+ℹ️  Using existing blueprint from file: B_cson_roms-marbl_v0.1_ccs-12km_352procs_020_postconfig.yml
+[INFO] 🛠️ Configuring ROMSSimulation
+[INFO] 🔧 Setting up ROMSExternalCodeBase...
+[INFO] 🔧 Setting up MARBLExternalCodeBase...
+[INFO] 📦 Fetching compile-time code...
+[INFO] 📦 Fetching runtime code... 
+[INFO] 📦 Fetching input datasets...
+[INFO] Partitioning /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_352procs_020_20240101-20240110/input/input_datasets/cson_roms-marbl_v0.1_ccs-12km_352procs_020_grid.nc into (16,22)
+[INFO] Partitioning /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_352procs_020_20240101-20240110/input/input_datasets/cson_roms-marbl_v0.1_ccs-12km_352procs_020_initial_conditions.nc into (16,22)
+[INFO] Partitioning /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_352procs_020_20240101-20240110/input/input_datasets/cson_roms-marbl_v0.1_ccs-12km_352procs_020_tidal.nc into (16,22)
+[INFO] Partitioning /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_352procs_020_20240101-20240110/input/input_datasets/cson_roms-marbl_v0.1_ccs-12km_352procs_020_river.nc into (16,22)
+[INFO] Partitioning /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_352procs_020_20240101-20240110/input/input_datasets/cson_roms-marbl_v0.1_ccs-12km_352procs_020_boundary-physics_202401.nc into (16,22)
+[INFO] Partitioning /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_352procs_020_20240101-20240110/input/input_datasets/cson_roms-marbl_v0.1_ccs-12km_352procs_020_boundary-bgc_clim.nc into (16,22)
+[INFO] Partitioning /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_352procs_020_20240101-20240110/input/input_datasets/cson_roms-marbl_v0.1_ccs-12km_352procs_020_surface-physics_202401.nc into (16,22)
+[INFO] Partitioning /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_352procs_020_20240101-20240110/input/input_datasets/cson_roms-marbl_v0.1_ccs-12km_352procs_020_surface-bgc_clim.nc into (16,22)
+
+✓ Successfully completed domain: ccs-12km_352procs
+
+--------------------------------------------------------------------------------
+[5/5] Processing domain: ccs-12km_70procs
+--------------------------------------------------------------------------------
+✔️  Using existing GLORYS_REGIONAL file for 2024-01-01: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240101.nc
+✔️  Using existing GLORYS_REGIONAL file for 2024-01-02: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240102.nc
+✔️  Using existing GLORYS_REGIONAL file for 2024-01-03: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240103.nc
+✔️  Using existing GLORYS_REGIONAL file for 2024-01-04: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240104.nc
+✔️  Using existing GLORYS_REGIONAL file for 2024-01-05: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240105.nc
+✔️  Using existing GLORYS_REGIONAL file for 2024-01-06: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240106.nc
+✔️  Using existing GLORYS_REGIONAL file for 2024-01-07: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240107.nc
+✔️  Using existing GLORYS_REGIONAL file for 2024-01-08: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240108.nc
+✔️  Using existing GLORYS_REGIONAL file for 2024-01-09: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240109.nc
+✔️  Using existing GLORYS_REGIONAL file for 2024-01-10: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240110.nc
+✔️  TPXO dataset verified at: /anvil/projects/x-ees250129/cson-forge-data/source-data/TPXO/TPXO10.v2
+✔️  Using existing BGC dataset: /anvil/projects/x-ees250129/cson-forge-data/source-data/UNIFIED_BGC/BGCdataset.nc
+ℹ️  Using existing blueprint from file: B_cson_roms-marbl_v0.1_ccs-12km_70procs_020_postconfig.yml
+[INFO] 🛠️ Configuring ROMSSimulation
+[INFO] 🔧 Setting up ROMSExternalCodeBase...
+[INFO] 🔧 Setting up MARBLExternalCodeBase...
+[INFO] 📦 Fetching compile-time code...
+[INFO] 📦 Fetching runtime code... 
+[INFO] 📦 Fetching input datasets...
+[INFO] Partitioning /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_70procs_020_20240101-20240110/input/input_datasets/cson_roms-marbl_v0.1_ccs-12km_70procs_020_grid.nc into (7,10)
+[INFO] Partitioning /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_70procs_020_20240101-20240110/input/input_datasets/cson_roms-marbl_v0.1_ccs-12km_70procs_020_initial_conditions.nc into (7,10)
+[INFO] Partitioning /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_70procs_020_20240101-20240110/input/input_datasets/cson_roms-marbl_v0.1_ccs-12km_70procs_020_tidal.nc into (7,10)
+[INFO] Partitioning /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_70procs_020_20240101-20240110/input/input_datasets/cson_roms-marbl_v0.1_ccs-12km_70procs_020_river.nc into (7,10)
+[INFO] Partitioning /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_70procs_020_20240101-20240110/input/input_datasets/cson_roms-marbl_v0.1_ccs-12km_70procs_020_boundary-physics_202401.nc into (7,10)
+[INFO] Partitioning /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_70procs_020_20240101-20240110/input/input_datasets/cson_roms-marbl_v0.1_ccs-12km_70procs_020_boundary-bgc_clim.nc into (7,10)
+[INFO] Partitioning /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_70procs_020_20240101-20240110/input/input_datasets/cson_roms-marbl_v0.1_ccs-12km_70procs_020_surface-physics_202401.nc into (7,10)
+[INFO] Partitioning /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_70procs_020_20240101-20240110/input/input_datasets/cson_roms-marbl_v0.1_ccs-12km_70procs_020_surface-bgc_clim.nc into (7,10)
+
+✓ Successfully completed domain: ccs-12km_70procs
+
+================================================================================
+Completed generation for all 5 domain(s)
+================================================================================
+
+
+✓ Generated 5 domain configuration(s)
+  - ccs-12km_1232procs
+  - ccs-12km_20procs
+  - ccs-12km_280procs
+  - ccs-12km_352procs
+  - ccs-12km_70procs
+
+================================================================================
+Running all simulations...
+================================================================================
+
+--------------------------------------------------------------------------------
+[1/5] Running simulation: ccs-12km_1232procs
+--------------------------------------------------------------------------------
+[INFO] Running srun -n 1232 /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_1232procs_020_20240101-20240110/input/compile_time_code/roms /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_1232procs_020_20240101-20240110/input/runtime_code/cson_roms-marbl_v0.1_ccs-12km_1232procs_020.in
+[INFO] Submitting job: sbatch /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_1232procs_020_20240101-20240110/work/cson_roms-marbl_v0-1_ccs-12km_1232procs_020_20240101-20240110.sh
+Execution handler: <cstar.execution.scheduler_job.SlurmJob object at 0x152c5c747230>
+
+--------------------------------------------------------------------------------
+[2/5] Running simulation: ccs-12km_20procs
+--------------------------------------------------------------------------------
+[INFO] Running srun -n 20 /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_20procs_020_20240101-20240110/input/compile_time_code/roms /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_20procs_020_20240101-20240110/input/runtime_code/cson_roms-marbl_v0.1_ccs-12km_20procs_020.in
+[INFO] Submitting job: sbatch /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_20procs_020_20240101-20240110/work/cson_roms-marbl_v0-1_ccs-12km_20procs_020_20240101-20240110.sh
+Execution handler: <cstar.execution.scheduler_job.SlurmJob object at 0x152c5c520190>
+
+--------------------------------------------------------------------------------
+[3/5] Running simulation: ccs-12km_280procs
+--------------------------------------------------------------------------------
+[INFO] Running srun -n 280 /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_280procs_020_20240101-20240110/input/compile_time_code/roms /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_280procs_020_20240101-20240110/input/runtime_code/cson_roms-marbl_v0.1_ccs-12km_280procs_020.in
+[INFO] Submitting job: sbatch /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_280procs_020_20240101-20240110/work/cson_roms-marbl_v0-1_ccs-12km_280procs_020_20240101-20240110.sh
+Execution handler: <cstar.execution.scheduler_job.SlurmJob object at 0x152be21b0690>
+
+--------------------------------------------------------------------------------
+[4/5] Running simulation: ccs-12km_352procs
+--------------------------------------------------------------------------------
+[INFO] Running srun -n 352 /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_352procs_020_20240101-20240110/input/compile_time_code/roms /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_352procs_020_20240101-20240110/input/runtime_code/cson_roms-marbl_v0.1_ccs-12km_352procs_020.in
+[INFO] Submitting job: sbatch /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_352procs_020_20240101-20240110/work/cson_roms-marbl_v0-1_ccs-12km_352procs_020_20240101-20240110.sh
+Execution handler: <cstar.execution.scheduler_job.SlurmJob object at 0x152c5c757360>
+
+--------------------------------------------------------------------------------
+[5/5] Running simulation: ccs-12km_70procs
+--------------------------------------------------------------------------------
+[INFO] Running srun -n 70 /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_70procs_020_20240101-20240110/input/compile_time_code/roms /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_70procs_020_20240101-20240110/input/runtime_code/cson_roms-marbl_v0.1_ccs-12km_70procs_020.in
+[INFO] Submitting job: sbatch /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_70procs_020_20240101-20240110/work/cson_roms-marbl_v0-1_ccs-12km_70procs_020_20240101-20240110.sh
+Execution handler: <cstar.execution.scheduler_job.SlurmJob object at 0x152bd7816650>
+
+================================================================================
+All simulations submitted.
+================================================================================
+
+Completed ensemble_id=20
+
+==========================================
+Running benchmark scaling for ensemble_id=30
+Current directory: /home/x-mlong/codes/cson-forge/workflows/computing-benchmarks
+==========================================
+Using domains file: /home/x-mlong/codes/cson-forge/workflows/computing-benchmarks/domains-bm-scaling.yml
+Clobber inputs: False
+Generate only: False
+Ensemble ID: 30
+
+System Configuration:
+  System ID: RCAC_anvil
+  Paths:
+    here: /home/x-mlong/codes/cson-forge/cson_forge
+    source_data: /anvil/projects/x-ees250129/cson-forge-data/source-data
+    input_data: /anvil/projects/x-ees250129/cson-forge-data/x-mlong/input-data
+    scratch: /anvil/scratch/x-mlong/cson-forge-run
+    blueprints: /home/x-mlong/codes/cson-forge/cson_forge/blueprints
+    model_configs: /home/x-mlong/codes/cson-forge/cson_forge/model-configs
+
+Initializing CstarSpecEngine with domains file: /home/x-mlong/codes/cson-forge/workflows/computing-benchmarks/domains-bm-scaling.yml
+
+================================================================================
+Generating all domain configurations...
+================================================================================
+
+================================================================================
+Starting generation for 5 domain(s)
+================================================================================
+
+
+--------------------------------------------------------------------------------
+[1/5] Processing domain: ccs-12km_1232procs
+--------------------------------------------------------------------------------
+✔️  Using existing GLORYS_REGIONAL file for 2024-01-01: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240101.nc
+✔️  Using existing GLORYS_REGIONAL file for 2024-01-02: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240102.nc
+✔️  Using existing GLORYS_REGIONAL file for 2024-01-03: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240103.nc
+✔️  Using existing GLORYS_REGIONAL file for 2024-01-04: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240104.nc
+✔️  Using existing GLORYS_REGIONAL file for 2024-01-05: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240105.nc
+✔️  Using existing GLORYS_REGIONAL file for 2024-01-06: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240106.nc
+✔️  Using existing GLORYS_REGIONAL file for 2024-01-07: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240107.nc
+✔️  Using existing GLORYS_REGIONAL file for 2024-01-08: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240108.nc
+✔️  Using existing GLORYS_REGIONAL file for 2024-01-09: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240109.nc
+✔️  Using existing GLORYS_REGIONAL file for 2024-01-10: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240110.nc
+✔️  TPXO dataset verified at: /anvil/projects/x-ees250129/cson-forge-data/source-data/TPXO/TPXO10.v2
+✔️  Using existing BGC dataset: /anvil/projects/x-ees250129/cson-forge-data/source-data/UNIFIED_BGC/BGCdataset.nc
+ℹ️  Using existing blueprint from file: B_cson_roms-marbl_v0.1_ccs-12km_1232procs_030_postconfig.yml
+[INFO] 🛠️ Configuring ROMSSimulation
+[INFO] 🔧 Setting up ROMSExternalCodeBase...
+[INFO] 🔧 Setting up MARBLExternalCodeBase...
+[INFO] 📦 Fetching compile-time code...
+[INFO] 📦 Fetching runtime code... 
+[INFO] 📦 Fetching input datasets...
+[INFO] Partitioning /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_1232procs_030_20240101-20240110/input/input_datasets/cson_roms-marbl_v0.1_ccs-12km_1232procs_030_grid.nc into (28,44)
+[INFO] Partitioning /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_1232procs_030_20240101-20240110/input/input_datasets/cson_roms-marbl_v0.1_ccs-12km_1232procs_030_initial_conditions.nc into (28,44)
+[INFO] Partitioning /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_1232procs_030_20240101-20240110/input/input_datasets/cson_roms-marbl_v0.1_ccs-12km_1232procs_030_tidal.nc into (28,44)
+[INFO] Partitioning /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_1232procs_030_20240101-20240110/input/input_datasets/cson_roms-marbl_v0.1_ccs-12km_1232procs_030_river.nc into (28,44)
+[INFO] Partitioning /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_1232procs_030_20240101-20240110/input/input_datasets/cson_roms-marbl_v0.1_ccs-12km_1232procs_030_boundary-physics_202401.nc into (28,44)
+[INFO] Partitioning /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_1232procs_030_20240101-20240110/input/input_datasets/cson_roms-marbl_v0.1_ccs-12km_1232procs_030_boundary-bgc_clim.nc into (28,44)
+[INFO] Partitioning /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_1232procs_030_20240101-20240110/input/input_datasets/cson_roms-marbl_v0.1_ccs-12km_1232procs_030_surface-physics_202401.nc into (28,44)
+[INFO] Partitioning /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_1232procs_030_20240101-20240110/input/input_datasets/cson_roms-marbl_v0.1_ccs-12km_1232procs_030_surface-bgc_clim.nc into (28,44)
+
+✓ Successfully completed domain: ccs-12km_1232procs
+
+--------------------------------------------------------------------------------
+[2/5] Processing domain: ccs-12km_20procs
+--------------------------------------------------------------------------------
+✔️  Using existing GLORYS_REGIONAL file for 2024-01-01: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240101.nc
+✔️  Using existing GLORYS_REGIONAL file for 2024-01-02: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240102.nc
+✔️  Using existing GLORYS_REGIONAL file for 2024-01-03: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240103.nc
+✔️  Using existing GLORYS_REGIONAL file for 2024-01-04: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240104.nc
+✔️  Using existing GLORYS_REGIONAL file for 2024-01-05: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240105.nc
+✔️  Using existing GLORYS_REGIONAL file for 2024-01-06: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240106.nc
+✔️  Using existing GLORYS_REGIONAL file for 2024-01-07: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240107.nc
+✔️  Using existing GLORYS_REGIONAL file for 2024-01-08: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240108.nc
+✔️  Using existing GLORYS_REGIONAL file for 2024-01-09: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240109.nc
+✔️  Using existing GLORYS_REGIONAL file for 2024-01-10: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240110.nc
+✔️  TPXO dataset verified at: /anvil/projects/x-ees250129/cson-forge-data/source-data/TPXO/TPXO10.v2
+✔️  Using existing BGC dataset: /anvil/projects/x-ees250129/cson-forge-data/source-data/UNIFIED_BGC/BGCdataset.nc
+ℹ️  Using existing blueprint from file: B_cson_roms-marbl_v0.1_ccs-12km_20procs_030_postconfig.yml
+[INFO] 🛠️ Configuring ROMSSimulation
+[INFO] 🔧 Setting up ROMSExternalCodeBase...
+[INFO] 🔧 Setting up MARBLExternalCodeBase...
+[INFO] 📦 Fetching compile-time code...
+[INFO] 📦 Fetching runtime code... 
+[INFO] 📦 Fetching input datasets...
+[INFO] Partitioning /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_20procs_030_20240101-20240110/input/input_datasets/cson_roms-marbl_v0.1_ccs-12km_20procs_030_grid.nc into (4,5)
+[INFO] Partitioning /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_20procs_030_20240101-20240110/input/input_datasets/cson_roms-marbl_v0.1_ccs-12km_20procs_030_initial_conditions.nc into (4,5)
+[INFO] Partitioning /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_20procs_030_20240101-20240110/input/input_datasets/cson_roms-marbl_v0.1_ccs-12km_20procs_030_tidal.nc into (4,5)
+[INFO] Partitioning /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_20procs_030_20240101-20240110/input/input_datasets/cson_roms-marbl_v0.1_ccs-12km_20procs_030_river.nc into (4,5)
+[INFO] Partitioning /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_20procs_030_20240101-20240110/input/input_datasets/cson_roms-marbl_v0.1_ccs-12km_20procs_030_boundary-physics_202401.nc into (4,5)
+[INFO] Partitioning /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_20procs_030_20240101-20240110/input/input_datasets/cson_roms-marbl_v0.1_ccs-12km_20procs_030_boundary-bgc_clim.nc into (4,5)
+[INFO] Partitioning /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_20procs_030_20240101-20240110/input/input_datasets/cson_roms-marbl_v0.1_ccs-12km_20procs_030_surface-physics_202401.nc into (4,5)
+[INFO] Partitioning /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_20procs_030_20240101-20240110/input/input_datasets/cson_roms-marbl_v0.1_ccs-12km_20procs_030_surface-bgc_clim.nc into (4,5)
+
+✓ Successfully completed domain: ccs-12km_20procs
+
+--------------------------------------------------------------------------------
+[3/5] Processing domain: ccs-12km_280procs
+--------------------------------------------------------------------------------
+✔️  Using existing GLORYS_REGIONAL file for 2024-01-01: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240101.nc
+✔️  Using existing GLORYS_REGIONAL file for 2024-01-02: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240102.nc
+✔️  Using existing GLORYS_REGIONAL file for 2024-01-03: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240103.nc
+✔️  Using existing GLORYS_REGIONAL file for 2024-01-04: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240104.nc
+✔️  Using existing GLORYS_REGIONAL file for 2024-01-05: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240105.nc
+✔️  Using existing GLORYS_REGIONAL file for 2024-01-06: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240106.nc
+✔️  Using existing GLORYS_REGIONAL file for 2024-01-07: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240107.nc
+✔️  Using existing GLORYS_REGIONAL file for 2024-01-08: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240108.nc
+✔️  Using existing GLORYS_REGIONAL file for 2024-01-09: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240109.nc
+✔️  Using existing GLORYS_REGIONAL file for 2024-01-10: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240110.nc
+✔️  TPXO dataset verified at: /anvil/projects/x-ees250129/cson-forge-data/source-data/TPXO/TPXO10.v2
+✔️  Using existing BGC dataset: /anvil/projects/x-ees250129/cson-forge-data/source-data/UNIFIED_BGC/BGCdataset.nc
+ℹ️  Using existing blueprint from file: B_cson_roms-marbl_v0.1_ccs-12km_280procs_030_postconfig.yml
+[INFO] 🛠️ Configuring ROMSSimulation
+[INFO] 🔧 Setting up ROMSExternalCodeBase...
+[INFO] 🔧 Setting up MARBLExternalCodeBase...
+[INFO] 📦 Fetching compile-time code...
+[INFO] 📦 Fetching runtime code... 
+[INFO] 📦 Fetching input datasets...
+[INFO] Partitioning /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_280procs_030_20240101-20240110/input/input_datasets/cson_roms-marbl_v0.1_ccs-12km_280procs_030_grid.nc into (14,20)
+[INFO] Partitioning /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_280procs_030_20240101-20240110/input/input_datasets/cson_roms-marbl_v0.1_ccs-12km_280procs_030_initial_conditions.nc into (14,20)
+[INFO] Partitioning /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_280procs_030_20240101-20240110/input/input_datasets/cson_roms-marbl_v0.1_ccs-12km_280procs_030_tidal.nc into (14,20)
+[INFO] Partitioning /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_280procs_030_20240101-20240110/input/input_datasets/cson_roms-marbl_v0.1_ccs-12km_280procs_030_river.nc into (14,20)
+[INFO] Partitioning /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_280procs_030_20240101-20240110/input/input_datasets/cson_roms-marbl_v0.1_ccs-12km_280procs_030_boundary-physics_202401.nc into (14,20)
+[INFO] Partitioning /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_280procs_030_20240101-20240110/input/input_datasets/cson_roms-marbl_v0.1_ccs-12km_280procs_030_boundary-bgc_clim.nc into (14,20)
+[INFO] Partitioning /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_280procs_030_20240101-20240110/input/input_datasets/cson_roms-marbl_v0.1_ccs-12km_280procs_030_surface-physics_202401.nc into (14,20)
+[INFO] Partitioning /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_280procs_030_20240101-20240110/input/input_datasets/cson_roms-marbl_v0.1_ccs-12km_280procs_030_surface-bgc_clim.nc into (14,20)
+
+✓ Successfully completed domain: ccs-12km_280procs
+
+--------------------------------------------------------------------------------
+[4/5] Processing domain: ccs-12km_352procs
+--------------------------------------------------------------------------------
+✔️  Using existing GLORYS_REGIONAL file for 2024-01-01: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240101.nc
+✔️  Using existing GLORYS_REGIONAL file for 2024-01-02: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240102.nc
+✔️  Using existing GLORYS_REGIONAL file for 2024-01-03: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240103.nc
+✔️  Using existing GLORYS_REGIONAL file for 2024-01-04: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240104.nc
+✔️  Using existing GLORYS_REGIONAL file for 2024-01-05: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240105.nc
+✔️  Using existing GLORYS_REGIONAL file for 2024-01-06: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240106.nc
+✔️  Using existing GLORYS_REGIONAL file for 2024-01-07: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240107.nc
+✔️  Using existing GLORYS_REGIONAL file for 2024-01-08: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240108.nc
+✔️  Using existing GLORYS_REGIONAL file for 2024-01-09: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240109.nc
+✔️  Using existing GLORYS_REGIONAL file for 2024-01-10: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240110.nc
+✔️  TPXO dataset verified at: /anvil/projects/x-ees250129/cson-forge-data/source-data/TPXO/TPXO10.v2
+✔️  Using existing BGC dataset: /anvil/projects/x-ees250129/cson-forge-data/source-data/UNIFIED_BGC/BGCdataset.nc
+ℹ️  Using existing blueprint from file: B_cson_roms-marbl_v0.1_ccs-12km_352procs_030_postconfig.yml
+[INFO] 🛠️ Configuring ROMSSimulation
+[INFO] 🔧 Setting up ROMSExternalCodeBase...
+[INFO] 🔧 Setting up MARBLExternalCodeBase...
+[INFO] 📦 Fetching compile-time code...
+[INFO] 📦 Fetching runtime code... 
+[INFO] 📦 Fetching input datasets...
+[INFO] Partitioning /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_352procs_030_20240101-20240110/input/input_datasets/cson_roms-marbl_v0.1_ccs-12km_352procs_030_grid.nc into (16,22)
+[INFO] Partitioning /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_352procs_030_20240101-20240110/input/input_datasets/cson_roms-marbl_v0.1_ccs-12km_352procs_030_initial_conditions.nc into (16,22)
+[INFO] Partitioning /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_352procs_030_20240101-20240110/input/input_datasets/cson_roms-marbl_v0.1_ccs-12km_352procs_030_tidal.nc into (16,22)
+[INFO] Partitioning /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_352procs_030_20240101-20240110/input/input_datasets/cson_roms-marbl_v0.1_ccs-12km_352procs_030_river.nc into (16,22)
+[INFO] Partitioning /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_352procs_030_20240101-20240110/input/input_datasets/cson_roms-marbl_v0.1_ccs-12km_352procs_030_boundary-physics_202401.nc into (16,22)
+[INFO] Partitioning /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_352procs_030_20240101-20240110/input/input_datasets/cson_roms-marbl_v0.1_ccs-12km_352procs_030_boundary-bgc_clim.nc into (16,22)
+[INFO] Partitioning /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_352procs_030_20240101-20240110/input/input_datasets/cson_roms-marbl_v0.1_ccs-12km_352procs_030_surface-physics_202401.nc into (16,22)
+[INFO] Partitioning /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_352procs_030_20240101-20240110/input/input_datasets/cson_roms-marbl_v0.1_ccs-12km_352procs_030_surface-bgc_clim.nc into (16,22)
+
+✓ Successfully completed domain: ccs-12km_352procs
+
+--------------------------------------------------------------------------------
+[5/5] Processing domain: ccs-12km_70procs
+--------------------------------------------------------------------------------
+✔️  Using existing GLORYS_REGIONAL file for 2024-01-01: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240101.nc
+✔️  Using existing GLORYS_REGIONAL file for 2024-01-02: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240102.nc
+✔️  Using existing GLORYS_REGIONAL file for 2024-01-03: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240103.nc
+✔️  Using existing GLORYS_REGIONAL file for 2024-01-04: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240104.nc
+✔️  Using existing GLORYS_REGIONAL file for 2024-01-05: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240105.nc
+✔️  Using existing GLORYS_REGIONAL file for 2024-01-06: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240106.nc
+✔️  Using existing GLORYS_REGIONAL file for 2024-01-07: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240107.nc
+✔️  Using existing GLORYS_REGIONAL file for 2024-01-08: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240108.nc
+✔️  Using existing GLORYS_REGIONAL file for 2024-01-09: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240109.nc
+✔️  Using existing GLORYS_REGIONAL file for 2024-01-10: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240110.nc
+✔️  TPXO dataset verified at: /anvil/projects/x-ees250129/cson-forge-data/source-data/TPXO/TPXO10.v2
+✔️  Using existing BGC dataset: /anvil/projects/x-ees250129/cson-forge-data/source-data/UNIFIED_BGC/BGCdataset.nc
+ℹ️  Using existing blueprint from file: B_cson_roms-marbl_v0.1_ccs-12km_70procs_030_postconfig.yml
+[INFO] 🛠️ Configuring ROMSSimulation
+[INFO] 🔧 Setting up ROMSExternalCodeBase...
+[INFO] 🔧 Setting up MARBLExternalCodeBase...
+[INFO] 📦 Fetching compile-time code...
+[INFO] 📦 Fetching runtime code... 
+[INFO] 📦 Fetching input datasets...
+[INFO] Partitioning /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_70procs_030_20240101-20240110/input/input_datasets/cson_roms-marbl_v0.1_ccs-12km_70procs_030_grid.nc into (7,10)
+[INFO] Partitioning /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_70procs_030_20240101-20240110/input/input_datasets/cson_roms-marbl_v0.1_ccs-12km_70procs_030_initial_conditions.nc into (7,10)
+[INFO] Partitioning /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_70procs_030_20240101-20240110/input/input_datasets/cson_roms-marbl_v0.1_ccs-12km_70procs_030_tidal.nc into (7,10)
+[INFO] Partitioning /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_70procs_030_20240101-20240110/input/input_datasets/cson_roms-marbl_v0.1_ccs-12km_70procs_030_river.nc into (7,10)
+[INFO] Partitioning /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_70procs_030_20240101-20240110/input/input_datasets/cson_roms-marbl_v0.1_ccs-12km_70procs_030_boundary-physics_202401.nc into (7,10)
+[INFO] Partitioning /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_70procs_030_20240101-20240110/input/input_datasets/cson_roms-marbl_v0.1_ccs-12km_70procs_030_boundary-bgc_clim.nc into (7,10)
+[INFO] Partitioning /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_70procs_030_20240101-20240110/input/input_datasets/cson_roms-marbl_v0.1_ccs-12km_70procs_030_surface-physics_202401.nc into (7,10)
+[INFO] Partitioning /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_70procs_030_20240101-20240110/input/input_datasets/cson_roms-marbl_v0.1_ccs-12km_70procs_030_surface-bgc_clim.nc into (7,10)
+
+✓ Successfully completed domain: ccs-12km_70procs
+
+================================================================================
+Completed generation for all 5 domain(s)
+================================================================================
+
+
+✓ Generated 5 domain configuration(s)
+  - ccs-12km_1232procs
+  - ccs-12km_20procs
+  - ccs-12km_280procs
+  - ccs-12km_352procs
+  - ccs-12km_70procs
+
+================================================================================
+Running all simulations...
+================================================================================
+
+--------------------------------------------------------------------------------
+[1/5] Running simulation: ccs-12km_1232procs
+--------------------------------------------------------------------------------
+[INFO] Running srun -n 1232 /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_1232procs_030_20240101-20240110/input/compile_time_code/roms /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_1232procs_030_20240101-20240110/input/runtime_code/cson_roms-marbl_v0.1_ccs-12km_1232procs_030.in
+[INFO] Submitting job: sbatch /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_1232procs_030_20240101-20240110/work/cson_roms-marbl_v0-1_ccs-12km_1232procs_030_20240101-20240110.sh
+Execution handler: <cstar.execution.scheduler_job.SlurmJob object at 0x1487f3497230>
+
+--------------------------------------------------------------------------------
+[2/5] Running simulation: ccs-12km_20procs
+--------------------------------------------------------------------------------
+[INFO] Running srun -n 20 /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_20procs_030_20240101-20240110/input/compile_time_code/roms /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_20procs_030_20240101-20240110/input/runtime_code/cson_roms-marbl_v0.1_ccs-12km_20procs_030.in
+[INFO] Submitting job: sbatch /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_20procs_030_20240101-20240110/work/cson_roms-marbl_v0-1_ccs-12km_20procs_030_20240101-20240110.sh
+Execution handler: <cstar.execution.scheduler_job.SlurmJob object at 0x1487f3274190>
+
+--------------------------------------------------------------------------------
+[3/5] Running simulation: ccs-12km_280procs
+--------------------------------------------------------------------------------
+[INFO] Running srun -n 280 /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_280procs_030_20240101-20240110/input/compile_time_code/roms /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_280procs_030_20240101-20240110/input/runtime_code/cson_roms-marbl_v0.1_ccs-12km_280procs_030.in
+[INFO] Submitting job: sbatch /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_280procs_030_20240101-20240110/work/cson_roms-marbl_v0-1_ccs-12km_280procs_030_20240101-20240110.sh
+Execution handler: <cstar.execution.scheduler_job.SlurmJob object at 0x1487bafe0690>
+
+--------------------------------------------------------------------------------
+[4/5] Running simulation: ccs-12km_352procs
+--------------------------------------------------------------------------------
+[INFO] Running srun -n 352 /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_352procs_030_20240101-20240110/input/compile_time_code/roms /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_352procs_030_20240101-20240110/input/runtime_code/cson_roms-marbl_v0.1_ccs-12km_352procs_030.in
+[INFO] Submitting job: sbatch /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_352procs_030_20240101-20240110/work/cson_roms-marbl_v0-1_ccs-12km_352procs_030_20240101-20240110.sh
+Execution handler: <cstar.execution.scheduler_job.SlurmJob object at 0x1487f34a7360>
+
+--------------------------------------------------------------------------------
+[5/5] Running simulation: ccs-12km_70procs
+--------------------------------------------------------------------------------
+[INFO] Running srun -n 70 /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_70procs_030_20240101-20240110/input/compile_time_code/roms /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_70procs_030_20240101-20240110/input/runtime_code/cson_roms-marbl_v0.1_ccs-12km_70procs_030.in
+[INFO] Submitting job: sbatch /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_70procs_030_20240101-20240110/work/cson_roms-marbl_v0-1_ccs-12km_70procs_030_20240101-20240110.sh
+Execution handler: <cstar.execution.scheduler_job.SlurmJob object at 0x1487ba95a650>
+
+================================================================================
+All simulations submitted.
+================================================================================
+
+Completed ensemble_id=30
+
+==========================================
+Running benchmark scaling for ensemble_id=40
+Current directory: /home/x-mlong/codes/cson-forge/workflows/computing-benchmarks
+==========================================
+Using domains file: /home/x-mlong/codes/cson-forge/workflows/computing-benchmarks/domains-bm-scaling.yml
+Clobber inputs: False
+Generate only: False
+Ensemble ID: 40
+
+System Configuration:
+  System ID: RCAC_anvil
+  Paths:
+    here: /home/x-mlong/codes/cson-forge/cson_forge
+    source_data: /anvil/projects/x-ees250129/cson-forge-data/source-data
+    input_data: /anvil/projects/x-ees250129/cson-forge-data/x-mlong/input-data
+    scratch: /anvil/scratch/x-mlong/cson-forge-run
+    blueprints: /home/x-mlong/codes/cson-forge/cson_forge/blueprints
+    model_configs: /home/x-mlong/codes/cson-forge/cson_forge/model-configs
+
+Initializing CstarSpecEngine with domains file: /home/x-mlong/codes/cson-forge/workflows/computing-benchmarks/domains-bm-scaling.yml
+
+================================================================================
+Generating all domain configurations...
+================================================================================
+
+================================================================================
+Starting generation for 5 domain(s)
+================================================================================
+
+
+--------------------------------------------------------------------------------
+[1/5] Processing domain: ccs-12km_1232procs
+--------------------------------------------------------------------------------
+✔️  Using existing GLORYS_REGIONAL file for 2024-01-01: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240101.nc
+✔️  Using existing GLORYS_REGIONAL file for 2024-01-02: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240102.nc
+✔️  Using existing GLORYS_REGIONAL file for 2024-01-03: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240103.nc
+✔️  Using existing GLORYS_REGIONAL file for 2024-01-04: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240104.nc
+✔️  Using existing GLORYS_REGIONAL file for 2024-01-05: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240105.nc
+✔️  Using existing GLORYS_REGIONAL file for 2024-01-06: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240106.nc
+✔️  Using existing GLORYS_REGIONAL file for 2024-01-07: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240107.nc
+✔️  Using existing GLORYS_REGIONAL file for 2024-01-08: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240108.nc
+✔️  Using existing GLORYS_REGIONAL file for 2024-01-09: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240109.nc
+✔️  Using existing GLORYS_REGIONAL file for 2024-01-10: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240110.nc
+✔️  TPXO dataset verified at: /anvil/projects/x-ees250129/cson-forge-data/source-data/TPXO/TPXO10.v2
+✔️  Using existing BGC dataset: /anvil/projects/x-ees250129/cson-forge-data/source-data/UNIFIED_BGC/BGCdataset.nc
+ℹ️  Using existing blueprint from file: B_cson_roms-marbl_v0.1_ccs-12km_1232procs_040_postconfig.yml
+[INFO] 🛠️ Configuring ROMSSimulation
+[INFO] 🔧 Setting up ROMSExternalCodeBase...
+[INFO] 🔧 Setting up MARBLExternalCodeBase...
+[INFO] 📦 Fetching compile-time code...
+[INFO] 📦 Fetching runtime code... 
+[INFO] 📦 Fetching input datasets...
+[INFO] Partitioning /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_1232procs_040_20240101-20240110/input/input_datasets/cson_roms-marbl_v0.1_ccs-12km_1232procs_040_grid.nc into (28,44)
+[INFO] Partitioning /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_1232procs_040_20240101-20240110/input/input_datasets/cson_roms-marbl_v0.1_ccs-12km_1232procs_040_initial_conditions.nc into (28,44)
+[INFO] Partitioning /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_1232procs_040_20240101-20240110/input/input_datasets/cson_roms-marbl_v0.1_ccs-12km_1232procs_040_tidal.nc into (28,44)
+[INFO] Partitioning /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_1232procs_040_20240101-20240110/input/input_datasets/cson_roms-marbl_v0.1_ccs-12km_1232procs_040_river.nc into (28,44)
+[INFO] Partitioning /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_1232procs_040_20240101-20240110/input/input_datasets/cson_roms-marbl_v0.1_ccs-12km_1232procs_040_boundary-physics_202401.nc into (28,44)
+[INFO] Partitioning /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_1232procs_040_20240101-20240110/input/input_datasets/cson_roms-marbl_v0.1_ccs-12km_1232procs_040_boundary-bgc_clim.nc into (28,44)
+[INFO] Partitioning /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_1232procs_040_20240101-20240110/input/input_datasets/cson_roms-marbl_v0.1_ccs-12km_1232procs_040_surface-physics_202401.nc into (28,44)
+[INFO] Partitioning /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_1232procs_040_20240101-20240110/input/input_datasets/cson_roms-marbl_v0.1_ccs-12km_1232procs_040_surface-bgc_clim.nc into (28,44)
+
+✓ Successfully completed domain: ccs-12km_1232procs
+
+--------------------------------------------------------------------------------
+[2/5] Processing domain: ccs-12km_20procs
+--------------------------------------------------------------------------------
+✔️  Using existing GLORYS_REGIONAL file for 2024-01-01: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240101.nc
+✔️  Using existing GLORYS_REGIONAL file for 2024-01-02: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240102.nc
+✔️  Using existing GLORYS_REGIONAL file for 2024-01-03: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240103.nc
+✔️  Using existing GLORYS_REGIONAL file for 2024-01-04: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240104.nc
+✔️  Using existing GLORYS_REGIONAL file for 2024-01-05: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240105.nc
+✔️  Using existing GLORYS_REGIONAL file for 2024-01-06: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240106.nc
+✔️  Using existing GLORYS_REGIONAL file for 2024-01-07: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240107.nc
+✔️  Using existing GLORYS_REGIONAL file for 2024-01-08: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240108.nc
+✔️  Using existing GLORYS_REGIONAL file for 2024-01-09: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240109.nc
+✔️  Using existing GLORYS_REGIONAL file for 2024-01-10: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240110.nc
+✔️  TPXO dataset verified at: /anvil/projects/x-ees250129/cson-forge-data/source-data/TPXO/TPXO10.v2
+✔️  Using existing BGC dataset: /anvil/projects/x-ees250129/cson-forge-data/source-data/UNIFIED_BGC/BGCdataset.nc
+ℹ️  Using existing blueprint from file: B_cson_roms-marbl_v0.1_ccs-12km_20procs_040_postconfig.yml
+[INFO] 🛠️ Configuring ROMSSimulation
+[INFO] 🔧 Setting up ROMSExternalCodeBase...
+[INFO] 🔧 Setting up MARBLExternalCodeBase...
+[INFO] 📦 Fetching compile-time code...
+[INFO] 📦 Fetching runtime code... 
+[INFO] 📦 Fetching input datasets...
+[INFO] Partitioning /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_20procs_040_20240101-20240110/input/input_datasets/cson_roms-marbl_v0.1_ccs-12km_20procs_040_grid.nc into (4,5)
+[INFO] Partitioning /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_20procs_040_20240101-20240110/input/input_datasets/cson_roms-marbl_v0.1_ccs-12km_20procs_040_initial_conditions.nc into (4,5)
+[INFO] Partitioning /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_20procs_040_20240101-20240110/input/input_datasets/cson_roms-marbl_v0.1_ccs-12km_20procs_040_tidal.nc into (4,5)
+[INFO] Partitioning /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_20procs_040_20240101-20240110/input/input_datasets/cson_roms-marbl_v0.1_ccs-12km_20procs_040_river.nc into (4,5)
+[INFO] Partitioning /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_20procs_040_20240101-20240110/input/input_datasets/cson_roms-marbl_v0.1_ccs-12km_20procs_040_boundary-physics_202401.nc into (4,5)
+[INFO] Partitioning /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_20procs_040_20240101-20240110/input/input_datasets/cson_roms-marbl_v0.1_ccs-12km_20procs_040_boundary-bgc_clim.nc into (4,5)
+[INFO] Partitioning /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_20procs_040_20240101-20240110/input/input_datasets/cson_roms-marbl_v0.1_ccs-12km_20procs_040_surface-physics_202401.nc into (4,5)
+[INFO] Partitioning /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_20procs_040_20240101-20240110/input/input_datasets/cson_roms-marbl_v0.1_ccs-12km_20procs_040_surface-bgc_clim.nc into (4,5)
+
+✓ Successfully completed domain: ccs-12km_20procs
+
+--------------------------------------------------------------------------------
+[3/5] Processing domain: ccs-12km_280procs
+--------------------------------------------------------------------------------
+✔️  Using existing GLORYS_REGIONAL file for 2024-01-01: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240101.nc
+✔️  Using existing GLORYS_REGIONAL file for 2024-01-02: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240102.nc
+✔️  Using existing GLORYS_REGIONAL file for 2024-01-03: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240103.nc
+✔️  Using existing GLORYS_REGIONAL file for 2024-01-04: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240104.nc
+✔️  Using existing GLORYS_REGIONAL file for 2024-01-05: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240105.nc
+✔️  Using existing GLORYS_REGIONAL file for 2024-01-06: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240106.nc
+✔️  Using existing GLORYS_REGIONAL file for 2024-01-07: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240107.nc
+✔️  Using existing GLORYS_REGIONAL file for 2024-01-08: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240108.nc
+✔️  Using existing GLORYS_REGIONAL file for 2024-01-09: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240109.nc
+✔️  Using existing GLORYS_REGIONAL file for 2024-01-10: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240110.nc
+✔️  TPXO dataset verified at: /anvil/projects/x-ees250129/cson-forge-data/source-data/TPXO/TPXO10.v2
+✔️  Using existing BGC dataset: /anvil/projects/x-ees250129/cson-forge-data/source-data/UNIFIED_BGC/BGCdataset.nc
+ℹ️  Using existing blueprint from file: B_cson_roms-marbl_v0.1_ccs-12km_280procs_040_postconfig.yml
+[INFO] 🛠️ Configuring ROMSSimulation
+[INFO] 🔧 Setting up ROMSExternalCodeBase...
+[INFO] 🔧 Setting up MARBLExternalCodeBase...
+[INFO] 📦 Fetching compile-time code...
+[INFO] 📦 Fetching runtime code... 
+[INFO] 📦 Fetching input datasets...
+[INFO] Partitioning /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_280procs_040_20240101-20240110/input/input_datasets/cson_roms-marbl_v0.1_ccs-12km_280procs_040_grid.nc into (14,20)
+[INFO] Partitioning /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_280procs_040_20240101-20240110/input/input_datasets/cson_roms-marbl_v0.1_ccs-12km_280procs_040_initial_conditions.nc into (14,20)
+[INFO] Partitioning /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_280procs_040_20240101-20240110/input/input_datasets/cson_roms-marbl_v0.1_ccs-12km_280procs_040_tidal.nc into (14,20)
+[INFO] Partitioning /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_280procs_040_20240101-20240110/input/input_datasets/cson_roms-marbl_v0.1_ccs-12km_280procs_040_river.nc into (14,20)
+[INFO] Partitioning /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_280procs_040_20240101-20240110/input/input_datasets/cson_roms-marbl_v0.1_ccs-12km_280procs_040_boundary-physics_202401.nc into (14,20)
+[INFO] Partitioning /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_280procs_040_20240101-20240110/input/input_datasets/cson_roms-marbl_v0.1_ccs-12km_280procs_040_boundary-bgc_clim.nc into (14,20)
+[INFO] Partitioning /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_280procs_040_20240101-20240110/input/input_datasets/cson_roms-marbl_v0.1_ccs-12km_280procs_040_surface-physics_202401.nc into (14,20)
+[INFO] Partitioning /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_280procs_040_20240101-20240110/input/input_datasets/cson_roms-marbl_v0.1_ccs-12km_280procs_040_surface-bgc_clim.nc into (14,20)
+
+✓ Successfully completed domain: ccs-12km_280procs
+
+--------------------------------------------------------------------------------
+[4/5] Processing domain: ccs-12km_352procs
+--------------------------------------------------------------------------------
+✔️  Using existing GLORYS_REGIONAL file for 2024-01-01: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240101.nc
+✔️  Using existing GLORYS_REGIONAL file for 2024-01-02: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240102.nc
+✔️  Using existing GLORYS_REGIONAL file for 2024-01-03: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240103.nc
+✔️  Using existing GLORYS_REGIONAL file for 2024-01-04: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240104.nc
+✔️  Using existing GLORYS_REGIONAL file for 2024-01-05: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240105.nc
+✔️  Using existing GLORYS_REGIONAL file for 2024-01-06: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240106.nc
+✔️  Using existing GLORYS_REGIONAL file for 2024-01-07: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240107.nc
+✔️  Using existing GLORYS_REGIONAL file for 2024-01-08: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240108.nc
+✔️  Using existing GLORYS_REGIONAL file for 2024-01-09: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240109.nc
+✔️  Using existing GLORYS_REGIONAL file for 2024-01-10: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240110.nc
+✔️  TPXO dataset verified at: /anvil/projects/x-ees250129/cson-forge-data/source-data/TPXO/TPXO10.v2
+✔️  Using existing BGC dataset: /anvil/projects/x-ees250129/cson-forge-data/source-data/UNIFIED_BGC/BGCdataset.nc
+ℹ️  Using existing blueprint from file: B_cson_roms-marbl_v0.1_ccs-12km_352procs_040_postconfig.yml
+[INFO] 🛠️ Configuring ROMSSimulation
+[INFO] 🔧 Setting up ROMSExternalCodeBase...
+[INFO] 🔧 Setting up MARBLExternalCodeBase...
+[INFO] 📦 Fetching compile-time code...
+[INFO] 📦 Fetching runtime code... 
+[INFO] 📦 Fetching input datasets...
+[INFO] Partitioning /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_352procs_040_20240101-20240110/input/input_datasets/cson_roms-marbl_v0.1_ccs-12km_352procs_040_grid.nc into (16,22)
+[INFO] Partitioning /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_352procs_040_20240101-20240110/input/input_datasets/cson_roms-marbl_v0.1_ccs-12km_352procs_040_initial_conditions.nc into (16,22)
+[INFO] Partitioning /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_352procs_040_20240101-20240110/input/input_datasets/cson_roms-marbl_v0.1_ccs-12km_352procs_040_tidal.nc into (16,22)
+[INFO] Partitioning /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_352procs_040_20240101-20240110/input/input_datasets/cson_roms-marbl_v0.1_ccs-12km_352procs_040_river.nc into (16,22)
+[INFO] Partitioning /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_352procs_040_20240101-20240110/input/input_datasets/cson_roms-marbl_v0.1_ccs-12km_352procs_040_boundary-physics_202401.nc into (16,22)
+[INFO] Partitioning /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_352procs_040_20240101-20240110/input/input_datasets/cson_roms-marbl_v0.1_ccs-12km_352procs_040_boundary-bgc_clim.nc into (16,22)
+[INFO] Partitioning /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_352procs_040_20240101-20240110/input/input_datasets/cson_roms-marbl_v0.1_ccs-12km_352procs_040_surface-physics_202401.nc into (16,22)
+[INFO] Partitioning /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_352procs_040_20240101-20240110/input/input_datasets/cson_roms-marbl_v0.1_ccs-12km_352procs_040_surface-bgc_clim.nc into (16,22)
+
+✓ Successfully completed domain: ccs-12km_352procs
+
+--------------------------------------------------------------------------------
+[5/5] Processing domain: ccs-12km_70procs
+--------------------------------------------------------------------------------
+✔️  Using existing GLORYS_REGIONAL file for 2024-01-01: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240101.nc
+✔️  Using existing GLORYS_REGIONAL file for 2024-01-02: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240102.nc
+✔️  Using existing GLORYS_REGIONAL file for 2024-01-03: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240103.nc
+✔️  Using existing GLORYS_REGIONAL file for 2024-01-04: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240104.nc
+✔️  Using existing GLORYS_REGIONAL file for 2024-01-05: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240105.nc
+✔️  Using existing GLORYS_REGIONAL file for 2024-01-06: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240106.nc
+✔️  Using existing GLORYS_REGIONAL file for 2024-01-07: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240107.nc
+✔️  Using existing GLORYS_REGIONAL file for 2024-01-08: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240108.nc
+✔️  Using existing GLORYS_REGIONAL file for 2024-01-09: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240109.nc
+✔️  Using existing GLORYS_REGIONAL file for 2024-01-10: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240110.nc
+✔️  TPXO dataset verified at: /anvil/projects/x-ees250129/cson-forge-data/source-data/TPXO/TPXO10.v2
+✔️  Using existing BGC dataset: /anvil/projects/x-ees250129/cson-forge-data/source-data/UNIFIED_BGC/BGCdataset.nc
+ℹ️  Using existing blueprint from file: B_cson_roms-marbl_v0.1_ccs-12km_70procs_040_postconfig.yml
+[INFO] 🛠️ Configuring ROMSSimulation
+[INFO] 🔧 Setting up ROMSExternalCodeBase...
+[INFO] 🔧 Setting up MARBLExternalCodeBase...
+[INFO] 📦 Fetching compile-time code...
+[INFO] 📦 Fetching runtime code... 
+[INFO] 📦 Fetching input datasets...
+[INFO] Partitioning /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_70procs_040_20240101-20240110/input/input_datasets/cson_roms-marbl_v0.1_ccs-12km_70procs_040_grid.nc into (7,10)
+[INFO] Partitioning /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_70procs_040_20240101-20240110/input/input_datasets/cson_roms-marbl_v0.1_ccs-12km_70procs_040_initial_conditions.nc into (7,10)
+[INFO] Partitioning /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_70procs_040_20240101-20240110/input/input_datasets/cson_roms-marbl_v0.1_ccs-12km_70procs_040_tidal.nc into (7,10)
+[INFO] Partitioning /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_70procs_040_20240101-20240110/input/input_datasets/cson_roms-marbl_v0.1_ccs-12km_70procs_040_river.nc into (7,10)
+[INFO] Partitioning /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_70procs_040_20240101-20240110/input/input_datasets/cson_roms-marbl_v0.1_ccs-12km_70procs_040_boundary-physics_202401.nc into (7,10)
+[INFO] Partitioning /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_70procs_040_20240101-20240110/input/input_datasets/cson_roms-marbl_v0.1_ccs-12km_70procs_040_boundary-bgc_clim.nc into (7,10)
+[INFO] Partitioning /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_70procs_040_20240101-20240110/input/input_datasets/cson_roms-marbl_v0.1_ccs-12km_70procs_040_surface-physics_202401.nc into (7,10)
+[INFO] Partitioning /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_70procs_040_20240101-20240110/input/input_datasets/cson_roms-marbl_v0.1_ccs-12km_70procs_040_surface-bgc_clim.nc into (7,10)
+
+✓ Successfully completed domain: ccs-12km_70procs
+
+================================================================================
+Completed generation for all 5 domain(s)
+================================================================================
+
+
+✓ Generated 5 domain configuration(s)
+  - ccs-12km_1232procs
+  - ccs-12km_20procs
+  - ccs-12km_280procs
+  - ccs-12km_352procs
+  - ccs-12km_70procs
+
+================================================================================
+Running all simulations...
+================================================================================
+
+--------------------------------------------------------------------------------
+[1/5] Running simulation: ccs-12km_1232procs
+--------------------------------------------------------------------------------
+[INFO] Running srun -n 1232 /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_1232procs_040_20240101-20240110/input/compile_time_code/roms /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_1232procs_040_20240101-20240110/input/runtime_code/cson_roms-marbl_v0.1_ccs-12km_1232procs_040.in
+[INFO] Submitting job: sbatch /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_1232procs_040_20240101-20240110/work/cson_roms-marbl_v0-1_ccs-12km_1232procs_040_20240101-20240110.sh
+Execution handler: <cstar.execution.scheduler_job.SlurmJob object at 0x1468df30b230>
+
+--------------------------------------------------------------------------------
+[2/5] Running simulation: ccs-12km_20procs
+--------------------------------------------------------------------------------
+[INFO] Running srun -n 20 /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_20procs_040_20240101-20240110/input/compile_time_code/roms /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_20procs_040_20240101-20240110/input/runtime_code/cson_roms-marbl_v0.1_ccs-12km_20procs_040.in
+[INFO] Submitting job: sbatch /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_20procs_040_20240101-20240110/work/cson_roms-marbl_v0-1_ccs-12km_20procs_040_20240101-20240110.sh
+Execution handler: <cstar.execution.scheduler_job.SlurmJob object at 0x1468df0e8190>
+
+--------------------------------------------------------------------------------
+[3/5] Running simulation: ccs-12km_280procs
+--------------------------------------------------------------------------------
+[INFO] Running srun -n 280 /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_280procs_040_20240101-20240110/input/compile_time_code/roms /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_280procs_040_20240101-20240110/input/runtime_code/cson_roms-marbl_v0.1_ccs-12km_280procs_040.in
+[INFO] Submitting job: sbatch /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_280procs_040_20240101-20240110/work/cson_roms-marbl_v0-1_ccs-12km_280procs_040_20240101-20240110.sh
+Execution handler: <cstar.execution.scheduler_job.SlurmJob object at 0x14687377c690>
+
+--------------------------------------------------------------------------------
+[4/5] Running simulation: ccs-12km_352procs
+--------------------------------------------------------------------------------
+[INFO] Running srun -n 352 /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_352procs_040_20240101-20240110/input/compile_time_code/roms /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_352procs_040_20240101-20240110/input/runtime_code/cson_roms-marbl_v0.1_ccs-12km_352procs_040.in
+[INFO] Submitting job: sbatch /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_352procs_040_20240101-20240110/work/cson_roms-marbl_v0-1_ccs-12km_352procs_040_20240101-20240110.sh
+Execution handler: <cstar.execution.scheduler_job.SlurmJob object at 0x1468df31f360>
+
+--------------------------------------------------------------------------------
+[5/5] Running simulation: ccs-12km_70procs
+--------------------------------------------------------------------------------
+[INFO] Running srun -n 70 /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_70procs_040_20240101-20240110/input/compile_time_code/roms /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_70procs_040_20240101-20240110/input/runtime_code/cson_roms-marbl_v0.1_ccs-12km_70procs_040.in
+[INFO] Submitting job: sbatch /anvil/scratch/x-mlong/cson-forge-run/cson_roms-marbl_v0.1_ccs-12km_70procs_040_20240101-20240110/work/cson_roms-marbl_v0-1_ccs-12km_70procs_040_20240101-20240110.sh
+Execution handler: <cstar.execution.scheduler_job.SlurmJob object at 0x14686b65a650>
+
+================================================================================
+All simulations submitted.
+================================================================================
+
+Completed ensemble_id=40
+
+==========================================
+All ensemble runs completed
+==========================================

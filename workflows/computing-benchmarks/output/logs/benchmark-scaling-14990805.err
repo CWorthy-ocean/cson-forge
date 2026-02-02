@@ -1,0 +1,42 @@
+/home/x-mlong/.conda/envs/cson-forge-v0/lib/python3.13/site-packages/dask/array/reductions.py:292: RuntimeWarning: All-NaN slice encountered
+  return np.nanmin(x_chunk, axis=axis, keepdims=keepdims)
+[WARNING] The northern boundary is divided by land. It would be safer (but slower and more memory-intensive) to use `apply_2d_horizontal_fill = True`.
+[WARNING] No records found at or after the end_time: 2024-01-10 00:00:00.
+[WARNING] The northern boundary is divided by land. It would be safer (but slower and more memory-intensive) to use `apply_2d_horizontal_fill = True`.
+[WARNING] No records found at or after the end_time: 2024-01-10 00:00:00.
+[WARNING] The northern boundary is divided by land. It would be safer (but slower and more memory-intensive) to use `apply_2d_horizontal_fill = True`.
+[WARNING] No records found at or after the end_time: 2024-01-10 00:00:00.
+[WARNING] The northern boundary is divided by land. It would be safer (but slower and more memory-intensive) to use `apply_2d_horizontal_fill = True`.
+[WARNING] No records found at or after the end_time: 2024-01-10 00:00:00.
+[WARNING] The northern boundary is divided by land. It would be safer (but slower and more memory-intensive) to use `apply_2d_horizontal_fill = True`.
+[WARNING] No records found at or after the end_time: 2024-01-10 00:00:00.
+[WARNING] The northern boundary is divided by land. It would be safer (but slower and more memory-intensive) to use `apply_2d_horizontal_fill = True`.
+[WARNING] No records found at or after the end_time: 2024-01-10 00:00:00.
+[WARNING] The northern boundary is divided by land. It would be safer (but slower and more memory-intensive) to use `apply_2d_horizontal_fill = True`.
+[WARNING] No records found at or after the end_time: 2024-01-10 00:00:00.
+[WARNING] The northern boundary is divided by land. It would be safer (but slower and more memory-intensive) to use `apply_2d_horizontal_fill = True`.
+[WARNING] No records found at or after the end_time: 2024-01-10 00:00:00.
+[WARNING] The northern boundary is divided by land. It would be safer (but slower and more memory-intensive) to use `apply_2d_horizontal_fill = True`.
+[WARNING] No records found at or after the end_time: 2024-01-10 00:00:00.
+[WARNING] The northern boundary is divided by land. It would be safer (but slower and more memory-intensive) to use `apply_2d_horizontal_fill = True`.
+[WARNING] No records found at or after the end_time: 2024-01-10 00:00:00.
+[WARNING] The northern boundary is divided by land. It would be safer (but slower and more memory-intensive) to use `apply_2d_horizontal_fill = True`.
+[WARNING] No records found at or after the end_time: 2024-01-10 00:00:00.
+[WARNING] The northern boundary is divided by land. It would be safer (but slower and more memory-intensive) to use `apply_2d_horizontal_fill = True`.
+[WARNING] No records found at or after the end_time: 2024-01-10 00:00:00.
+[WARNING] The northern boundary is divided by land. It would be safer (but slower and more memory-intensive) to use `apply_2d_horizontal_fill = True`.
+[WARNING] No records found at or after the end_time: 2024-01-10 00:00:00.
+[WARNING] The northern boundary is divided by land. It would be safer (but slower and more memory-intensive) to use `apply_2d_horizontal_fill = True`.
+[WARNING] No records found at or after the end_time: 2024-01-10 00:00:00.
+[WARNING] The northern boundary is divided by land. It would be safer (but slower and more memory-intensive) to use `apply_2d_horizontal_fill = True`.
+[WARNING] No records found at or after the end_time: 2024-01-10 00:00:00.
+[WARNING] The northern boundary is divided by land. It would be safer (but slower and more memory-intensive) to use `apply_2d_horizontal_fill = True`.
+[WARNING] No records found at or after the end_time: 2024-01-10 00:00:00.
+[WARNING] The northern boundary is divided by land. It would be safer (but slower and more memory-intensive) to use `apply_2d_horizontal_fill = True`.
+[WARNING] No records found at or after the end_time: 2024-01-10 00:00:00.
+[WARNING] The northern boundary is divided by land. It would be safer (but slower and more memory-intensive) to use `apply_2d_horizontal_fill = True`.
+[WARNING] No records found at or after the end_time: 2024-01-10 00:00:00.
+[WARNING] The northern boundary is divided by land. It would be safer (but slower and more memory-intensive) to use `apply_2d_horizontal_fill = True`.
+[WARNING] No records found at or after the end_time: 2024-01-10 00:00:00.
+[WARNING] The northern boundary is divided by land. It would be safer (but slower and more memory-intensive) to use `apply_2d_horizontal_fill = True`.
+[WARNING] No records found at or after the end_time: 2024-01-10 00:00:00.
