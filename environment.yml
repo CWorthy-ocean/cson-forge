@@ -46,4 +46,4 @@ dependencies:
     # roms-tools from GitHub: use branch (e.g. @main) or commit hash (e.g. @abc123f)
     - git+https://github.com/CWorthy-ocean/roms-tools.git@02d3b25
     # cstar-ocean from GitHub: use branch (e.g. @main) or commit hash (e.g. @abc123f)    
-    - git+https://github.com/matt-long/C-Star.git@90af620
+    - git+https://github.com/CWorthy-ocean/C-Star.git@37cfccc
