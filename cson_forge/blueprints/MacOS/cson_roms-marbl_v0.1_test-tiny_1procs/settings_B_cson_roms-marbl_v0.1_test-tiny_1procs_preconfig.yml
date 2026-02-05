@@ -142,8 +142,8 @@ run_time:
     title:
       casename: cson_roms-marbl_v0.1_test-tiny_1procs_20120101-20120102
     time_stepping:
-      ntimes: 48
-      dt: 1800
+      ntimes: 4800
+      dt: 18
       ndtfast: 60
       ninfo: 1
     s_coord:
