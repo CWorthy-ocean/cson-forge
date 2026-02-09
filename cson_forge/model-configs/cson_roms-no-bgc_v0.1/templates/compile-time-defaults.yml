@@ -11,7 +11,7 @@ cppdefs:
   obc_north: true
   obc_south: true
   marbl: false
-  
+
 param:
   LLm: 512
   MMm: 512
@@ -28,7 +28,7 @@ ocean_vars:
   output_period_rst: 43200  # 12*3600 seconds
   monthly_restarts: false
   nrpf_rst: 2
-  wrt_file_his: true
+  wrt_file_his: false
   output_period_his: 86400  # 24*3600 seconds
   nrpf_his: 7
   wrt_Z: true
@@ -80,7 +80,7 @@ tides:
   pot_tides: true
   ana_tides: false
 
-river_frc: 
+river_frc:
   river_source: false
   analytical: false
   nriv: 0
@@ -104,7 +104,7 @@ tracers:
 
 cdr_frc:
   cdr_source: false
-  cdr_volume: true
+  cdr_volume: false
   cdr_analytical: false
   ncdr: 1
   cdr_file: 'cdr_forcing.nc'
@@ -132,6 +132,6 @@ sponge_tune:
   ub_tune: false
   spn_avg: true
   sp_timscale: 86400  # 24*3600 seconds
-  wrt_sponge: true
+  wrt_sponge: false
   nrpf: 7
   output_period: 86400  # 24*3600 seconds

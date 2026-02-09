@@ -2,13 +2,13 @@
 # This file contains default values for all template parameters
 
 bgc:
-  wrt_his: true
+  wrt_his: false
   output_period_his: 86400  # 3600*24 seconds
   nrpf_his: 7
   wrt_avg: false
   output_period_avg: 86400  # 60*60*24 seconds
   nrpf_avg: 7
-  wrt_his_dia: true
+  wrt_his_dia: false
   output_period_his_dia: 86400  # 60*60*24 seconds
   nrpf_his_dia: 7
   wrt_avg_dia: false
@@ -27,7 +27,7 @@ cppdefs:
   obc_north: true
   obc_south: true
   marbl: true
-  
+
 param:
   LLm: 512
   MMm: 512
@@ -44,7 +44,7 @@ ocean_vars:
   output_period_rst: 43200  # 12*3600 seconds
   monthly_restarts: false
   nrpf_rst: 2
-  wrt_file_his: true
+  wrt_file_his: false
   output_period_his: 86400  # 24*3600 seconds
   nrpf_his: 7
   wrt_Z: true
@@ -96,7 +96,7 @@ tides:
   pot_tides: true
   ana_tides: false
 
-river_frc: 
+river_frc:
   river_source: false
   analytical: false
   nriv: 0
@@ -120,7 +120,7 @@ tracers:
 
 cdr_frc:
   cdr_source: false
-  cdr_volume: true
+  cdr_volume: false
   cdr_analytical: false
   ncdr: 1
   cdr_file: 'cdr_forcing.nc'
@@ -148,6 +148,6 @@ sponge_tune:
   ub_tune: false
   spn_avg: true
   sp_timscale: 86400  # 24*3600 seconds
-  wrt_sponge: true
+  wrt_sponge: false
   nrpf: 7
   output_period: 86400  # 24*3600 seconds
