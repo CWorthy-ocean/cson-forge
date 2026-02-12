@@ -161,11 +161,11 @@ class RomsMarblInputData(InputData):
     
     model_spec: cson_models.ModelSpec
     grid: rt.Grid
-    grid_child: Optional[rt.Grid] = None
     boundaries: cson_models.OpenBoundaries
     source_data: source_data.SourceData
     blueprint_dir: Path
     partitioning: cstar_models.PartitioningParameterSet
+    grid_child: Optional[rt.Grid] = None
     use_dask: bool = True
    
     # Blueprint elements containing input data

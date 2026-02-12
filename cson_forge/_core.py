@@ -180,6 +180,18 @@ class CstarSpecBuilder(BaseModel):
         validate_default=False,
         exclude=True
     )
+    grid_parent: Optional[rt.Grid] = Field(
+        default=None,
+        init=False,
+        validate_default=False,
+        exclude=True
+    )
+    grid_child: Optional[rt.ChildGrid] = Field(
+        default=None,
+        init=False,
+        validate_default=False,
+        exclude=True
+    )
     _model_spec: Optional[cson_models.ModelSpec] = PrivateAttr(default=None)
     _datasets: Optional[Dict[str, Union[xr.Dataset, List[xr.Dataset]]]] = PrivateAttr(default=None)
     _stage: Optional[str] = PrivateAttr(default=None)
@@ -209,12 +221,14 @@ class CstarSpecBuilder(BaseModel):
         """
         # Create grid
         self.grid_parent = rt.Grid(**self.grid_kwargs_parent) if self.grid_kwargs_parent is not None else None
-        self.grid_child = rt.Grid(**self.grid_kwargs_child) if self.grid_kwargs_child is not None else None
-        
         if self.grid_parent is not None:
             self.grid_kwargs["parent_grid"] = self.grid_parent
-        self.grid = rt.Grid(**self.grid_kwargs)
+            self.grid = rt.ChildGrid(**self.grid_kwargs)
+        else:
+            self.grid = rt.Grid(**self.grid_kwargs)
 
+        self.grid_child = rt.ChildGrid(**self.grid_kwargs_child) if self.grid_kwargs_child is not None else None
+        
         # Initialize blueprint with basic structure
         self._initialize_blueprint()
 
@@ -2384,6 +2398,17 @@ class CstarSpecEngine:
         if ensemble_id is not None:
             config_dict["ensemble_id"] = ensemble_id
         
+
+        if "_parent_grid_name" in config_dict:
+            parent_grid_config = self._get_domain_config(config_dict["_parent_grid_name"]).copy()
+            config_dict["grid_kwargs_parent"] = parent_grid_config["grid_kwargs"]
+            config_dict.pop("_parent_grid_name", None)
+
+        if "_child_grid_name" in config_dict:
+            child_grid_config = self._get_domain_config(config_dict["_child_grid_name"]).copy()
+            config_dict["grid_kwargs_child"] = child_grid_config["grid_kwargs"]
+            config_dict.pop("_child_grid_name", None)
+
         # Apply overrides if provided
         if overrides:
             config_dict.update(overrides)
@@ -2403,7 +2428,8 @@ class CstarSpecEngine:
         # Convert partitioning dict to PartitioningParameterSet
         if "partitioning" in config_dict:
             config_dict["partitioning"] = cstar_models.PartitioningParameterSet(**config_dict["partitioning"])
-        
+
+
         # Create and return CstarSpecBuilder
         return CstarSpecBuilder(**config_dict)
     
