@@ -45,7 +45,9 @@ dependencies:
     # roms-tools from GitHub: use branch (e.g. @main) or commit hash (e.g. @abc123f)
     - git+https://github.com/CWorthy-ocean/roms-tools.git@40b5a2ea326dc08a98ac227520e52b13aa24f615
     # cstar-ocean from GitHub: use branch (e.g. @main) or commit hash (e.g. @abc123f)    
-    - git+https://github.com/CWorthy-ocean/C-Star.git@04ed63ca499a537e96749150882abebf195298b0
+    #- git+https://github.com/CWorthy-ocean/C-Star.git@04ed63ca499a537e96749150882abebf195298b0
+    - git+https://github.com/matt-long/C-Star.git@f56f115
+ 
   - xarray>=2022.6.0,<2025.8.0
   - pooch
   - packaging

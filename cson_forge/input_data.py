@@ -7,6 +7,7 @@ the ROMS-MARBL specific implementation.
 """
 from __future__ import annotations
 
+import warnings
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Union
@@ -165,6 +166,7 @@ class RomsMarblInputData(InputData):
     source_data: source_data.SourceData
     blueprint_dir: Path
     partitioning: cstar_models.PartitioningParameterSet
+    grid_child: Optional[rt.Grid] = None
     use_dask: bool = True
    
     # Blueprint elements containing input data
@@ -387,7 +389,34 @@ class RomsMarblInputData(InputData):
         yaml_path = self._yaml_filename(key)
         
         self.grid.save(out_path)       
-        self.grid.to_yaml(yaml_path)
+
+        try:
+            self.grid.to_yaml(yaml_path)
+        except Exception as e:
+            warnings.warn(
+                f"Failed to save grid YAML to {yaml_path}: {e}",
+                UserWarning,
+                stacklevel=2,
+            )
+
+        out_path_nesting = None
+        if self.grid_child is not None:
+            out_path_child = self._forcing_filename(input_name="grid_child")
+            self.grid_child.save(out_path_child)
+            yaml_path_child = self._yaml_filename(key + "_child")
+
+            try:
+                self.grid_child.to_yaml(yaml_path_child)
+            except Exception as e:
+                warnings.warn(
+                    f"Failed to save child grid YAML to {yaml_path_child}: {e}",
+                    UserWarning,
+                    stacklevel=2,
+                )
+
+            out_path_nesting = self._forcing_filename(input_name="nesting")
+            self.grid_child.save_nesting(out_path_nesting)
+
         # Append Resource directly to blueprint_elements.grid
         resource = cstar_models.Resource(location=str(out_path), partitioned=False)
         self.blueprint_elements.grid.data.append(resource)
@@ -413,6 +442,16 @@ class RomsMarblInputData(InputData):
         self._settings_compile_time["param"]["NSUB_X"] = 1
         self._settings_compile_time["param"]["NSUB_E"] = 1
 
+        if out_path_nesting is not None:
+            if "extract_data" not in self._settings_compile_time:
+                self._settings_compile_time["extract_data"] = {}            
+            self._settings_compile_time["extract_data"]["do_extract"] = True
+            self._settings_compile_time["extract_data"]["extract_file"] = out_path_nesting
+            self._settings_compile_time["extract_data"]["N_chd"] = self.grid_child.N
+            self._settings_compile_time["extract_data"]["theta_s_chd"] = self.grid_child.theta_s
+            self._settings_compile_time["extract_data"]["theta_b_chd"] = self.grid_child.theta_b
+            self._settings_compile_time["extract_data"]["hc_chd"] = self.grid_child.hc
+
         self._settings_run_time["roms.in"]["s_coord"] = dict(
             tcline = self.grid.hc,
             theta_b = self.grid.theta_b,
@@ -431,8 +470,17 @@ class RomsMarblInputData(InputData):
         
         ic = rt.InitialConditions(grid=self.grid, **input_args)
         paths = ic.save(self._forcing_filename(input_name="initial_conditions"))
-        ic.to_yaml(yaml_path)
-        
+
+        # See here: https://github.com/CWorthy-ocean/roms-tools/issues/553
+        try:
+            ic.to_yaml(yaml_path)
+        except Exception as e:
+            warnings.warn(
+                f"Failed to save initial conditions YAML to {yaml_path}: {e}",
+                UserWarning,
+                stacklevel=2,
+            )
+
         # Append Resources directly to blueprint_elements.initial_conditions
         if isinstance(paths, (list, tuple)):
             for path in paths:
@@ -475,7 +523,15 @@ class RomsMarblInputData(InputData):
 
         frc = rt.SurfaceForcing(grid=self.grid, **input_args)
         paths = frc.save(self._forcing_filename(input_name=f"surface-{type}"))
-        frc.to_yaml(yaml_path)
+        
+        try:
+            frc.to_yaml(yaml_path)
+        except Exception as e:
+            warnings.warn(
+                f"Failed to save surface forcing YAML to {yaml_path}: {e}",
+                UserWarning,
+                stacklevel=2,
+            )            
         
         # Append Resources directly to blueprint_elements.forcing[subkey]
         if isinstance(paths, (list, tuple)):
@@ -531,6 +587,8 @@ class RomsMarblInputData(InputData):
     @register_input(name="forcing.boundary", order=40, label="Generating boundary forcing")
     def _generate_boundary_forcing(self, key: str = "forcing.boundary", **kwargs):
         """Generate boundary forcing input files."""
+        if isinstance(self.grid, rt.ChildGrid):
+            return
         # Extract subkey from "forcing.boundary" -> "boundary"
         subkey = key.split(".", 1)[1] if "." in key else key
         
@@ -557,7 +615,14 @@ class RomsMarblInputData(InputData):
        
         bry = rt.BoundaryForcing(grid=self.grid, **input_args)
         paths = bry.save(self._forcing_filename(input_name=f"boundary-{type}"))
-        bry.to_yaml(yaml_path)
+        try:
+            bry.to_yaml(yaml_path)
+        except Exception as e:
+            warnings.warn(
+                f"Failed to save boundary forcing YAML to {yaml_path}: {e}",
+                UserWarning,
+                stacklevel=2,
+            )
         # Append Resources directly to blueprint_elements.forcing[subkey]
         if isinstance(paths, (list, tuple)):
             for path in paths:
@@ -589,7 +654,16 @@ class RomsMarblInputData(InputData):
         input_args = self._build_input_args(key, extra=extra, base_kwargs=kwargs)
         tidal = rt.TidalForcing(grid=self.grid, **input_args)
         paths = tidal.save(self._forcing_filename(subkey))
-        tidal.to_yaml(yaml_path)
+        
+        try:
+            tidal.to_yaml(yaml_path)
+        except Exception as e:
+            warnings.warn(
+                f"Failed to save tidal forcing YAML to {yaml_path}: {e}",
+                UserWarning,
+                stacklevel=2,
+            )
+            
         # Append Resources directly to blueprint_elements.forcing[subkey]
         if isinstance(paths, (list, tuple)):
             for path in paths:
@@ -623,7 +697,14 @@ class RomsMarblInputData(InputData):
         
         river = rt.RiverForcing(grid=self.grid, **input_args)
         paths = river.save(self._forcing_filename(subkey))
-        river.to_yaml(yaml_path)
+        try:
+            river.to_yaml(yaml_path)
+        except Exception as e:
+            warnings.warn(
+                f"Failed to save river forcing YAML to {yaml_path}: {e}",
+                UserWarning,
+                stacklevel=2,
+            )
         # Append Resources directly to blueprint_elements.forcing[subkey]
         if isinstance(paths, (list, tuple)):
             for path in paths:

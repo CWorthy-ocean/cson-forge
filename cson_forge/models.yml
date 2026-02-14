@@ -9,6 +9,7 @@ cson_roms-marbl_v0.1:
         - cdr_frc.opt.j2
         - cppdefs.opt.j2
         - diagnostics.opt.j2
+        - extract_data.opt.j2
         - ocean_vars.opt.j2
         - param.opt.j2
         - river_frc.opt.j2

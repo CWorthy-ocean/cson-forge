@@ -154,6 +154,8 @@ class CstarSpecBuilder(BaseModel):
     model_name: str
     grid_name: str
     grid_kwargs: Dict[str, Any]
+    grid_kwargs_parent: Optional[Dict[str, Any]] = Field(default=None, validate_default=False)
+    grid_kwargs_child: Optional[Dict[str, Any]] = Field(default=None, validate_default=False)
     open_boundaries: cson_models.OpenBoundaries
     partitioning: cstar_models.PartitioningParameterSet
     start_date: datetime = Field(alias="start_time")
@@ -173,6 +175,18 @@ class CstarSpecBuilder(BaseModel):
         validate_default=False
     )
     grid: Optional[rt.Grid] = Field(
+        default=None,
+        init=False,
+        validate_default=False,
+        exclude=True
+    )
+    grid_parent: Optional[rt.Grid] = Field(
+        default=None,
+        init=False,
+        validate_default=False,
+        exclude=True
+    )
+    grid_child: Optional[rt.ChildGrid] = Field(
         default=None,
         init=False,
         validate_default=False,
@@ -205,8 +219,23 @@ class CstarSpecBuilder(BaseModel):
         After this method completes, the blueprint is in the **PRECONFIG** stage
         and has been persisted to disk.
         """
-        # Create grid
-        self.grid = rt.Grid(**self.grid_kwargs)
+        
+        # Create grids
+        # I am a child
+        if self.grid_kwargs_parent is not None:
+            # make parent, but if the parent is also a child, remove the metadata
+            grid_kwargs_parent = {k: v for k, v in self.grid_kwargs_parent.items() if k != "metadata"}
+            self.grid_parent = rt.Grid(**grid_kwargs_parent)
+            self.grid = rt.ChildGrid(parent_grid=self.grid_parent, **self.grid_kwargs)
+        else:
+            grid_kwargs = {k: v for k, v in self.grid_kwargs.items() if k != "metadata"}
+            self.grid = rt.Grid(**grid_kwargs)
+
+        # I am a parent
+        if self.grid_kwargs_child is not None:
+            self.grid_child = rt.ChildGrid(parent_grid=self.grid, **self.grid_kwargs_child)
+        else:
+            self.grid_child = None
 
         # Initialize blueprint with basic structure
         self._initialize_blueprint()
@@ -464,7 +493,8 @@ class CstarSpecBuilder(BaseModel):
     
     def _convert_paths_to_strings(self, obj: Any) -> Any:
         """
-        Recursively convert Path objects to strings in a nested structure.
+        Recursively convert Path objects to strings and replace non-serializable
+        objects (e.g. xarray.Dataset) with placeholders for YAML serialization.
         
         Parameters
         ----------
@@ -474,7 +504,7 @@ class CstarSpecBuilder(BaseModel):
         Returns
         -------
         Any
-            Object with all Path objects converted to strings.
+            Object with Path converted to strings and non-serializable types replaced.
         """
         if isinstance(obj, Path):
             return str(obj)
@@ -482,6 +512,10 @@ class CstarSpecBuilder(BaseModel):
             return {k: self._convert_paths_to_strings(v) for k, v in obj.items()}
         elif isinstance(obj, (list, tuple)):
             return type(obj)(self._convert_paths_to_strings(item) for item in obj)
+        elif isinstance(obj, xr.Dataset):
+            return "<xarray.Dataset>"
+        elif isinstance(obj, xr.DataArray):
+            return "<xarray.DataArray>"
         else:
             return obj
     
@@ -1396,6 +1430,7 @@ class CstarSpecBuilder(BaseModel):
                 end_date=self.end_date,
                 model_spec=self._model_spec,
                 grid=self.grid,
+                grid_child=self.grid_child,
                 boundaries=self.open_boundaries,
                 source_data=self.src_data,
                 blueprint_dir=self.blueprint_dir,
@@ -1462,6 +1497,18 @@ class CstarSpecBuilder(BaseModel):
         """
         # Initialize from defaults (deep copy to avoid modifying the original)
         self._settings_compile_time = copy.deepcopy(self._model_spec.settings.compile_time.settings_dict)
+        if self.grid_child is not None:
+            if "metadata" not in self.grid_kwargs_child:
+                raise ValueError(
+                    "grid_kwargs_child must contain 'metadata' when grid_child is set (nested domain). "
+                    f"Got keys: {sorted(self.grid_kwargs_child.keys())}"
+                )
+            if "period" not in self.grid_kwargs_child["metadata"]:
+                raise ValueError(
+                    "grid_kwargs_child['metadata'] must contain 'period' when grid_child is set. "
+                    f"Got keys: {sorted(self.grid_kwargs_child['metadata'].keys())}"
+                )
+            self._settings_compile_time["extract_data"]["extract_period"] = self.grid_kwargs_child["metadata"]["period"]
     
     def _init_settings_run_time(self, dt: Optional[float] = None) -> None:
         """
@@ -2246,13 +2293,13 @@ class CstarSpecEngine:
     from cson_forge import CstarSpecEngine
     
     # Load and execute workflow for a domain
-    engine = CstarSpecEngine()
+    engine = CstarSpecEngine(domains_file="domains.yml")
     builder = engine.generate_domain("test-tiny")
     ```
     
     **Domain Configuration:**
     
-    Domain configurations are stored in `domains.yml` with the following structure:
+    Domain configurations are stored in a YAML file with the following structure:
     
     ```yaml
     grid_name:
@@ -2267,20 +2314,16 @@ class CstarSpecEngine:
     ```
     """
     
-    def __init__(self, domains_file: Optional[Union[str, Path]] = None):
+    def __init__(self, domains_file: Union[str, Path]):
         """
         Initialize CstarSpecEngine.
         
         Parameters
         ----------
-        domains_file : Optional[Union[str, Path]], optional
-            Path to domains YAML file. If None, uses default location
-            `cson_forge/domains.yml`. Default is None.
+        domains_file : Union[str, Path]
+            Path to domains YAML file.
         """
-        if domains_file is None:
-            domains_file = config.paths.here / "domains.yml"
-        else:
-            domains_file = Path(domains_file)
+        domains_file = Path(domains_file)
         
         self.domains_file = domains_file
         self._domains: Optional[Dict[str, Any]] = None
@@ -2376,6 +2419,17 @@ class CstarSpecEngine:
         if ensemble_id is not None:
             config_dict["ensemble_id"] = ensemble_id
         
+
+        if "_parent_grid_name" in config_dict:
+            parent_grid_config = self._get_domain_config(config_dict["_parent_grid_name"]).copy()
+            config_dict["grid_kwargs_parent"] = parent_grid_config["grid_kwargs"]
+            config_dict.pop("_parent_grid_name", None)
+
+        if "_child_grid_name" in config_dict:
+            child_grid_config = self._get_domain_config(config_dict["_child_grid_name"]).copy()
+            config_dict["grid_kwargs_child"] = child_grid_config["grid_kwargs"]
+            config_dict.pop("_child_grid_name", None)
+
         # Apply overrides if provided
         if overrides:
             config_dict.update(overrides)
@@ -2395,7 +2449,8 @@ class CstarSpecEngine:
         # Convert partitioning dict to PartitioningParameterSet
         if "partitioning" in config_dict:
             config_dict["partitioning"] = cstar_models.PartitioningParameterSet(**config_dict["partitioning"])
-        
+
+
         # Create and return CstarSpecBuilder
         return CstarSpecBuilder(**config_dict)
     
@@ -2473,6 +2528,7 @@ class CstarSpecEngine:
         compile_time_settings: Optional[Dict[str, Any]] = None,
         run_time_settings: Optional[Dict[str, Any]] = None,
         ensemble_id: Optional[int] = None,
+        stop_on_failure: bool = False,
     ) -> Dict[str, CstarSpecBuilder]:
         """
         Execute the complete workflow for all domains (generation only).
@@ -2513,12 +2569,27 @@ class CstarSpecEngine:
         print(f"Starting generation for {total_domains} domain(s)")
         print(f"{'='*80}\n")
         
+        
         failed_domains = []
         
         for idx, grid_name in enumerate(domain_list, start=1):
             print(f"\n{'-'*80}")
             print(f"[{idx}/{total_domains}] Processing domain: {grid_name}")
             print(f"{'-'*80}")
+            
+            # TEMPORARY: Remove stale cache between runs
+            # TODO: Remove this once C-Star has a proper cache management system.
+            # https://cworthy.atlassian.net/browse/CSD-538
+            cache_dir = Path.home() / ".cache" / "cstar"
+            if cache_dir.exists():
+                shutil.rmtree(cache_dir)
+                print("⚠ Removed ~/.cache/cstar to avoid stale C-Star cache between runs")
+                warnings.warn(
+                    "~/.cache/cstar was removed to avoid stale cache state",
+                    UserWarning,
+                    stacklevel=2,
+                )
+                        
             
             try:
                 builders[grid_name] = self.generate_domain(
@@ -2534,6 +2605,8 @@ class CstarSpecEngine:
                 print(f"\n✓ Successfully completed domain: {grid_name}")
             except Exception as e:
                 print(f"\n✗ Error processing domain {grid_name}: {e}")
+                if stop_on_failure:
+                    raise e
                 warnings.warn(
                     f"Error processing domain {grid_name}: {e}",
                     UserWarning,
