@@ -15,7 +15,7 @@ import signal
 import dask
 from dask.distributed import Client, LocalCluster
 
-from .config import paths
+from .config import paths, system, machine_config
 
 # Get JupyterHub URL from environment variable, default to empty string
 JUPYTERHUB_URL = os.environ.get("JUPYTERHUB_SERVICE_PREFIX", "")
@@ -26,11 +26,12 @@ class dask_cluster(object):
     def __init__(
         self,
         account=None,
-        n_nodes=4,
-        n_tasks_per_node=64,
-        wallclock="04:00:00",
-        queue_name="premium",
+        n_nodes=None,
+        n_tasks_per_node=None,
+        wallclock=None,
+        queue_name=None,
         scheduler_file=None,
+        conda_env=None,
     ):
         """
         Initialize a Dask cluster.
@@ -39,20 +40,48 @@ class dask_cluster(object):
         ----------
         account : str, optional
             SLURM account to charge when launching a cluster.
+            Defaults to config.machine_config.account if not provided.
         n_nodes : int, optional
-            Number of SLURM nodes to request.
+            Number of SLURM nodes to request. Default 4.
         n_tasks_per_node : int, optional
             Tasks per node for dask-worker.
+            Defaults to config.machine_config.pes_per_node if not provided.
         wallclock : str, optional
-            Wall clock time for the SLURM job (HH:MM:SS).
+            Wall clock time for the SLURM job (HH:MM:SS). Default "04:00:00".
         queue_name : str, optional
-            SLURM QoS/queue name.
+            SLURM QoS/queue/partition name.
+            Defaults to config.machine_config.queues premium or default if not provided.
         scheduler_file : str or pathlib.Path, optional
             Existing scheduler file to connect to. If provided, skip launch.
+        conda_env : str, optional
+            Conda environment name to activate in the SLURM job.
+            Defaults to CONDA_DEFAULT_ENV or "cson-forge-v0".
         """
+        # Defaults from machine_config, overwrite with provided args
+        account = account if account is not None else machine_config.account
+        n_nodes = n_nodes if n_nodes is not None else 4
+        n_tasks_per_node = (
+            n_tasks_per_node
+            if n_tasks_per_node is not None
+            else (machine_config.pes_per_node or 64)
+        )
+        wallclock = wallclock if wallclock is not None else "04:00:00"
+        queues = machine_config.queues or {}
+        queue_name = (
+            queue_name
+            if queue_name is not None
+            else queues.get("premium") or queues.get("default") or "premium"
+        )
+        conda_env = (
+            conda_env
+            if conda_env is not None
+            else os.environ.get("CONDA_DEFAULT_ENV", "cson-forge-v0")
+        )
+
         self.scheduler_file = scheduler_file
         self.client = None
         
+
         if not slurm_available():
             self.cluster = LocalCluster()
             self.client = Client(self.cluster)
@@ -77,6 +106,7 @@ class dask_cluster(object):
                 n_tasks_per_node=n_tasks_per_node,
                 wallclock=wallclock,
                 queue_name=queue_name,
+                conda_env=conda_env,
             )
 
         self.local_cluster = False
@@ -100,6 +130,7 @@ class dask_cluster(object):
                     n_tasks_per_node=n_tasks_per_node,
                     wallclock=wallclock,
                     queue_name=queue_name,
+                    conda_env=conda_env,
                 )
                 self._connect_client()
             else:
@@ -109,7 +140,9 @@ class dask_cluster(object):
 
         print(f"Dashboard:\n {self.dashboard_link}")
 
-    def _launch_dask_cluster(self, account, n_nodes, n_tasks_per_node, wallclock, queue_name):
+    def _launch_dask_cluster(
+        self, account, n_nodes, n_tasks_per_node, wallclock, queue_name, conda_env
+    ):
         """Submit a SLURM job that starts a Dask scheduler and workers."""
         # Use scratch parent as scratch location, or fall back to environment variable
         scratch_root = paths.scratch.parent if hasattr(paths, 'scratch') else Path(os.environ.get("SCRATCH", "/tmp"))
@@ -121,9 +154,8 @@ class dask_cluster(object):
             prefix="dask_scheduler_file.", suffix=".json", dir=path_dask_str
         )
 
-        script = textwrap.dedent(
-            f"""\
-            #!/bin/bash
+        if system == "NERSC_perlmutter":
+            sbatch_header = f"""\
             #SBATCH --job-name dask-worker
             #SBATCH --account {account}
             #SBATCH --qos={queue_name}
@@ -132,21 +164,64 @@ class dask_cluster(object):
             #SBATCH --time={wallclock}
             #SBATCH --constraint=cpu
             #SBATCH --error {path_dask_str}/dask-workers/dask-worker-%J.err
-            #SBATCH --output {path_dask_str}/dask-workers/dask-worker-%J.out
+            #SBATCH --output {path_dask_str}/dask-workers/dask-worker-%J.out"""
+        elif system == "RCAC_anvil":
+            sbatch_header = f"""\
+            #SBATCH --job-name dask-worker
+            #SBATCH --account {account}
+            #SBATCH --partition={queue_name}
+            #SBATCH --nodes={n_nodes}
+            #SBATCH --ntasks-per-node={n_tasks_per_node}
+            #SBATCH --time={wallclock}
+            #SBATCH --error {path_dask_str}/dask-workers/dask-worker-%J.err
+            #SBATCH --output {path_dask_str}/dask-workers/dask-worker-%J.out"""
+        else:
+            sbatch_header = f"""\
+            #SBATCH --job-name dask-worker
+            #SBATCH --account {account}
+            #SBATCH --nodes={n_nodes}
+            #SBATCH --ntasks-per-node={n_tasks_per_node}
+            #SBATCH --time={wallclock}
+            #SBATCH --error {path_dask_str}/dask-workers/dask-worker-%J.err
+            #SBATCH --output {path_dask_str}/dask-workers/dask-worker-%J.out"""
+
+        if system == "NERSC_perlmutter":
+            env_setup = f"""\
+            module load conda
+            module load python
+            source $(conda info --base)/etc/profile.d/conda.sh
+            conda activate {conda_env}"""
+            dask_interface = "hsn0"
+        elif system == "RCAC_anvil":
+            env_setup = f"""\
+            module load conda
+            source $(conda info --base)/etc/profile.d/conda.sh
+            conda activate {conda_env}"""
+            dask_interface = "ib0"
+        else:
+            env_setup = f"""\
+            module load conda
+            source $(conda info --base)/etc/profile.d/conda.sh
+            conda activate {conda_env}"""
+            dask_interface = "hsn0"
+
+        script = textwrap.dedent(
+            f"""\
+            #!/bin/bash
+            {sbatch_header}
 
             echo "Starting scheduler..."
 
             scheduler_file={scheduler_file}
             rm -f $scheduler_file
 
-            module load python
-            conda activate atlas-calcs
+            {env_setup}
 
             #start scheduler
             DASK_DISTRIBUTED__COMM__TIMEOUTS__CONNECT=3600s \
             DASK_DISTRIBUTED__COMM__TIMEOUTS__TCP=3600s \
             dask scheduler \
-                --interface hsn0 \
+                --interface {dask_interface} \
                 --scheduler-file $scheduler_file &
 
             dask_pid=$!
@@ -165,7 +240,7 @@ class dask_cluster(object):
             DASK_DISTRIBUTED__COMM__TIMEOUTS__TCP=3600s \
             srun dask-worker \
             --scheduler-file $scheduler_file \
-                --interface hsn0 \
+                --interface {dask_interface} \
                 --nworkers 1 
 
             echo "Killing scheduler"

@@ -58,6 +58,8 @@ forcing:
     documentation: ''
     locked: false
     data:
+    - location: /Users/mclong/cson-forge-data/input-data/cson_roms-marbl_v0.1_gulf-guinea-toy_10procs/cson_roms-marbl_v0.1_gulf-guinea-toy_10procs_surface-physics_201112.nc
+      partitioned: false
     - location: /Users/mclong/cson-forge-data/input-data/cson_roms-marbl_v0.1_gulf-guinea-toy_10procs/cson_roms-marbl_v0.1_gulf-guinea-toy_10procs_surface-physics_201201.nc
       partitioned: false
     - location: /Users/mclong/cson-forge-data/input-data/cson_roms-marbl_v0.1_gulf-guinea-toy_10procs/cson_roms-marbl_v0.1_gulf-guinea-toy_10procs_surface-bgc_clim.nc

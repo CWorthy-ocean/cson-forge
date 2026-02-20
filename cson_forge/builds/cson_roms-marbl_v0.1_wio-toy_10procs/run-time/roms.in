@@ -16,7 +16,7 @@ grid:  filename
       /Users/mclong/cson-forge-data/input-data/cson_roms-marbl_v0.1_wio-toy_10procs/cson_roms-marbl_v0.1_wio-toy_10procs_grid.nc
 
 forcing: filename
-      /Users/mclong/cson-forge-data/input-data/cson_roms-marbl_v0.1_wio-toy_10procs/cson_roms-marbl_v0.1_wio-toy_10procs_surface-physics_201201.nc
+      /Users/mclong/cson-forge-data/input-data/cson_roms-marbl_v0.1_wio-toy_10procs/cson_roms-marbl_v0.1_wio-toy_10procs_surface-physics_201112.nc
       /Users/mclong/cson-forge-data/input-data/cson_roms-marbl_v0.1_wio-toy_10procs/cson_roms-marbl_v0.1_wio-toy_10procs_surface-bgc_clim.nc
       /Users/mclong/cson-forge-data/input-data/cson_roms-marbl_v0.1_wio-toy_10procs/cson_roms-marbl_v0.1_wio-toy_10procs_boundary-physics_201201.nc
       /Users/mclong/cson-forge-data/input-data/cson_roms-marbl_v0.1_wio-toy_10procs/cson_roms-marbl_v0.1_wio-toy_10procs_boundary-bgc_clim.nc
