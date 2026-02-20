@@ -44,6 +44,8 @@ def make_script(year, script_dir=None, test=False):
         #SBATCH --time=06:00:00
         #SBATCH --output {path_logs_str}/ensure-glorys-{year}-%J.log
         #SBATCH --error {path_logs_str}/ensure-glorys-{year}-%J.log
+
+        set -euo pipefail
         """
 
     test_mode = " --test" if test else ""
