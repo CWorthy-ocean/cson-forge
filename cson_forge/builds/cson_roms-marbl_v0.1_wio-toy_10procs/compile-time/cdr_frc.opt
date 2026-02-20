@@ -1,7 +1,7 @@
       ! ****************************************************************
       ! user inputs
       logical,parameter,public :: cdr_source  = .false.  ! default. Should be false if not using CDR forcing
-      logical,parameter,public :: cdr_volume  = .true.  ! If false, use tracer flux only
+      logical,parameter,public :: cdr_volume  = .false.  ! If false, use tracer flux only
                                                          ! If true, use volume flux and tracer concentrations
 
       logical,parameter :: cdr_analytical  = .false.     ! If true, cdr release specified in ana_cdf_frc.h

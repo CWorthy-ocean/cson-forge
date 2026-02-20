@@ -16,7 +16,7 @@ grid:  filename
       /Users/mclong/cson-forge-data/input-data/cson_roms-marbl_v0.1_ccs-12km_320procs/cson_roms-marbl_v0.1_ccs-12km_320procs_grid.nc
 
 forcing: filename
-      /Users/mclong/cson-forge-data/input-data/cson_roms-marbl_v0.1_ccs-12km_320procs/cson_roms-marbl_v0.1_ccs-12km_320procs_surface-physics_202401.nc
+      /Users/mclong/cson-forge-data/input-data/cson_roms-marbl_v0.1_ccs-12km_320procs/cson_roms-marbl_v0.1_ccs-12km_320procs_surface-physics_202312.nc
       /Users/mclong/cson-forge-data/input-data/cson_roms-marbl_v0.1_ccs-12km_320procs/cson_roms-marbl_v0.1_ccs-12km_320procs_surface-bgc_clim.nc
       /Users/mclong/cson-forge-data/input-data/cson_roms-marbl_v0.1_ccs-12km_320procs/cson_roms-marbl_v0.1_ccs-12km_320procs_boundary-physics_202401.nc
       /Users/mclong/cson-forge-data/input-data/cson_roms-marbl_v0.1_ccs-12km_320procs/cson_roms-marbl_v0.1_ccs-12km_320procs_boundary-bgc_clim.nc

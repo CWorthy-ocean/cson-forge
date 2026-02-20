@@ -63,6 +63,9 @@ forcing:
     locked: false
     data:
     - location: "/Users/mclong/cson-forge-data/input-data/cson_roms-marbl_v0.1_hvalfj\xF6\
+        r\xF0ur-0_256procs/cson_roms-marbl_v0.1_hvalfj\xF6r\xF0ur-0_256procs_surface-physics_202312.nc"
+      partitioned: false
+    - location: "/Users/mclong/cson-forge-data/input-data/cson_roms-marbl_v0.1_hvalfj\xF6\
         r\xF0ur-0_256procs/cson_roms-marbl_v0.1_hvalfj\xF6r\xF0ur-0_256procs_surface-physics_202401.nc"
       partitioned: false
     - location: "/Users/mclong/cson-forge-data/input-data/cson_roms-marbl_v0.1_hvalfj\xF6\

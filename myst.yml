@@ -37,12 +37,12 @@ project:
     - title: CStarSpecBuilder
       children:
         - file: docs/CStarSpecBuilder-overview.md
-        - file: workflows/generate-models/CStarSpecBuilder-demo.ipynb
+        - file: workflows/generate-models/templates/CStarSpecBuilder-demo.ipynb
 
     - title: CStarSpecEngine
       children:
-        - file: workflows/generate-models/CStarSpecEngine-build-one.ipynb
-        - file: workflows/generate-models/CStarSpecEngine-build-all.ipynb
+        - file: workflows/generate-models/templates/CStarSpecEngine-build-one.ipynb
+        - file: workflows/generate-models/templates/CStarSpecEngine-build-all.ipynb
 
     - title: Catalog
       children:      

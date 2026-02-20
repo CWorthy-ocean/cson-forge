@@ -38,6 +38,7 @@ code:
       - cdr_frc.opt
       - cppdefs.opt
       - diagnostics.opt
+      - extract_data.opt
       - ocean_vars.opt
       - param.opt
       - river_frc.opt
@@ -77,6 +78,8 @@ forcing:
     documentation: ''
     locked: false
     data:
+    - location: /Users/mclong/cson-forge-data/input-data/cson_roms-marbl_v0.1_ccs-12km_320procs/cson_roms-marbl_v0.1_ccs-12km_320procs_surface-physics_202312.nc
+      partitioned: false
     - location: /Users/mclong/cson-forge-data/input-data/cson_roms-marbl_v0.1_ccs-12km_320procs/cson_roms-marbl_v0.1_ccs-12km_320procs_surface-physics_202401.nc
       partitioned: false
     - location: /Users/mclong/cson-forge-data/input-data/cson_roms-marbl_v0.1_ccs-12km_320procs/cson_roms-marbl_v0.1_ccs-12km_320procs_surface-bgc_clim.nc

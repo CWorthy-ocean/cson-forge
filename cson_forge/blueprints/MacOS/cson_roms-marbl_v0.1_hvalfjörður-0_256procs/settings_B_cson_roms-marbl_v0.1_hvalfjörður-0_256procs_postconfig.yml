@@ -1,12 +1,12 @@
 compile_time:
   bgc:
-    wrt_his: true
+    wrt_his: false
     output_period_his: 86400
     nrpf_his: 7
     wrt_avg: false
     output_period_avg: 86400
     nrpf_avg: 7
-    wrt_his_dia: true
+    wrt_his_dia: false
     output_period_his_dia: 86400
     nrpf_his_dia: 7
     wrt_avg_dia: false
@@ -37,7 +37,7 @@ compile_time:
     output_period_rst: 43200
     monthly_restarts: false
     nrpf_rst: 2
-    wrt_file_his: true
+    wrt_file_his: false
     output_period_his: 86400
     nrpf_his: 7
     wrt_Z: true
@@ -107,7 +107,7 @@ compile_time:
     interp_t: 1
   cdr_frc:
     cdr_source: false
-    cdr_volume: true
+    cdr_volume: false
     cdr_analytical: false
     ncdr: 1
     cdr_file: cdr_forcing.nc
@@ -122,6 +122,16 @@ compile_time:
     cdr_loc_dep: cdr_dep
     cdr_scl_hor: cdr_hsc
     cdr_scl_vrt: cdr_vsc
+  extract_data:
+    do_extract: false
+    extract_file: sample_edata.nc
+    nrpf: 48
+    edat_prec: nf90_double
+    N_chd: 90
+    theta_s_chd: 5.0
+    theta_b_chd: 2.0
+    hc_chd: 250.0
+    extract_period: 1800.0
   sponge_tune:
     pflx_w_vname: up_west
     pflx_w_tname: bry_time
@@ -134,7 +144,7 @@ compile_time:
     ub_tune: false
     spn_avg: true
     sp_timscale: 86400
-    wrt_sponge: true
+    wrt_sponge: false
     nrpf: 7
     output_period: 86400
 run_time:
@@ -155,7 +165,7 @@ run_time:
         r\xF0ur-0_256procs/cson_roms-marbl_v0.1_hvalfj\xF6r\xF0ur-0_256procs_grid.nc"
     forcing:
       surface_forcing_path: "/Users/mclong/cson-forge-data/input-data/cson_roms-marbl_v0.1_hvalfj\xF6\
-        r\xF0ur-0_256procs/cson_roms-marbl_v0.1_hvalfj\xF6r\xF0ur-0_256procs_surface-physics_202401.nc"
+        r\xF0ur-0_256procs/cson_roms-marbl_v0.1_hvalfj\xF6r\xF0ur-0_256procs_surface-physics_202312.nc"
       surface_forcing_bgc_path: "/Users/mclong/cson-forge-data/input-data/cson_roms-marbl_v0.1_hvalfj\xF6\
         r\xF0ur-0_256procs/cson_roms-marbl_v0.1_hvalfj\xF6r\xF0ur-0_256procs_surface-bgc_clim.nc"
       boundary_forcing_path: "/Users/mclong/cson-forge-data/input-data/cson_roms-marbl_v0.1_hvalfj\xF6\
