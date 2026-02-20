@@ -196,7 +196,6 @@ class dask_cluster(object):
             rm -f $scheduler_file
 
             module load conda        
-            module load python
             conda activate {conda_env}
 
             #start scheduler
