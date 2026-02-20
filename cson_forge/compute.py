@@ -15,7 +15,7 @@ import signal
 import dask
 from dask.distributed import Client, LocalCluster
 
-from .config import paths
+from .config import paths, system
 
 # Get JupyterHub URL from environment variable, default to empty string
 JUPYTERHUB_URL = os.environ.get("JUPYTERHUB_SERVICE_PREFIX", "")
@@ -121,9 +121,8 @@ class dask_cluster(object):
             prefix="dask_scheduler_file.", suffix=".json", dir=path_dask_str
         )
 
-        script = textwrap.dedent(
-            f"""\
-            #!/bin/bash
+        if system == "NERSC_perlmutter":
+            sbatch_header = f"""\
             #SBATCH --job-name dask-worker
             #SBATCH --account {account}
             #SBATCH --qos={queue_name}
@@ -132,7 +131,31 @@ class dask_cluster(object):
             #SBATCH --time={wallclock}
             #SBATCH --constraint=cpu
             #SBATCH --error {path_dask_str}/dask-workers/dask-worker-%J.err
-            #SBATCH --output {path_dask_str}/dask-workers/dask-worker-%J.out
+            #SBATCH --output {path_dask_str}/dask-workers/dask-worker-%J.out"""
+        elif system == "RCAC_anvil":
+            sbatch_header = f"""\
+            #SBATCH --job-name dask-worker
+            #SBATCH --account {account}
+            #SBATCH --partition={queue_name}
+            #SBATCH --nodes={n_nodes}
+            #SBATCH --ntasks-per-node={n_tasks_per_node}
+            #SBATCH --time={wallclock}
+            #SBATCH --error {path_dask_str}/dask-workers/dask-worker-%J.err
+            #SBATCH --output {path_dask_str}/dask-workers/dask-worker-%J.out"""
+        else:
+            sbatch_header = f"""\
+            #SBATCH --job-name dask-worker
+            #SBATCH --account {account}
+            #SBATCH --nodes={n_nodes}
+            #SBATCH --ntasks-per-node={n_tasks_per_node}
+            #SBATCH --time={wallclock}
+            #SBATCH --error {path_dask_str}/dask-workers/dask-worker-%J.err
+            #SBATCH --output {path_dask_str}/dask-workers/dask-worker-%J.out"""
+
+        script = textwrap.dedent(
+            f"""\
+            #!/bin/bash
+            {sbatch_header}
 
             echo "Starting scheduler..."
 
