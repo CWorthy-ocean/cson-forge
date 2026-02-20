@@ -31,6 +31,7 @@ class dask_cluster(object):
         wallclock=None,
         queue_name=None,
         scheduler_file=None,
+        conda_env=None,
     ):
         """
         Initialize a Dask cluster.
@@ -52,6 +53,9 @@ class dask_cluster(object):
             Defaults to config.machine_config.queues premium or default if not provided.
         scheduler_file : str or pathlib.Path, optional
             Existing scheduler file to connect to. If provided, skip launch.
+        conda_env : str, optional
+            Conda environment name to activate in the SLURM job.
+            Defaults to CONDA_DEFAULT_ENV or "cson-forge-v0".
         """
         # Defaults from machine_config, overwrite with provided args
         account = account if account is not None else machine_config.account
@@ -68,8 +72,11 @@ class dask_cluster(object):
             if queue_name is not None
             else queues.get("premium") or queues.get("default") or "premium"
         )
-
-        conda_env = os.environ.get("CONDA_DEFAULT_ENV", "cson-forge-v0")
+        conda_env = (
+            conda_env
+            if conda_env is not None
+            else os.environ.get("CONDA_DEFAULT_ENV", "cson-forge-v0")
+        )
 
         self.scheduler_file = scheduler_file
         self.client = None
@@ -99,6 +106,7 @@ class dask_cluster(object):
                 n_tasks_per_node=n_tasks_per_node,
                 wallclock=wallclock,
                 queue_name=queue_name,
+                conda_env=conda_env,
             )
 
         self.local_cluster = False
@@ -122,6 +130,7 @@ class dask_cluster(object):
                     n_tasks_per_node=n_tasks_per_node,
                     wallclock=wallclock,
                     queue_name=queue_name,
+                    conda_env=conda_env,
                 )
                 self._connect_client()
             else:
@@ -131,7 +140,9 @@ class dask_cluster(object):
 
         print(f"Dashboard:\n {self.dashboard_link}")
 
-    def _launch_dask_cluster(self, account, n_nodes, n_tasks_per_node, wallclock, queue_name):
+    def _launch_dask_cluster(
+        self, account, n_nodes, n_tasks_per_node, wallclock, queue_name, conda_env
+    ):
         """Submit a SLURM job that starts a Dask scheduler and workers."""
         # Use scratch parent as scratch location, or fall back to environment variable
         scratch_root = paths.scratch.parent if hasattr(paths, 'scratch') else Path(os.environ.get("SCRATCH", "/tmp"))
