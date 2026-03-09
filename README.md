@@ -2,6 +2,9 @@
 
 A utility for generating new regional oceanographic modeling domains and creating reproducible [C-Star](https://c-star.readthedocs.io) workflows through blueprint descriptors.
 
+## Using C-SON Forge
+To learn how to use C-SON Forge, check out the [documentation](https://cworthy-ocean.github.io/cson-forge/overview/).
+
 [![Run Tests](https://github.com/CWorthy-ocean/cson-forge/actions/workflows/tests.yml/badge.svg)](https://github.com/CWorthy-ocean/cson-forge/actions/workflows/tests.yml?query=branch%3Amain)
 [![codecov](https://codecov.io/gh/CWorthy-ocean/cson-forge/graph/badge.svg)](https://codecov.io/gh/CWorthy-ocean/cson-forge)
 
