@@ -3,7 +3,6 @@
       logical,parameter :: wrt_file_rst      = {{ ocean_vars.wrt_file_rst|lower }}     ! t/f to write module history file
       real,parameter    :: output_period_rst = {{ ocean_vars.output_period_rst }}  ! output period in seconds
       logical,parameter :: monthly_restarts = {{ ocean_vars.monthly_restarts|lower }}      ! This overrides output_period   
-      integer,parameter :: nrpf_rst          = {{ ocean_vars.nrpf_rst }}           ! total recs per file
 
       logical,parameter :: wrt_file_his      = {{ ocean_vars.wrt_file_his|lower }}     ! t/f to write module history file
       real,parameter    :: output_period_his = {{ ocean_vars.output_period_his }}    ! output period in seconds

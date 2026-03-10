@@ -40,7 +40,7 @@ cson_roms-marbl_v0.1:
   code:
     roms:
       location: https://github.com/CWorthy-ocean/ucla-roms.git
-      commit: 84f4ee7886e9ee4c33b3248b35c955551f3b9c06
+      commit: 00706a1
 
     marbl:
       location: https://github.com/marbl-ecosys/MARBL.git
