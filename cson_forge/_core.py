@@ -1458,6 +1458,7 @@ class CstarSpecBuilder(BaseModel):
             blueprint_dict["initial_conditions"] = blueprint_elements.initial_conditions.model_dump() if blueprint_elements.initial_conditions else None
             blueprint_dict["forcing"] = blueprint_elements.forcing.model_dump() if blueprint_elements.forcing else None
             blueprint_dict["cdr_forcing"] = blueprint_elements.cdr_forcing.model_dump() if blueprint_elements.cdr_forcing else None
+            blueprint_dict["nesting_info"] = blueprint_elements.nesting_info.model_dump() if blueprint_elements.nesting_info else None
                     
              
             # TODO: Uncomment this when settings are implemented in the blueprint
