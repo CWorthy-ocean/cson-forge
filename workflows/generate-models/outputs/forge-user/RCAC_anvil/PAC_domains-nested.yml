@@ -1,9 +1,9 @@
 PAC-0p5_deg:
-  description: "Pacific 2/15 deg (nested)"
+  description: "Pacific 1/2 deg (nested)"
   model_name: "cson_roms-marbl_v0.1"
   grid_name: "PAC-0p5_deg"
   start_time: "2010-01-01"
-  end_time: "2025-01-02"
+  end_time: "2010-01-10"
   grid_kwargs:
     nx: 208
     ny: 192
@@ -18,12 +18,12 @@ PAC-0p5_deg:
     hc: 250.0
   open_boundaries:
     south: true
-    east: false
+    east: true
     north: true
     west: true
   partitioning:
     n_procs_x: 16
-    n_procs_y: 8
+    n_procs_y: 16
   _child_grid_name: "NEP-p25_deg"
 
 NEP-p25_deg:
@@ -31,7 +31,7 @@ NEP-p25_deg:
   model_name: "cson_roms-marbl_v0.1"
   grid_name: "NEP-p25_deg"
   start_time: "2010-01-01"
-  end_time: "2025-01-02"
+  end_time: "2010-01-10"
   grid_kwargs:
     nx: 208
     ny: 192
@@ -55,7 +55,7 @@ NEP-p25_deg:
     west: true
   partitioning:
     n_procs_x: 16
-    n_procs_y: 8
+    n_procs_y: 16
   _parent_grid_name: "PAC-0p5_deg"
   _child_grid_name: "GoA-p10_deg"
 
@@ -64,7 +64,7 @@ GoA-p10_deg:
   model_name: "cson_roms-marbl_v0.1"
   grid_name: "GoA-p10_deg"
   start_time: "2010-01-01"
-  end_time: "2025-01-02"
+  end_time: "2010-01-10"
   grid_kwargs:
     nx: 208
     ny: 192
@@ -88,5 +88,5 @@ GoA-p10_deg:
     west: true
   partitioning:
     n_procs_x: 16
-    n_procs_y: 8
+    n_procs_y: 16
   _parent_grid_name: "NEP-p25_deg"
