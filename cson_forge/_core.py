@@ -94,7 +94,18 @@ class BlueprintStage:
         return stage_map.get(stage, -1)
 
 
+def _deep_merge_settings_dict(target: Dict[str, Any], update: Dict[str, Any]) -> None:
+    """
+    Recursively merge ``update`` into ``target`` (mutates ``target`` in place).
 
+    Nested dicts are merged key-by-key. Any key whose new value is not a dict,
+    or whose existing value is not a dict, replaces the value at that key.
+    """
+    for k, v in update.items():
+        if k in target and isinstance(target[k], dict) and isinstance(v, dict):
+            _deep_merge_settings_dict(target[k], v)
+        else:
+            target[k] = copy.deepcopy(v)
 
 
 class CstarSpecBuilder(BaseModel):
@@ -1554,17 +1565,16 @@ class CstarSpecBuilder(BaseModel):
     
     def _update_settings_compile_time(self, settings_compile_time: Dict[str, Any]) -> None:
         """
-        Update compile-time settings with deep merge of nested dictionaries.
+        Update compile-time settings by recursively merging nested dictionaries.
         
-        Merges provided settings into existing compile-time settings using deep merge.
-        For each top-level key, if it exists in both dictionaries, the nested dictionaries
-        are merged (not replaced). This preserves existing settings while allowing updates.
+        Top-level keys must already exist on the builder. Nested dicts are merged
+        recursively so partial overrides do not drop sibling keys.
         
         **Merging Behavior:**
         
-        - If key exists in both: nested dicts are merged (preserves existing values)
+        - If key exists in both: nested dicts are merged recursively
         - If key exists only in new settings: raises ValueError (unknown key)
-        - Non-dict values: replaced directly
+        - Non-dict values, or dict replacing a non-dict: replaced directly
         
         Parameters
         ----------
@@ -1583,17 +1593,16 @@ class CstarSpecBuilder(BaseModel):
         
         for key, value in settings_compile_time.items():
             if key in self._settings_compile_time:
-                # Both exist - merge nested dictionaries
                 if isinstance(self._settings_compile_time[key], dict) and isinstance(value, dict):
-                    # Deep merge: update nested dict without replacing it
-                    # Deep copy value to avoid modifying the original dict and ensure we merge correctly
                     value_copy = copy.deepcopy(value)
-                    self._settings_compile_time[key].update(value_copy)
+                    _deep_merge_settings_dict(self._settings_compile_time[key], value_copy)
                 else:
-                    # One or both are not dicts - replace the value
-                    self._settings_compile_time[key] = copy.deepcopy(value) if not isinstance(value, (str, int, float, bool, type(None))) else value
+                    self._settings_compile_time[key] = (
+                        copy.deepcopy(value)
+                        if not isinstance(value, (str, int, float, bool, type(None)))
+                        else value
+                    )
             else:
-                # Unknown key - raise error
                 raise ValueError(
                     f"Unknown compile-time setting key: '{key}'. "
                     f"Valid keys are: {sorted(self._settings_compile_time.keys())}"
@@ -1601,17 +1610,17 @@ class CstarSpecBuilder(BaseModel):
     
     def _update_settings_run_time(self, settings_run_time: Dict[str, Any]) -> None:
         """
-        Update run-time settings with deep merge of nested dictionaries.
+        Update run-time settings by recursively merging nested dictionaries.
         
-        Merges provided settings into existing run-time settings using deep merge.
-        For each top-level key, if it exists in both dictionaries, the nested dictionaries
-        are merged (not replaced). This preserves existing settings while allowing updates.
+        Top-level keys must already exist on the builder. Nested dicts are merged
+        recursively so partial overrides (e.g. only ``dt`` under ``time_stepping``)
+        do not remove sibling keys populated from defaults.
         
         **Merging Behavior:**
         
-        - If key exists in both: nested dicts are merged (preserves existing values)
+        - If key exists in both: nested dicts are merged recursively
         - If key exists only in new settings: raises ValueError (unknown key)
-        - Non-dict values: replaced directly
+        - Non-dict values, or dict replacing a non-dict: replaced directly
         
         Parameters
         ----------
@@ -1630,19 +1639,19 @@ class CstarSpecBuilder(BaseModel):
         
         for key, value in settings_run_time.items():
             if key in self._settings_run_time:
-                # Both exist - merge nested dictionaries
                 if isinstance(self._settings_run_time[key], dict) and isinstance(value, dict):
-                    # Deep merge: update nested dict without replacing it
-                    # Deep copy value to avoid modifying the original dict and ensure we merge correctly
                     value_copy = copy.deepcopy(value)
-                    # Special handling for time_stepping: ensure ntimes is an integer
                     if key == "roms.in" and "time_stepping" in value_copy:
-                        if "ntimes" in value_copy["time_stepping"]:
-                            value_copy["time_stepping"]["ntimes"] = int(round(value_copy["time_stepping"]["ntimes"]))
-                    self._settings_run_time[key].update(value_copy)
+                        ts = value_copy["time_stepping"]
+                        if isinstance(ts, dict) and "ntimes" in ts:
+                            ts["ntimes"] = int(round(ts["ntimes"]))
+                    _deep_merge_settings_dict(self._settings_run_time[key], value_copy)
                 else:
-                    # One or both are not dicts - replace the value
-                    self._settings_run_time[key] = copy.deepcopy(value) if not isinstance(value, (str, int, float, bool, type(None))) else value
+                    self._settings_run_time[key] = (
+                        copy.deepcopy(value)
+                        if not isinstance(value, (str, int, float, bool, type(None)))
+                        else value
+                    )
             else:
                 # Unknown key - raise error
                 raise ValueError(
