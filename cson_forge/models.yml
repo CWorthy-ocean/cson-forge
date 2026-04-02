@@ -17,7 +17,6 @@ cson_roms-marbl_v0.1:
         - surf_flux.opt.j2
         - tides.opt.j2
         - tracers.opt.j2
-        - Makefile
 
     run_time:
       location: "{{ config.path.model_configs }}/{{ model.name }}/templates/run-time"
