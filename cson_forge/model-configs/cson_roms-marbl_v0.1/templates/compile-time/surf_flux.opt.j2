@@ -3,7 +3,6 @@
 
       logical,public,parameter :: wrt_smflx = {{ surf_flux.wrt_smflx|lower }}              ! output surface momentum flux
       logical,public,parameter :: wrt_stflx = {{ surf_flux.wrt_stflx|lower }}              ! output surface tracer flux
-      logical,public,parameter :: wrt_swflx = {{ surf_flux.wrt_swflx|lower }}              ! output surface tracer flux
       logical,parameter :: sflx_avg  = {{ surf_flux.sflx_avg|lower }}              ! write averaged sflx data
 
       real,parameter           :: output_period = {{ surf_flux.output_period }}       ! output averaging period in seconds
