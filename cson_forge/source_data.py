@@ -281,12 +281,22 @@ class SourceData:
         bounds : dict
             Dictionary with keys minimum_longitude, maximum_longitude,
             minimum_latitude, maximum_latitude. For global, all values are None.
+
+        Notes
+        -----
+        The GLORYS fetch window is padded by 1 day on each side
+        (start_time - 1 day to end_time + 1 day) to ensure boundary/initial
+        condition interpolation has temporal context.
         """
         paths = []
         
-        # Iterate over each day from start_time to end_time
-        current_date = datetime(self.start_time.year, self.start_time.month, self.start_time.day)
-        end_date = datetime(self.end_time.year, self.end_time.month, self.end_time.day)
+        # Iterate over each day with a ±1 day temporal padding window.
+        current_date = datetime(
+            self.start_time.year, self.start_time.month, self.start_time.day
+        ) - timedelta(days=1)
+        end_date = datetime(
+            self.end_time.year, self.end_time.month, self.end_time.day
+        ) + timedelta(days=1)
         
         while current_date <= end_date:
             # Construct path for this day

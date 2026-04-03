@@ -7,8 +7,11 @@ from __future__ import annotations
 
 import math
 import warnings
+from typing import Literal
 
 import xarray as xr
+
+PhaseSpeedMode = Literal["baroclinic", "barotropic"]
 
 
 def compute_timestep_from_cfl(
@@ -19,6 +22,9 @@ def compute_timestep_from_cfl(
     grid_ds: xr.Dataset,
     cfl: float = 0.7,
     default_depth: float = 4000.0,
+    reduced_gravity: float = 0.02,
+    equivalent_depth: float = 400.0,
+    mode: PhaseSpeedMode = "baroclinic",
 ) -> float:
     """
     
@@ -26,8 +32,8 @@ def compute_timestep_from_cfl(
 
     Compute timestep based on CFL criterion for numerical stability.
     
-    The CFL (Courant-Friedrichs-Lewy) condition ensures that the timestep
-    is small enough to resolve the fastest gravity waves in the simulation.
+    The CFL (Courant-Friedrichs-Lewy) condition uses ``dt = CFL * dx_min / c``
+    for the chosen phase speed ``c``.
     
     Parameters
     ----------
@@ -40,12 +46,23 @@ def compute_timestep_from_cfl(
     grid_ny : int
         Number of grid points in y-direction.
     grid_ds : xr.Dataset
-        Grid dataset containing bathymetry ('h' variable).
+        Grid dataset; bathymetry (``h``) is read only when
+        ``mode`` is ``"barotropic"``.
     cfl : float, optional
         CFL number (typically 0.5-0.8 for stability). Default is 0.7.
     default_depth : float, optional
-        Default ocean depth in meters to use if 'h' variable is not found.
+        Default ocean depth in meters if ``h`` is missing in barotropic mode.
         Default is 4000.0 meters.
+    reduced_gravity : float, optional
+        Reduced gravity ``g'`` (m/s²) for baroclinic mode, ``c = sqrt(g' * h_e)``.
+        Default 0.02 is a typical thermocline-scale value.
+    equivalent_depth : float, optional
+        Equivalent depth ``h_e`` (m) for baroclinic mode. Default 400 m with
+        default ``g'`` gives ``c`` ~ 2.8 m/s.
+    mode : {"baroclinic", "barotropic"}, optional
+        ``"baroclinic"`` (default): ``c = sqrt(reduced_gravity * equivalent_depth)``.
+        ``"barotropic"``: ``c = sqrt(g * H_max)`` from ``grid_ds['h']`` or
+        ``default_depth``.
     
     Returns
     -------
@@ -58,13 +75,17 @@ def compute_timestep_from_cfl(
     -----
     The calculation follows these steps:
     1. Compute minimum grid spacing (dx, dy) from domain size and grid points
-    2. Estimate fastest gravity wave speed: c = sqrt(g * H_max)
+    2. Estimate fastest {Baroclinic,Barotropic} wave speed
     3. Apply CFL condition: dt = CFL * dx_min / c
     4. Round to nearest integer
     5. Adjust to nearest divisor of 86400 (ensures daily alignment)
     
-    The fastest gravity wave speed is the barotropic wave speed for shallow
-    water waves, which depends on the maximum depth in the domain.
+    Notes/Summary: grid spacing → phase speed ``c`` → ``dt = CFL * dx_min / c`` →
+    round → snap to a divisor of 86400. Baroclinic ``c`` is a reduced-gravity
+    scale for the baroclinic timestep; barotropic stability and
+    other limits may still require a smaller ``dt``. The fastest gravity wave speed 
+	is the barotropic wave speed for shallow water waves, which depends on the 
+	maximum depth in the domain.
     
     The timestep is constrained to be an even divisor of 86400 (seconds per day)
     to ensure that model timesteps align with daily boundaries, which is important
@@ -78,26 +99,33 @@ def compute_timestep_from_cfl(
     # Convert to meters
     dx_min_m = dx_min_km * 1000.0
     
-    # Get maximum depth from grid dataset (in meters)
-    # The 'h' variable is bathymetry (depth) at RHO-points
-    if 'h' in grid_ds:
-        H_max = float(grid_ds['h'].max().values)
+    if mode == "baroclinic":
+        if reduced_gravity <= 0.0 or equivalent_depth <= 0.0:
+            raise ValueError(
+                "reduced_gravity and equivalent_depth must be positive for "
+                "baroclinic phase speed; got "
+                f"reduced_gravity={reduced_gravity!r}, "
+                f"equivalent_depth={equivalent_depth!r}"
+            )
+        c = math.sqrt(reduced_gravity * equivalent_depth)
+    elif mode == "barotropic":
+        if "h" in grid_ds:
+            H_max = float(grid_ds["h"].max().values)
+        else:
+            H_max = default_depth
+            warnings.warn(
+                "Grid dataset does not contain 'h' variable. "
+                f"Using default depth of {H_max} m for CFL calculation.",
+                UserWarning,
+                stacklevel=2,
+            )
+        g = 9.81
+        c = math.sqrt(g * H_max)
     else:
-        # Fallback: use a typical ocean depth if 'h' is not available
-        H_max = default_depth
-        warnings.warn(
-            "Grid dataset does not contain 'h' variable. "
-            f"Using default depth of {H_max} m for CFL calculation.",
-            UserWarning,
-            stacklevel=2
+        raise ValueError(
+            f"'mode' must be 'baroclinic' or 'barotropic'; "
+            f"got {mode!r}"
         )
-    
-    # Gravity acceleration (m/s²)
-    g = 9.81
-    
-    # Fastest gravity wave speed (barotropic wave speed)
-    # c = sqrt(g * H) for shallow water waves
-    c = math.sqrt(g * H_max)
     
     # Compute timestep from CFL condition: dt = CFL * dx / c
     dt = cfl * dx_min_m / c

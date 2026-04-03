@@ -2736,6 +2736,55 @@ class TestCstarSpecBuilderGetDsComprehensive:
                     mock_open.assert_called_once_with(str(test_file), decode_timedelta=False)
 
 
+class TestDeepMergeSettingsDict:
+    """Regression tests for recursive run/compile settings merge."""
+
+    def test_preserves_sibling_keys_under_time_stepping(self):
+        from cson_forge._core import _deep_merge_settings_dict
+
+        target = {
+            "roms.in": {
+                "time_stepping": {
+                    "ntimes": 100,
+                    "dt": 60,
+                    "ndtfast": 30,
+                    "ninfo": 1,
+                },
+            }
+        }
+        update = {"roms.in": {"time_stepping": {"dt": 1800}}}
+        _deep_merge_settings_dict(target, update)
+        ts = target["roms.in"]["time_stepping"]
+        assert ts["dt"] == 1800
+        assert ts["ntimes"] == 100
+        assert ts["ndtfast"] == 30
+        assert ts["ninfo"] == 1
+
+    def test_preserves_sibling_keys_under_forcing(self):
+        from cson_forge._core import _deep_merge_settings_dict
+
+        target = {
+            "roms.in": {
+                "forcing": {
+                    "surface_forcing_path": "/a",
+                    "boundary_forcing_path": "/b",
+                },
+            }
+        }
+        update = {"roms.in": {"forcing": {"surface_forcing_path": "/c"}}}
+        _deep_merge_settings_dict(target, update)
+        f = target["roms.in"]["forcing"]
+        assert f["surface_forcing_path"] == "/c"
+        assert f["boundary_forcing_path"] == "/b"
+
+    def test_non_dict_replaces_existing(self):
+        from cson_forge._core import _deep_merge_settings_dict
+
+        target = {"blk": {"nested": {"x": 1}}}
+        _deep_merge_settings_dict(target, {"blk": {"nested": "scalar"}})
+        assert target["blk"]["nested"] == "scalar"
+
+
 class TestBlueprintStage:
     """Tests for BlueprintStage class."""
     
