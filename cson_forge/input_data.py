@@ -46,6 +46,9 @@ class RomsMarblBlueprintInputData(BaseModel):
     cdr_forcing: Optional[cstar_models.Dataset] = Field(default=None, validate_default=False)
     """CDR forcing dataset."""
 
+    nesting_info: Optional[cstar_models.Dataset] = Field(default=None, validate_default=False)
+    """Nesting info dataset (only set when a child grid is present)."""
+
 
 @dataclass
 class InputData:
@@ -416,6 +419,9 @@ class RomsMarblInputData(InputData):
 
             out_path_nesting = self._forcing_filename(input_name="nesting")
             self.grid_child.save_nesting(out_path_nesting)
+            self.blueprint_elements.nesting_info = cstar_models.Dataset(
+                data=[cstar_models.Resource(location=str(out_path_nesting), partitioned=False)]
+            )
 
         # Append Resource directly to blueprint_elements.grid
         resource = cstar_models.Resource(location=str(out_path), partitioned=False)
@@ -444,9 +450,9 @@ class RomsMarblInputData(InputData):
 
         if out_path_nesting is not None:
             if "extract_data" not in self._settings_compile_time:
-                self._settings_compile_time["extract_data"] = {}            
+                self._settings_compile_time["extract_data"] = {}
             self._settings_compile_time["extract_data"]["do_extract"] = True
-            self._settings_compile_time["extract_data"]["extract_file"] = out_path_nesting
+            self._settings_compile_time["extract_data"]["extract_file"] = "nesting.nc"
             self._settings_compile_time["extract_data"]["N_chd"] = self.grid_child.N
             self._settings_compile_time["extract_data"]["theta_s_chd"] = self.grid_child.theta_s
             self._settings_compile_time["extract_data"]["theta_b_chd"] = self.grid_child.theta_b
