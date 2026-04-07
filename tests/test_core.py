@@ -30,6 +30,7 @@ from cson_forge._core import CstarSpecBuilder
 from cson_forge import models as cson_models
 from cson_forge.config import DataPaths
 from cson_forge import config
+from cson_forge._core import _deep_merge_settings_dict
 
 
 def _create_empty_dataset(tmp_path):
@@ -2651,8 +2652,7 @@ class TestDeepMergeSettingsDict:
     """Regression tests for recursive run/compile settings merge."""
 
     def test_preserves_sibling_keys_under_time_stepping(self):
-        from cson_forge._core import _deep_merge_settings_dict
-
+        """"Verify that merging dictionaries does not remove/not copy any upstream dict entries"""
         target = {
             "roms.in": {
                 "time_stepping": {
@@ -2672,8 +2672,7 @@ class TestDeepMergeSettingsDict:
         assert ts["ninfo"] == 1
 
     def test_preserves_sibling_keys_under_forcing(self):
-        from cson_forge._core import _deep_merge_settings_dict
-
+        """"Verify that merging dictionaries does not replace the shared ancestor"""
         target = {
             "roms.in": {
                 "forcing": {
@@ -2689,8 +2688,7 @@ class TestDeepMergeSettingsDict:
         assert f["boundary_forcing_path"] == "/b"
 
     def test_non_dict_replaces_existing(self):
-        from cson_forge._core import _deep_merge_settings_dict
-
+        """Verify that a non-dict value replaces an existing dict value"""
         target = {"blk": {"nested": {"x": 1}}}
         _deep_merge_settings_dict(target, {"blk": {"nested": "scalar"}})
         assert target["blk"]["nested"] == "scalar"

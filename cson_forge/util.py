@@ -12,7 +12,7 @@ from typing import Literal
 import xarray as xr
 
 PhaseSpeedMode = Literal["baroclinic", "barotropic"]
-
+"""Wave phase speed mode for the CFL time step calculation."""
 
 def compute_timestep_from_cfl(
     grid_size_x: float,
@@ -22,8 +22,8 @@ def compute_timestep_from_cfl(
     grid_ds: xr.Dataset,
     cfl: float = 0.7,
     default_depth: float = 4000.0,
-    reduced_gravity: float = 0.02,
-    equivalent_depth: float = 400.0,
+    reduced_gravity: float = 0.04,
+    equivalent_depth: float = 2000.0,
     mode: PhaseSpeedMode = "baroclinic",
 ) -> float:
     """
@@ -52,13 +52,15 @@ def compute_timestep_from_cfl(
         CFL number (typically 0.5-0.8 for stability). Default is 0.7.
     default_depth : float, optional
         Default ocean depth in meters if ``h`` is missing in barotropic mode.
-        Default is 4000.0 meters.
+        Default is 4000.0 m.
     reduced_gravity : float, optional
-        Reduced gravity ``g'`` (m/s²) for baroclinic mode, ``c = sqrt(g' * h_e)``.
-        Default 0.02 is a typical thermocline-scale value.
+        Reduced gravity ``g'`` (m/s^2) for baroclinic mode, ``c = sqrt(g' * h_e)``.
+        Default 0.04 m/s^2 a typical thermocline-scale value.
     equivalent_depth : float, optional
-        Equivalent depth ``h_e`` (m) for baroclinic mode. Default 400 m with
-        default ``g'`` gives ``c`` ~ 2.8 m/s.
+        Equivalent depth ``h_e`` (m) for baroclinic mode. Default 2000.0 m with
+        default ``g'`` gives ``c`` ~ 9.0 m/s, but is tuned for a timestep of ~900s
+        @ a 12km grid size. A typical internal wave speed is ~3 m/s but the timestep
+        generated for that speed is longer than current ROMS-MARBL stability requires.
     mode : {"baroclinic", "barotropic"}, optional
         ``"baroclinic"`` (default): ``c = sqrt(reduced_gravity * equivalent_depth)``.
         ``"barotropic"``: ``c = sqrt(g * H_max)`` from ``grid_ds['h']`` or
@@ -80,8 +82,8 @@ def compute_timestep_from_cfl(
     4. Round to nearest integer
     5. Adjust to nearest divisor of 86400 (ensures daily alignment)
     
-    Notes/Summary: grid spacing → phase speed ``c`` → ``dt = CFL * dx_min / c`` →
-    round → snap to a divisor of 86400. Baroclinic ``c`` is a reduced-gravity
+    Logic: grid spacing -> phase speed ``c`` -> ``dt = CFL * dx_min / c`` ->
+    round -> snap to a divisor of 86400. Baroclinic ``c`` is a reduced-gravity
     scale for the baroclinic timestep; barotropic stability and
     other limits may still require a smaller ``dt``. The fastest gravity wave speed 
 	is the barotropic wave speed for shallow water waves, which depends on the 
@@ -123,7 +125,7 @@ def compute_timestep_from_cfl(
         c = math.sqrt(g * H_max)
     else:
         raise ValueError(
-            f"'mode' must be 'baroclinic' or 'barotropic'; "
+            "'mode' must be 'baroclinic' or 'barotropic'; "
             f"got {mode!r}"
         )
     

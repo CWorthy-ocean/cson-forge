@@ -1634,6 +1634,8 @@ class CstarSpecBuilder(BaseModel):
             If a top-level key in `settings_run_time` is not present in
             `_settings_run_time` (unknown setting key).
         """
+        # TODO: Consider adding a test for the merge operation passing {} to make sure it properly handles the edge case of an empty input.
+        # Consider adding a test for the merge operation passing {"nothing-shared": "foo"} to test the no-intersection edge case.
         if not settings_run_time:
             return
         
@@ -1641,6 +1643,8 @@ class CstarSpecBuilder(BaseModel):
             if key in self._settings_run_time:
                 if isinstance(self._settings_run_time[key], dict) and isinstance(value, dict):
                     value_copy = copy.deepcopy(value)
+                    # TODO: Evaluate whether corrective logic for passed-in values should live here
+                    # Do we need to correct anything else?
                     if key == "roms.in" and "time_stepping" in value_copy:
                         ts = value_copy["time_stepping"]
                         if isinstance(ts, dict) and "ntimes" in ts:
@@ -1697,12 +1701,12 @@ class CstarSpecBuilder(BaseModel):
                 grid_ny=self.grid.ny,
                 grid_ds=self.grid.ds,
             )
-        
+            
         ntimes = int(round((self.end_date - self.start_date).days * 24 * 3600 / dt))
         self._settings_run_time["roms.in"]["time_stepping"] = dict(
             ntimes = ntimes,
             dt = dt,
-            ndtfast = 60,
+            ndtfast = 60, # TODO: Think about if how to better NDTFAST based on this dt
             ninfo = 1,
         )
    

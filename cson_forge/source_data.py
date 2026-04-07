@@ -293,11 +293,13 @@ class SourceData:
         # Iterate over each day with a ±1 day temporal padding window.
         current_date = datetime(
             self.start_time.year, self.start_time.month, self.start_time.day
-        ) - timedelta(days=1)
+        )
         end_date = datetime(
             self.end_time.year, self.end_time.month, self.end_time.day
-        ) + timedelta(days=1)
-        
+        )
+        # Pad the range by 1 day on each side to ensure boundary/initial condition can be interpolated
+        current_date, end_date = _pad_date_range(current_date, end_date, pad_days=1)
+
         while current_date <= end_date:
             # Construct path for this day
             path = self._construct_glorys_path(current_date, is_regional)
@@ -335,6 +337,16 @@ class SourceData:
             current_date += timedelta(days=1)
         
         return paths
+
+
+def _pad_date_range(sd: datetime, ed: datetime, pad_days: int=1) -> tuple[datetime, datetime]:
+    """Return a new date range with padding added to both ends."""
+    if sd > ed:
+        raise ValueError("Start date must precede end date")
+
+    pad_days = abs(pad_days)
+    delta = timedelta(days=pad_days)
+    return sd - delta, ed + delta
 
 
 # ---------------------------
