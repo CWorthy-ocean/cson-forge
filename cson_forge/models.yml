@@ -7,6 +7,7 @@ cson_roms-marbl_v0.1:
         - bgc.opt.j2
         - blk_frc.opt.j2
         - cdr_frc.opt.j2
+        - cdr_output.opt.j2
         - cppdefs.opt.j2
         - diagnostics.opt.j2
         - extract_data.opt.j2

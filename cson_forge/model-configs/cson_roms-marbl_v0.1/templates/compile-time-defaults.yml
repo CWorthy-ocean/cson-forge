@@ -28,6 +28,13 @@ cppdefs:
   obc_south: true
   marbl: true
 
+cdr_output:
+  do_cdr: false
+  do_avg: true
+  monthly_averages: false
+  output_period: 3600
+  nrpf: 24
+
 param:
   LLm: 512
   MMm: 512
