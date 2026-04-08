@@ -94,18 +94,7 @@ class BlueprintStage:
         return stage_map.get(stage, -1)
 
 
-def _deep_merge_settings_dict(target: Dict[str, Any], update: Dict[str, Any]) -> None:
-    """
-    Recursively merge ``update`` into ``target`` (mutates ``target`` in place).
 
-    Nested dicts are merged key-by-key. Any key whose new value is not a dict,
-    or whose existing value is not a dict, replaces the value at that key.
-    """
-    for k, v in update.items():
-        if k in target and isinstance(target[k], dict) and isinstance(v, dict):
-            _deep_merge_settings_dict(target[k], v)
-        else:
-            target[k] = copy.deepcopy(v)
 
 
 class CstarSpecBuilder(BaseModel):
@@ -197,7 +186,13 @@ class CstarSpecBuilder(BaseModel):
         validate_default=False,
         exclude=True
     )
-    grid_child: Optional[rt.ChildGrid] = Field(
+    grid_child: Optional[rt.Grid] = Field(
+        default=None,
+        init=False,
+        validate_default=False,
+        exclude=True
+    )
+    metadata_child: Optional[dict[str, Any]] = Field(
         default=None,
         init=False,
         validate_default=False,
@@ -231,25 +226,56 @@ class CstarSpecBuilder(BaseModel):
         and has been persisted to disk.
         """
         
-        # Create grids
-        # I am a child
-        if self.grid_kwargs_parent is not None:
-            # make parent, but if the parent is also a child, remove the metadata
+        # Create grids, 3 cases:
+        # grid has child and no parent, grid has child and parent, grid has parent and no child.
+
+        ### ADD child METADATA TO GRID IF IT HAS A CHILD.
+        # I am a parent but not a child
+        if self.grid_kwargs_child is not None and self.grid_kwargs_parent is None:
+            # Make both parent and child, to make the nesting edata. 
+            grid_kwargs_child = {k: v for k, v in self.grid_kwargs_child.items() if k != "metadata"}
+
+            self.grid_child = rt.Grid(**grid_kwargs_child)
+            self.grid = rt.Grid(**self.grid_kwargs)
+            self.grid_child = rt.align_grids(self.grid, self.grid_child)
+
+            if 'metadata' in self.grid_kwargs_child:
+                self.metadata_child = self.grid_kwargs_child['metadata']
+
+        # I am a parent and a child
+        elif self.grid_kwargs_child is not None and self.grid_kwargs_parent is not None:
+            #import pdb;pdb.set_trace()
+            grid_kwargs_child = {k: v for k, v in self.grid_kwargs_child.items() if k != "metadata"}
             grid_kwargs_parent = {k: v for k, v in self.grid_kwargs_parent.items() if k != "metadata"}
-            self.grid_parent = rt.Grid(**grid_kwargs_parent)
-            self.grid = rt.ChildGrid(parent_grid=self.grid_parent, **self.grid_kwargs)
-        else:
             grid_kwargs = {k: v for k, v in self.grid_kwargs.items() if k != "metadata"}
+
+            # Adapt this grid to its parent, but create nesting data for its child
+            self.grid_parent = rt.Grid(**grid_kwargs_parent)
+            self.grid_child = rt.Grid(**grid_kwargs_child)
             self.grid = rt.Grid(**grid_kwargs)
 
-        # I am a parent
-        if self.grid_kwargs_child is not None:
-            self.grid_child = rt.ChildGrid(parent_grid=self.grid, **self.grid_kwargs_child)
+            self.grid = rt.align_grids(self.grid_parent, self.grid)
+            self.grid_child = rt.align_grids(self.grid, self.grid_child)
+
+            if 'metadata' in self.grid_kwargs_child:
+                self.metadata_child = self.grid_kwargs_child['metadata']
+
+        # I am a child but not a parent
+        elif self.grid_kwargs_child is None and self.grid_kwargs_parent is not None:
+            grid_kwargs_parent = {k: v for k, v in self.grid_kwargs_parent.items() if k != "metadata"}
+            grid_kwargs = {k: v for k, v in self.grid_kwargs.items() if k != "metadata"}
+
+            # Adapt this grid to its parent. no nesting data needed
+            self.grid_parent = rt.Grid(**grid_kwargs_parent)
+            self.grid = rt.Grid(**grid_kwargs)
+
+            self.grid = rt.align_grids(self.grid_parent, self.grid)
         else:
-            self.grid_child = None
+            self.grid = rt.Grid(**self.grid_kwargs)
 
         # Initialize blueprint with basic structure
         self._initialize_blueprint()
+
 
     @property
     def name(self) -> str:
@@ -1442,6 +1468,7 @@ class CstarSpecBuilder(BaseModel):
                 model_spec=self._model_spec,
                 grid=self.grid,
                 grid_child=self.grid_child,
+                metadata_child=self.metadata_child,
                 boundaries=self.open_boundaries,
                 source_data=self.src_data,
                 blueprint_dir=self.blueprint_dir,
@@ -1566,16 +1593,17 @@ class CstarSpecBuilder(BaseModel):
     
     def _update_settings_compile_time(self, settings_compile_time: Dict[str, Any]) -> None:
         """
-        Update compile-time settings by recursively merging nested dictionaries.
+        Update compile-time settings with deep merge of nested dictionaries.
         
-        Top-level keys must already exist on the builder. Nested dicts are merged
-        recursively so partial overrides do not drop sibling keys.
+        Merges provided settings into existing compile-time settings using deep merge.
+        For each top-level key, if it exists in both dictionaries, the nested dictionaries
+        are merged (not replaced). This preserves existing settings while allowing updates.
         
         **Merging Behavior:**
         
-        - If key exists in both: nested dicts are merged recursively
+        - If key exists in both: nested dicts are merged (preserves existing values)
         - If key exists only in new settings: raises ValueError (unknown key)
-        - Non-dict values, or dict replacing a non-dict: replaced directly
+        - Non-dict values: replaced directly
         
         Parameters
         ----------
@@ -1594,16 +1622,17 @@ class CstarSpecBuilder(BaseModel):
         
         for key, value in settings_compile_time.items():
             if key in self._settings_compile_time:
+                # Both exist - merge nested dictionaries
                 if isinstance(self._settings_compile_time[key], dict) and isinstance(value, dict):
+                    # Deep merge: update nested dict without replacing it
+                    # Deep copy value to avoid modifying the original dict and ensure we merge correctly
                     value_copy = copy.deepcopy(value)
-                    _deep_merge_settings_dict(self._settings_compile_time[key], value_copy)
+                    self._settings_compile_time[key].update(value_copy)
                 else:
-                    self._settings_compile_time[key] = (
-                        copy.deepcopy(value)
-                        if not isinstance(value, (str, int, float, bool, type(None)))
-                        else value
-                    )
+                    # One or both are not dicts - replace the value
+                    self._settings_compile_time[key] = copy.deepcopy(value) if not isinstance(value, (str, int, float, bool, type(None))) else value
             else:
+                # Unknown key - raise error
                 raise ValueError(
                     f"Unknown compile-time setting key: '{key}'. "
                     f"Valid keys are: {sorted(self._settings_compile_time.keys())}"
@@ -1611,17 +1640,17 @@ class CstarSpecBuilder(BaseModel):
     
     def _update_settings_run_time(self, settings_run_time: Dict[str, Any]) -> None:
         """
-        Update run-time settings by recursively merging nested dictionaries.
+        Update run-time settings with deep merge of nested dictionaries.
         
-        Top-level keys must already exist on the builder. Nested dicts are merged
-        recursively so partial overrides (e.g. only ``dt`` under ``time_stepping``)
-        do not remove sibling keys populated from defaults.
+        Merges provided settings into existing run-time settings using deep merge.
+        For each top-level key, if it exists in both dictionaries, the nested dictionaries
+        are merged (not replaced). This preserves existing settings while allowing updates.
         
         **Merging Behavior:**
         
-        - If key exists in both: nested dicts are merged recursively
+        - If key exists in both: nested dicts are merged (preserves existing values)
         - If key exists only in new settings: raises ValueError (unknown key)
-        - Non-dict values, or dict replacing a non-dict: replaced directly
+        - Non-dict values: replaced directly
         
         Parameters
         ----------
@@ -1635,28 +1664,24 @@ class CstarSpecBuilder(BaseModel):
             If a top-level key in `settings_run_time` is not present in
             `_settings_run_time` (unknown setting key).
         """
-        # TODO: Consider adding a test for the merge operation passing {} to make sure it properly handles the edge case of an empty input.
-        # Consider adding a test for the merge operation passing {"nothing-shared": "foo"} to test the no-intersection edge case.
         if not settings_run_time:
             return
         
         for key, value in settings_run_time.items():
             if key in self._settings_run_time:
+                # Both exist - merge nested dictionaries
                 if isinstance(self._settings_run_time[key], dict) and isinstance(value, dict):
+                    # Deep merge: update nested dict without replacing it
+                    # Deep copy value to avoid modifying the original dict and ensure we merge correctly
                     value_copy = copy.deepcopy(value)
-                    # TODO: Evaluate whether corrective logic for passed-in values should live here
-                    # Do we need to correct anything else?
+                    # Special handling for time_stepping: ensure ntimes is an integer
                     if key == "roms.in" and "time_stepping" in value_copy:
-                        ts = value_copy["time_stepping"]
-                        if isinstance(ts, dict) and "ntimes" in ts:
-                            ts["ntimes"] = int(round(ts["ntimes"]))
-                    _deep_merge_settings_dict(self._settings_run_time[key], value_copy)
+                        if "ntimes" in value_copy["time_stepping"]:
+                            value_copy["time_stepping"]["ntimes"] = int(round(value_copy["time_stepping"]["ntimes"]))
+                    self._settings_run_time[key].update(value_copy)
                 else:
-                    self._settings_run_time[key] = (
-                        copy.deepcopy(value)
-                        if not isinstance(value, (str, int, float, bool, type(None)))
-                        else value
-                    )
+                    # One or both are not dicts - replace the value
+                    self._settings_run_time[key] = copy.deepcopy(value) if not isinstance(value, (str, int, float, bool, type(None))) else value
             else:
                 # Unknown key - raise error
                 raise ValueError(
@@ -1702,12 +1727,12 @@ class CstarSpecBuilder(BaseModel):
                 grid_ny=self.grid.ny,
                 grid_ds=self.grid.ds,
             )
-            
+        
         ntimes = int(round((self.end_date - self.start_date).days * 24 * 3600 / dt))
         self._settings_run_time["roms.in"]["time_stepping"] = dict(
             ntimes = ntimes,
             dt = dt,
-            ndtfast = 60, # TODO: Think about if how to better NDTFAST based on this dt
+            ndtfast = 60,
             ninfo = 1,
         )
    
