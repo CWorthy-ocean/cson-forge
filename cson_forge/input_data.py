@@ -419,7 +419,7 @@ class RomsMarblInputData(InputData):
                 )
 
             out_path_nesting = self._forcing_filename(input_name="nesting")
-            ds_nesting = rt.make_edata(self.grid, self.grid_child, out_path_nesting, **(self.metadata_child or {}))
+            rt.make_edata(self.grid, self.grid_child, out_path_nesting, **(self.metadata_child or {}))
             self.blueprint_elements.nesting_info = cstar_models.Dataset(
                 data=[cstar_models.Resource(location=str(out_path_nesting), partitioned=False)]
             )

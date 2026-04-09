@@ -238,10 +238,9 @@ class CstarSpecBuilder(BaseModel):
         and has been persisted to disk.
         """
         
-        # Create grids, 3 cases:
-        # grid has child and no parent, grid has child and parent, grid has parent and no child.
+        # Create grids, 4 cases:
+        # has child and no parent, has child and parent, has parent and no child, no parent no child
 
-        ### ADD child METADATA TO GRID IF IT HAS A CHILD.
         # I am a parent but not a child
         if self.grid_kwargs_child is not None and self.grid_kwargs_parent is None:
             # Make both parent and child, to make the nesting edata. 
@@ -1500,7 +1499,7 @@ class CstarSpecBuilder(BaseModel):
                return
 
             # Map blueprint_elements to self.blueprint
-            # Update theblueprint_dict["nesting_info"] = blueprint_elements.nesting_info.model_dump() if blueprint     _elements.nesting_info else None blueprint with the generated input data
+            # Update the blueprint with the generated input data
             blueprint_dict = self.blueprint.model_dump()
             blueprint_dict["grid"] = blueprint_elements.grid.model_dump() if blueprint_elements.grid else None
             blueprint_dict["initial_conditions"] = blueprint_elements.initial_conditions.model_dump() if blueprint_elements.initial_conditions else None

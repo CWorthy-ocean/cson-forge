@@ -43,7 +43,7 @@ dependencies:
   - zarr
   - pip:
     # roms-tools from GitHub: use branch (e.g. @main) or commit hash (e.g. @abc123f)
-    - git+https://github.com/CWorthy-ocean/roms-tools.git@60debd3ba99f0705946d00384004022f7ced72de
+    - git+https://github.com/CWorthy-ocean/roms-tools.git@main
     # cstar-ocean from GitHub: use branch (e.g. @main) or commit hash (e.g. @abc123f)    
     - git+https://github.com/CWorthy-ocean/C-Star.git@e9e716dc0d38d2150ea1eeee7d009d000fed371f
   - xarray>=2022.6.0,<2025.8.0
