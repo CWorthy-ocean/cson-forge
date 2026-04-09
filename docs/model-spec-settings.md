@@ -15,7 +15,7 @@ Settings are managed in `forge` using
 
 A model specification in `models.yml` will include a list of code templates. For example,
 ```yaml
-cson_roms-marbl_v0.1:
+csforge_roms-marbl_v0.1:
   templates:
     compile_time:
       location: "{{ config.path.model_configs }}/{{ model.name }}/templates/compile-time"
@@ -71,7 +71,7 @@ When `forge` configures and builds the model for a new domain, it uses the `jinj
 
 This dictionary is initialized to the defaults curated in YAML files. 
 
-For example, `model-configs/cson_roms-marbl_v0.1/templates/compile-time-defaults.yml` includes the following:
+For example, `model-configs/csforge_roms-marbl_v0.1/templates/compile-time-defaults.yml` includes the following:
 ```yaml
 cdr_frc:
   cdr_source: false

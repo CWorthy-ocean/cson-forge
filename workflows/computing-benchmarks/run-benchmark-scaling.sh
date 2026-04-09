@@ -37,7 +37,7 @@ fi
 # Activate conda environment
 # Allow unset variables for conda operations
 set +u
-ENV_NAME="cson-forge-v0"
+ENV_NAME="cstar-forge-v0"
 
 # Load conda via module system
 module load conda

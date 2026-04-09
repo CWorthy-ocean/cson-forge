@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Prepare GLORYS source data for cson-forge, with optional batch SLURM submission."""
+"""Prepare GLORYS source data for cstar-forge, with optional batch SLURM submission."""
 
 import argparse
 import calendar
@@ -10,7 +10,7 @@ from datetime import datetime
 from pathlib import Path
 
 from dask.distributed import Client
-import cson_forge
+import cstar_forge
 
 
 def make_script(year, month, script_dir=None, test=False):
@@ -25,7 +25,7 @@ def make_script(year, month, script_dir=None, test=False):
     Returns:
         Path to the generated script file.
     """
-    path_work = cson_forge.config.paths.scratch / "source-data-setup"
+    path_work = cstar_forge.config.paths.scratch / "source-data-setup"
     path_logs = path_work / "logs"
     path_logs_str = str(path_logs)
     os.makedirs(path_logs_str, exist_ok=True)
@@ -36,13 +36,13 @@ def make_script(year, month, script_dir=None, test=False):
     start_date = f"{year:04d}-{month:02d}-01"
     end_date = f"{year:04d}-{month:02d}-{last_day:02d}"
 
-    account = cson_forge.config.machine_config.account
-    queues = cson_forge.config.machine_config.queues or {}
+    account = cstar_forge.config.machine_config.account
+    queues = cstar_forge.config.machine_config.queues or {}
     queue_name = queues.get("shared", "shared")
     if account is None and not test:
         raise ValueError(
             "No SLURM account configured for this system. "
-            "Add this host to cson_forge/machines.yml or run with test=True."
+            "Add this host to cstar_forge/machines.yml or run with test=True."
         )
 
     job_suffix = f"{year}-{month:02d}"
@@ -66,7 +66,7 @@ def make_script(year, month, script_dir=None, test=False):
 
         module load conda
         source $(conda info --base)/etc/profile.d/conda.sh
-        conda activate cson-forge-v0
+        conda activate cstar-forge-v0
 
         cd {script_dir}
         python -u ensure_glorys.py --start-date {start_date} --end-date {end_date}{test_mode}
@@ -131,7 +131,7 @@ def main(start_date, end_date, test=False):
     # Single worker: copernicusmarine's to_netcdf writes one file per day; multiple
     # workers cause HDF5 file-locking conflicts (BlockingIOError errno 11).
     client = Client(n_workers=1, threads_per_worker=1)
-    src = cson_forge.source_data.SourceData(
+    src = cstar_forge.source_data.SourceData(
         datasets=["GLORYS"],
         clobber=False,
         start_time=start_date,

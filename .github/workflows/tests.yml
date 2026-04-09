@@ -58,12 +58,12 @@ jobs:
         echo "$HOME/bin" >> $GITHUB_PATH
         echo "Created conda wrapper at $HOME/bin/conda"
         
-    - name: Install cson_forge
+    - name: Install cstar_forge
       shell: bash -l {0}
       working-directory: ${{ github.workspace }}
       run: |
         eval "$(micromamba shell hook --shell bash)"
-        micromamba activate cson-forge-v0
+        micromamba activate cstar-forge-v0
         # C-Star and roms-tools come from environment.yml (pip section)
         pip install -e .
         
@@ -71,7 +71,7 @@ jobs:
       shell: bash -l {0}
       working-directory: ${{ github.workspace }}
       run: |
-        micromamba run -n cson-forge-v0 pytest tests/ -v --cov=cson_forge --cov-report=xml --cov-report=term-missing
+        micromamba run -n cstar-forge-v0 pytest tests/ -v --cov=cstar_forge --cov-report=xml --cov-report=term-missing
 
     - name: Upload coverage reports to Codecov
       uses: codecov/codecov-action@v5

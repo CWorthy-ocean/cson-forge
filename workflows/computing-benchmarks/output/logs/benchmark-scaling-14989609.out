@@ -1,11 +1,11 @@
-Using Python: /home/x-mlong/.conda/envs/cson-forge-v0/bin/python
+Using Python: /home/x-mlong/.conda/envs/cstar-forge-v0/bin/python
 Python version: Python 3.13.11
-CONDA_PREFIX: /home/x-mlong/.conda/envs/cson-forge-v0
+CONDA_PREFIX: /home/x-mlong/.conda/envs/cstar-forge-v0
 ==========================================
 Running benchmark scaling for ensemble_id=10
-Current directory: /home/x-mlong/codes/cson-forge/workflows/computing-benchmarks
+Current directory: /home/x-mlong/codes/cstar-forge/workflows/computing-benchmarks
 ==========================================
-Using domains file: /home/x-mlong/codes/cson-forge/workflows/computing-benchmarks/domains-bm-scaling-no-bgc.yml
+Using domains file: /home/x-mlong/codes/cstar-forge/workflows/computing-benchmarks/domains-bm-scaling-no-bgc.yml
 Clobber inputs: False
 Generate only: False
 Ensemble ID: 10
@@ -13,14 +13,14 @@ Ensemble ID: 10
 System Configuration:
   System ID: RCAC_anvil
   Paths:
-    here: /home/x-mlong/codes/cson-forge/cson_forge
-    source_data: /anvil/projects/x-ees250129/cson-forge-data/source-data
-    input_data: /anvil/projects/x-ees250129/cson-forge-data/x-mlong/input-data
-    scratch: /anvil/scratch/x-mlong/cson-forge-run
-    blueprints: /home/x-mlong/codes/cson-forge/cson_forge/blueprints
-    model_configs: /home/x-mlong/codes/cson-forge/cson_forge/model-configs
+    here: /home/x-mlong/codes/cstar-forge/cstar_forge
+    source_data: /anvil/projects/x-ees250129/cstar-forge-data/source-data
+    input_data: /anvil/projects/x-ees250129/cstar-forge-data/x-mlong/input-data
+    scratch: /anvil/scratch/x-mlong/cstar-forge-run
+    blueprints: /home/x-mlong/codes/cstar-forge/cstar_forge/blueprints
+    model_configs: /home/x-mlong/codes/cstar-forge/cstar_forge/model-configs
 
-Initializing CstarSpecEngine with domains file: /home/x-mlong/codes/cson-forge/workflows/computing-benchmarks/domains-bm-scaling-no-bgc.yml
+Initializing CstarSpecEngine with domains file: /home/x-mlong/codes/cstar-forge/workflows/computing-benchmarks/domains-bm-scaling-no-bgc.yml
 
 ================================================================================
 Generating all domain configurations...
@@ -44,8 +44,8 @@ Starting generation for 5 domain(s)
 ✔️  Using existing GLORYS_REGIONAL file for 2024-01-08: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240108.nc
 ✔️  Using existing GLORYS_REGIONAL file for 2024-01-09: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240109.nc
 ✔️  Using existing GLORYS_REGIONAL file for 2024-01-10: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240110.nc
-✔️  TPXO dataset verified at: /anvil/projects/x-ees250129/cson-forge-data/source-data/TPXO/TPXO10.v2
-✔️  Using existing BGC dataset: /anvil/projects/x-ees250129/cson-forge-data/source-data/UNIFIED_BGC/BGCdataset.nc
+✔️  TPXO dataset verified at: /anvil/projects/x-ees250129/cstar-forge-data/source-data/TPXO/TPXO10.v2
+✔️  Using existing BGC dataset: /anvil/projects/x-ees250129/cstar-forge-data/source-data/UNIFIED_BGC/BGCdataset.nc
 
 ✗ Error processing domain ccs-12km_1232procs: Blueprint mismatch detected, but input files exist. Set clobber=True to overwrite existing input files.
 
@@ -62,8 +62,8 @@ Starting generation for 5 domain(s)
 ✔️  Using existing GLORYS_REGIONAL file for 2024-01-08: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240108.nc
 ✔️  Using existing GLORYS_REGIONAL file for 2024-01-09: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240109.nc
 ✔️  Using existing GLORYS_REGIONAL file for 2024-01-10: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240110.nc
-✔️  TPXO dataset verified at: /anvil/projects/x-ees250129/cson-forge-data/source-data/TPXO/TPXO10.v2
-✔️  Using existing BGC dataset: /anvil/projects/x-ees250129/cson-forge-data/source-data/UNIFIED_BGC/BGCdataset.nc
+✔️  TPXO dataset verified at: /anvil/projects/x-ees250129/cstar-forge-data/source-data/TPXO/TPXO10.v2
+✔️  Using existing BGC dataset: /anvil/projects/x-ees250129/cstar-forge-data/source-data/UNIFIED_BGC/BGCdataset.nc
 
 ✗ Error processing domain ccs-12km_20procs: Blueprint mismatch detected, but input files exist. Set clobber=True to overwrite existing input files.
 
@@ -80,8 +80,8 @@ Starting generation for 5 domain(s)
 ✔️  Using existing GLORYS_REGIONAL file for 2024-01-08: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240108.nc
 ✔️  Using existing GLORYS_REGIONAL file for 2024-01-09: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240109.nc
 ✔️  Using existing GLORYS_REGIONAL file for 2024-01-10: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240110.nc
-✔️  TPXO dataset verified at: /anvil/projects/x-ees250129/cson-forge-data/source-data/TPXO/TPXO10.v2
-✔️  Using existing BGC dataset: /anvil/projects/x-ees250129/cson-forge-data/source-data/UNIFIED_BGC/BGCdataset.nc
+✔️  TPXO dataset verified at: /anvil/projects/x-ees250129/cstar-forge-data/source-data/TPXO/TPXO10.v2
+✔️  Using existing BGC dataset: /anvil/projects/x-ees250129/cstar-forge-data/source-data/UNIFIED_BGC/BGCdataset.nc
 
 ✗ Error processing domain ccs-12km_280procs: Blueprint mismatch detected, but input files exist. Set clobber=True to overwrite existing input files.
 
@@ -98,8 +98,8 @@ Starting generation for 5 domain(s)
 ✔️  Using existing GLORYS_REGIONAL file for 2024-01-08: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240108.nc
 ✔️  Using existing GLORYS_REGIONAL file for 2024-01-09: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240109.nc
 ✔️  Using existing GLORYS_REGIONAL file for 2024-01-10: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240110.nc
-✔️  TPXO dataset verified at: /anvil/projects/x-ees250129/cson-forge-data/source-data/TPXO/TPXO10.v2
-✔️  Using existing BGC dataset: /anvil/projects/x-ees250129/cson-forge-data/source-data/UNIFIED_BGC/BGCdataset.nc
+✔️  TPXO dataset verified at: /anvil/projects/x-ees250129/cstar-forge-data/source-data/TPXO/TPXO10.v2
+✔️  Using existing BGC dataset: /anvil/projects/x-ees250129/cstar-forge-data/source-data/UNIFIED_BGC/BGCdataset.nc
 
 ✗ Error processing domain ccs-12km_352procs: Blueprint mismatch detected, but input files exist. Set clobber=True to overwrite existing input files.
 
@@ -116,8 +116,8 @@ Starting generation for 5 domain(s)
 ✔️  Using existing GLORYS_REGIONAL file for 2024-01-08: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240108.nc
 ✔️  Using existing GLORYS_REGIONAL file for 2024-01-09: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240109.nc
 ✔️  Using existing GLORYS_REGIONAL file for 2024-01-10: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240110.nc
-✔️  TPXO dataset verified at: /anvil/projects/x-ees250129/cson-forge-data/source-data/TPXO/TPXO10.v2
-✔️  Using existing BGC dataset: /anvil/projects/x-ees250129/cson-forge-data/source-data/UNIFIED_BGC/BGCdataset.nc
+✔️  TPXO dataset verified at: /anvil/projects/x-ees250129/cstar-forge-data/source-data/TPXO/TPXO10.v2
+✔️  Using existing BGC dataset: /anvil/projects/x-ees250129/cstar-forge-data/source-data/UNIFIED_BGC/BGCdataset.nc
 
 ✗ Error processing domain ccs-12km_70procs: Blueprint mismatch detected, but input files exist. Set clobber=True to overwrite existing input files.
 
@@ -146,9 +146,9 @@ Completed ensemble_id=10
 
 ==========================================
 Running benchmark scaling for ensemble_id=20
-Current directory: /home/x-mlong/codes/cson-forge/workflows/computing-benchmarks
+Current directory: /home/x-mlong/codes/cstar-forge/workflows/computing-benchmarks
 ==========================================
-Using domains file: /home/x-mlong/codes/cson-forge/workflows/computing-benchmarks/domains-bm-scaling-no-bgc.yml
+Using domains file: /home/x-mlong/codes/cstar-forge/workflows/computing-benchmarks/domains-bm-scaling-no-bgc.yml
 Clobber inputs: False
 Generate only: False
 Ensemble ID: 20
@@ -156,14 +156,14 @@ Ensemble ID: 20
 System Configuration:
   System ID: RCAC_anvil
   Paths:
-    here: /home/x-mlong/codes/cson-forge/cson_forge
-    source_data: /anvil/projects/x-ees250129/cson-forge-data/source-data
-    input_data: /anvil/projects/x-ees250129/cson-forge-data/x-mlong/input-data
-    scratch: /anvil/scratch/x-mlong/cson-forge-run
-    blueprints: /home/x-mlong/codes/cson-forge/cson_forge/blueprints
-    model_configs: /home/x-mlong/codes/cson-forge/cson_forge/model-configs
+    here: /home/x-mlong/codes/cstar-forge/cstar_forge
+    source_data: /anvil/projects/x-ees250129/cstar-forge-data/source-data
+    input_data: /anvil/projects/x-ees250129/cstar-forge-data/x-mlong/input-data
+    scratch: /anvil/scratch/x-mlong/cstar-forge-run
+    blueprints: /home/x-mlong/codes/cstar-forge/cstar_forge/blueprints
+    model_configs: /home/x-mlong/codes/cstar-forge/cstar_forge/model-configs
 
-Initializing CstarSpecEngine with domains file: /home/x-mlong/codes/cson-forge/workflows/computing-benchmarks/domains-bm-scaling-no-bgc.yml
+Initializing CstarSpecEngine with domains file: /home/x-mlong/codes/cstar-forge/workflows/computing-benchmarks/domains-bm-scaling-no-bgc.yml
 
 ================================================================================
 Generating all domain configurations...
@@ -187,8 +187,8 @@ Starting generation for 5 domain(s)
 ✔️  Using existing GLORYS_REGIONAL file for 2024-01-08: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240108.nc
 ✔️  Using existing GLORYS_REGIONAL file for 2024-01-09: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240109.nc
 ✔️  Using existing GLORYS_REGIONAL file for 2024-01-10: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240110.nc
-✔️  TPXO dataset verified at: /anvil/projects/x-ees250129/cson-forge-data/source-data/TPXO/TPXO10.v2
-✔️  Using existing BGC dataset: /anvil/projects/x-ees250129/cson-forge-data/source-data/UNIFIED_BGC/BGCdataset.nc
+✔️  TPXO dataset verified at: /anvil/projects/x-ees250129/cstar-forge-data/source-data/TPXO/TPXO10.v2
+✔️  Using existing BGC dataset: /anvil/projects/x-ees250129/cstar-forge-data/source-data/UNIFIED_BGC/BGCdataset.nc
 
 ✗ Error processing domain ccs-12km_1232procs: Blueprint mismatch detected, but input files exist. Set clobber=True to overwrite existing input files.
 
@@ -205,8 +205,8 @@ Starting generation for 5 domain(s)
 ✔️  Using existing GLORYS_REGIONAL file for 2024-01-08: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240108.nc
 ✔️  Using existing GLORYS_REGIONAL file for 2024-01-09: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240109.nc
 ✔️  Using existing GLORYS_REGIONAL file for 2024-01-10: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240110.nc
-✔️  TPXO dataset verified at: /anvil/projects/x-ees250129/cson-forge-data/source-data/TPXO/TPXO10.v2
-✔️  Using existing BGC dataset: /anvil/projects/x-ees250129/cson-forge-data/source-data/UNIFIED_BGC/BGCdataset.nc
+✔️  TPXO dataset verified at: /anvil/projects/x-ees250129/cstar-forge-data/source-data/TPXO/TPXO10.v2
+✔️  Using existing BGC dataset: /anvil/projects/x-ees250129/cstar-forge-data/source-data/UNIFIED_BGC/BGCdataset.nc
 
 ✗ Error processing domain ccs-12km_20procs: Blueprint mismatch detected, but input files exist. Set clobber=True to overwrite existing input files.
 
@@ -223,8 +223,8 @@ Starting generation for 5 domain(s)
 ✔️  Using existing GLORYS_REGIONAL file for 2024-01-08: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240108.nc
 ✔️  Using existing GLORYS_REGIONAL file for 2024-01-09: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240109.nc
 ✔️  Using existing GLORYS_REGIONAL file for 2024-01-10: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240110.nc
-✔️  TPXO dataset verified at: /anvil/projects/x-ees250129/cson-forge-data/source-data/TPXO/TPXO10.v2
-✔️  Using existing BGC dataset: /anvil/projects/x-ees250129/cson-forge-data/source-data/UNIFIED_BGC/BGCdataset.nc
+✔️  TPXO dataset verified at: /anvil/projects/x-ees250129/cstar-forge-data/source-data/TPXO/TPXO10.v2
+✔️  Using existing BGC dataset: /anvil/projects/x-ees250129/cstar-forge-data/source-data/UNIFIED_BGC/BGCdataset.nc
 
 ✗ Error processing domain ccs-12km_280procs: Blueprint mismatch detected, but input files exist. Set clobber=True to overwrite existing input files.
 
@@ -241,8 +241,8 @@ Starting generation for 5 domain(s)
 ✔️  Using existing GLORYS_REGIONAL file for 2024-01-08: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240108.nc
 ✔️  Using existing GLORYS_REGIONAL file for 2024-01-09: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240109.nc
 ✔️  Using existing GLORYS_REGIONAL file for 2024-01-10: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240110.nc
-✔️  TPXO dataset verified at: /anvil/projects/x-ees250129/cson-forge-data/source-data/TPXO/TPXO10.v2
-✔️  Using existing BGC dataset: /anvil/projects/x-ees250129/cson-forge-data/source-data/UNIFIED_BGC/BGCdataset.nc
+✔️  TPXO dataset verified at: /anvil/projects/x-ees250129/cstar-forge-data/source-data/TPXO/TPXO10.v2
+✔️  Using existing BGC dataset: /anvil/projects/x-ees250129/cstar-forge-data/source-data/UNIFIED_BGC/BGCdataset.nc
 
 ✗ Error processing domain ccs-12km_352procs: Blueprint mismatch detected, but input files exist. Set clobber=True to overwrite existing input files.
 
@@ -259,8 +259,8 @@ Starting generation for 5 domain(s)
 ✔️  Using existing GLORYS_REGIONAL file for 2024-01-08: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240108.nc
 ✔️  Using existing GLORYS_REGIONAL file for 2024-01-09: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240109.nc
 ✔️  Using existing GLORYS_REGIONAL file for 2024-01-10: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240110.nc
-✔️  TPXO dataset verified at: /anvil/projects/x-ees250129/cson-forge-data/source-data/TPXO/TPXO10.v2
-✔️  Using existing BGC dataset: /anvil/projects/x-ees250129/cson-forge-data/source-data/UNIFIED_BGC/BGCdataset.nc
+✔️  TPXO dataset verified at: /anvil/projects/x-ees250129/cstar-forge-data/source-data/TPXO/TPXO10.v2
+✔️  Using existing BGC dataset: /anvil/projects/x-ees250129/cstar-forge-data/source-data/UNIFIED_BGC/BGCdataset.nc
 
 ✗ Error processing domain ccs-12km_70procs: Blueprint mismatch detected, but input files exist. Set clobber=True to overwrite existing input files.
 
@@ -289,9 +289,9 @@ Completed ensemble_id=20
 
 ==========================================
 Running benchmark scaling for ensemble_id=30
-Current directory: /home/x-mlong/codes/cson-forge/workflows/computing-benchmarks
+Current directory: /home/x-mlong/codes/cstar-forge/workflows/computing-benchmarks
 ==========================================
-Using domains file: /home/x-mlong/codes/cson-forge/workflows/computing-benchmarks/domains-bm-scaling-no-bgc.yml
+Using domains file: /home/x-mlong/codes/cstar-forge/workflows/computing-benchmarks/domains-bm-scaling-no-bgc.yml
 Clobber inputs: False
 Generate only: False
 Ensemble ID: 30
@@ -299,14 +299,14 @@ Ensemble ID: 30
 System Configuration:
   System ID: RCAC_anvil
   Paths:
-    here: /home/x-mlong/codes/cson-forge/cson_forge
-    source_data: /anvil/projects/x-ees250129/cson-forge-data/source-data
-    input_data: /anvil/projects/x-ees250129/cson-forge-data/x-mlong/input-data
-    scratch: /anvil/scratch/x-mlong/cson-forge-run
-    blueprints: /home/x-mlong/codes/cson-forge/cson_forge/blueprints
-    model_configs: /home/x-mlong/codes/cson-forge/cson_forge/model-configs
+    here: /home/x-mlong/codes/cstar-forge/cstar_forge
+    source_data: /anvil/projects/x-ees250129/cstar-forge-data/source-data
+    input_data: /anvil/projects/x-ees250129/cstar-forge-data/x-mlong/input-data
+    scratch: /anvil/scratch/x-mlong/cstar-forge-run
+    blueprints: /home/x-mlong/codes/cstar-forge/cstar_forge/blueprints
+    model_configs: /home/x-mlong/codes/cstar-forge/cstar_forge/model-configs
 
-Initializing CstarSpecEngine with domains file: /home/x-mlong/codes/cson-forge/workflows/computing-benchmarks/domains-bm-scaling-no-bgc.yml
+Initializing CstarSpecEngine with domains file: /home/x-mlong/codes/cstar-forge/workflows/computing-benchmarks/domains-bm-scaling-no-bgc.yml
 
 ================================================================================
 Generating all domain configurations...
@@ -330,8 +330,8 @@ Starting generation for 5 domain(s)
 ✔️  Using existing GLORYS_REGIONAL file for 2024-01-08: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240108.nc
 ✔️  Using existing GLORYS_REGIONAL file for 2024-01-09: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240109.nc
 ✔️  Using existing GLORYS_REGIONAL file for 2024-01-10: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240110.nc
-✔️  TPXO dataset verified at: /anvil/projects/x-ees250129/cson-forge-data/source-data/TPXO/TPXO10.v2
-✔️  Using existing BGC dataset: /anvil/projects/x-ees250129/cson-forge-data/source-data/UNIFIED_BGC/BGCdataset.nc
+✔️  TPXO dataset verified at: /anvil/projects/x-ees250129/cstar-forge-data/source-data/TPXO/TPXO10.v2
+✔️  Using existing BGC dataset: /anvil/projects/x-ees250129/cstar-forge-data/source-data/UNIFIED_BGC/BGCdataset.nc
 
 ✗ Error processing domain ccs-12km_1232procs: Blueprint mismatch detected, but input files exist. Set clobber=True to overwrite existing input files.
 
@@ -348,8 +348,8 @@ Starting generation for 5 domain(s)
 ✔️  Using existing GLORYS_REGIONAL file for 2024-01-08: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240108.nc
 ✔️  Using existing GLORYS_REGIONAL file for 2024-01-09: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240109.nc
 ✔️  Using existing GLORYS_REGIONAL file for 2024-01-10: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240110.nc
-✔️  TPXO dataset verified at: /anvil/projects/x-ees250129/cson-forge-data/source-data/TPXO/TPXO10.v2
-✔️  Using existing BGC dataset: /anvil/projects/x-ees250129/cson-forge-data/source-data/UNIFIED_BGC/BGCdataset.nc
+✔️  TPXO dataset verified at: /anvil/projects/x-ees250129/cstar-forge-data/source-data/TPXO/TPXO10.v2
+✔️  Using existing BGC dataset: /anvil/projects/x-ees250129/cstar-forge-data/source-data/UNIFIED_BGC/BGCdataset.nc
 
 ✗ Error processing domain ccs-12km_20procs: Blueprint mismatch detected, but input files exist. Set clobber=True to overwrite existing input files.
 
@@ -366,8 +366,8 @@ Starting generation for 5 domain(s)
 ✔️  Using existing GLORYS_REGIONAL file for 2024-01-08: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240108.nc
 ✔️  Using existing GLORYS_REGIONAL file for 2024-01-09: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240109.nc
 ✔️  Using existing GLORYS_REGIONAL file for 2024-01-10: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240110.nc
-✔️  TPXO dataset verified at: /anvil/projects/x-ees250129/cson-forge-data/source-data/TPXO/TPXO10.v2
-✔️  Using existing BGC dataset: /anvil/projects/x-ees250129/cson-forge-data/source-data/UNIFIED_BGC/BGCdataset.nc
+✔️  TPXO dataset verified at: /anvil/projects/x-ees250129/cstar-forge-data/source-data/TPXO/TPXO10.v2
+✔️  Using existing BGC dataset: /anvil/projects/x-ees250129/cstar-forge-data/source-data/UNIFIED_BGC/BGCdataset.nc
 
 ✗ Error processing domain ccs-12km_280procs: Blueprint mismatch detected, but input files exist. Set clobber=True to overwrite existing input files.
 
@@ -384,8 +384,8 @@ Starting generation for 5 domain(s)
 ✔️  Using existing GLORYS_REGIONAL file for 2024-01-08: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240108.nc
 ✔️  Using existing GLORYS_REGIONAL file for 2024-01-09: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240109.nc
 ✔️  Using existing GLORYS_REGIONAL file for 2024-01-10: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240110.nc
-✔️  TPXO dataset verified at: /anvil/projects/x-ees250129/cson-forge-data/source-data/TPXO/TPXO10.v2
-✔️  Using existing BGC dataset: /anvil/projects/x-ees250129/cson-forge-data/source-data/UNIFIED_BGC/BGCdataset.nc
+✔️  TPXO dataset verified at: /anvil/projects/x-ees250129/cstar-forge-data/source-data/TPXO/TPXO10.v2
+✔️  Using existing BGC dataset: /anvil/projects/x-ees250129/cstar-forge-data/source-data/UNIFIED_BGC/BGCdataset.nc
 
 ✗ Error processing domain ccs-12km_352procs: Blueprint mismatch detected, but input files exist. Set clobber=True to overwrite existing input files.
 
@@ -402,8 +402,8 @@ Starting generation for 5 domain(s)
 ✔️  Using existing GLORYS_REGIONAL file for 2024-01-08: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240108.nc
 ✔️  Using existing GLORYS_REGIONAL file for 2024-01-09: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240109.nc
 ✔️  Using existing GLORYS_REGIONAL file for 2024-01-10: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240110.nc
-✔️  TPXO dataset verified at: /anvil/projects/x-ees250129/cson-forge-data/source-data/TPXO/TPXO10.v2
-✔️  Using existing BGC dataset: /anvil/projects/x-ees250129/cson-forge-data/source-data/UNIFIED_BGC/BGCdataset.nc
+✔️  TPXO dataset verified at: /anvil/projects/x-ees250129/cstar-forge-data/source-data/TPXO/TPXO10.v2
+✔️  Using existing BGC dataset: /anvil/projects/x-ees250129/cstar-forge-data/source-data/UNIFIED_BGC/BGCdataset.nc
 
 ✗ Error processing domain ccs-12km_70procs: Blueprint mismatch detected, but input files exist. Set clobber=True to overwrite existing input files.
 
@@ -432,9 +432,9 @@ Completed ensemble_id=30
 
 ==========================================
 Running benchmark scaling for ensemble_id=40
-Current directory: /home/x-mlong/codes/cson-forge/workflows/computing-benchmarks
+Current directory: /home/x-mlong/codes/cstar-forge/workflows/computing-benchmarks
 ==========================================
-Using domains file: /home/x-mlong/codes/cson-forge/workflows/computing-benchmarks/domains-bm-scaling-no-bgc.yml
+Using domains file: /home/x-mlong/codes/cstar-forge/workflows/computing-benchmarks/domains-bm-scaling-no-bgc.yml
 Clobber inputs: False
 Generate only: False
 Ensemble ID: 40
@@ -442,14 +442,14 @@ Ensemble ID: 40
 System Configuration:
   System ID: RCAC_anvil
   Paths:
-    here: /home/x-mlong/codes/cson-forge/cson_forge
-    source_data: /anvil/projects/x-ees250129/cson-forge-data/source-data
-    input_data: /anvil/projects/x-ees250129/cson-forge-data/x-mlong/input-data
-    scratch: /anvil/scratch/x-mlong/cson-forge-run
-    blueprints: /home/x-mlong/codes/cson-forge/cson_forge/blueprints
-    model_configs: /home/x-mlong/codes/cson-forge/cson_forge/model-configs
+    here: /home/x-mlong/codes/cstar-forge/cstar_forge
+    source_data: /anvil/projects/x-ees250129/cstar-forge-data/source-data
+    input_data: /anvil/projects/x-ees250129/cstar-forge-data/x-mlong/input-data
+    scratch: /anvil/scratch/x-mlong/cstar-forge-run
+    blueprints: /home/x-mlong/codes/cstar-forge/cstar_forge/blueprints
+    model_configs: /home/x-mlong/codes/cstar-forge/cstar_forge/model-configs
 
-Initializing CstarSpecEngine with domains file: /home/x-mlong/codes/cson-forge/workflows/computing-benchmarks/domains-bm-scaling-no-bgc.yml
+Initializing CstarSpecEngine with domains file: /home/x-mlong/codes/cstar-forge/workflows/computing-benchmarks/domains-bm-scaling-no-bgc.yml
 
 ================================================================================
 Generating all domain configurations...
@@ -473,8 +473,8 @@ Starting generation for 5 domain(s)
 ✔️  Using existing GLORYS_REGIONAL file for 2024-01-08: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240108.nc
 ✔️  Using existing GLORYS_REGIONAL file for 2024-01-09: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240109.nc
 ✔️  Using existing GLORYS_REGIONAL file for 2024-01-10: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240110.nc
-✔️  TPXO dataset verified at: /anvil/projects/x-ees250129/cson-forge-data/source-data/TPXO/TPXO10.v2
-✔️  Using existing BGC dataset: /anvil/projects/x-ees250129/cson-forge-data/source-data/UNIFIED_BGC/BGCdataset.nc
+✔️  TPXO dataset verified at: /anvil/projects/x-ees250129/cstar-forge-data/source-data/TPXO/TPXO10.v2
+✔️  Using existing BGC dataset: /anvil/projects/x-ees250129/cstar-forge-data/source-data/UNIFIED_BGC/BGCdataset.nc
 
 ✗ Error processing domain ccs-12km_1232procs: Blueprint mismatch detected, but input files exist. Set clobber=True to overwrite existing input files.
 
@@ -491,8 +491,8 @@ Starting generation for 5 domain(s)
 ✔️  Using existing GLORYS_REGIONAL file for 2024-01-08: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240108.nc
 ✔️  Using existing GLORYS_REGIONAL file for 2024-01-09: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240109.nc
 ✔️  Using existing GLORYS_REGIONAL file for 2024-01-10: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240110.nc
-✔️  TPXO dataset verified at: /anvil/projects/x-ees250129/cson-forge-data/source-data/TPXO/TPXO10.v2
-✔️  Using existing BGC dataset: /anvil/projects/x-ees250129/cson-forge-data/source-data/UNIFIED_BGC/BGCdataset.nc
+✔️  TPXO dataset verified at: /anvil/projects/x-ees250129/cstar-forge-data/source-data/TPXO/TPXO10.v2
+✔️  Using existing BGC dataset: /anvil/projects/x-ees250129/cstar-forge-data/source-data/UNIFIED_BGC/BGCdataset.nc
 
 ✗ Error processing domain ccs-12km_20procs: Blueprint mismatch detected, but input files exist. Set clobber=True to overwrite existing input files.
 
@@ -509,8 +509,8 @@ Starting generation for 5 domain(s)
 ✔️  Using existing GLORYS_REGIONAL file for 2024-01-08: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240108.nc
 ✔️  Using existing GLORYS_REGIONAL file for 2024-01-09: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240109.nc
 ✔️  Using existing GLORYS_REGIONAL file for 2024-01-10: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240110.nc
-✔️  TPXO dataset verified at: /anvil/projects/x-ees250129/cson-forge-data/source-data/TPXO/TPXO10.v2
-✔️  Using existing BGC dataset: /anvil/projects/x-ees250129/cson-forge-data/source-data/UNIFIED_BGC/BGCdataset.nc
+✔️  TPXO dataset verified at: /anvil/projects/x-ees250129/cstar-forge-data/source-data/TPXO/TPXO10.v2
+✔️  Using existing BGC dataset: /anvil/projects/x-ees250129/cstar-forge-data/source-data/UNIFIED_BGC/BGCdataset.nc
 
 ✗ Error processing domain ccs-12km_280procs: Blueprint mismatch detected, but input files exist. Set clobber=True to overwrite existing input files.
 
@@ -527,8 +527,8 @@ Starting generation for 5 domain(s)
 ✔️  Using existing GLORYS_REGIONAL file for 2024-01-08: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240108.nc
 ✔️  Using existing GLORYS_REGIONAL file for 2024-01-09: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240109.nc
 ✔️  Using existing GLORYS_REGIONAL file for 2024-01-10: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240110.nc
-✔️  TPXO dataset verified at: /anvil/projects/x-ees250129/cson-forge-data/source-data/TPXO/TPXO10.v2
-✔️  Using existing BGC dataset: /anvil/projects/x-ees250129/cson-forge-data/source-data/UNIFIED_BGC/BGCdataset.nc
+✔️  TPXO dataset verified at: /anvil/projects/x-ees250129/cstar-forge-data/source-data/TPXO/TPXO10.v2
+✔️  Using existing BGC dataset: /anvil/projects/x-ees250129/cstar-forge-data/source-data/UNIFIED_BGC/BGCdataset.nc
 
 ✗ Error processing domain ccs-12km_352procs: Blueprint mismatch detected, but input files exist. Set clobber=True to overwrite existing input files.
 
@@ -545,8 +545,8 @@ Starting generation for 5 domain(s)
 ✔️  Using existing GLORYS_REGIONAL file for 2024-01-08: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240108.nc
 ✔️  Using existing GLORYS_REGIONAL file for 2024-01-09: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240109.nc
 ✔️  Using existing GLORYS_REGIONAL file for 2024-01-10: cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_ccs-12km_20240110.nc
-✔️  TPXO dataset verified at: /anvil/projects/x-ees250129/cson-forge-data/source-data/TPXO/TPXO10.v2
-✔️  Using existing BGC dataset: /anvil/projects/x-ees250129/cson-forge-data/source-data/UNIFIED_BGC/BGCdataset.nc
+✔️  TPXO dataset verified at: /anvil/projects/x-ees250129/cstar-forge-data/source-data/TPXO/TPXO10.v2
+✔️  Using existing BGC dataset: /anvil/projects/x-ees250129/cstar-forge-data/source-data/UNIFIED_BGC/BGCdataset.nc
 
 ✗ Error processing domain ccs-12km_70procs: Blueprint mismatch detected, but input files exist. Set clobber=True to overwrite existing input files.
 
