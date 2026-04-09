@@ -238,7 +238,7 @@ class CompileTime(BaseModel):
     ----------
     filter : Filter
         Filter specification for compile-time files to copy from templates to the
-        build opt directory during compilation (e.g., ["bgc.opt", "cppdefs.opt", "Makefile"]).
+        build opt directory during compilation (e.g., ["bgc.opt", "cppdefs.opt"]).
     """
     
     model_config = ConfigDict(extra="forbid")
@@ -428,7 +428,7 @@ class ModelSpec(BaseModel):
         
         Only files ending with .j2 in templates.compile_time.filter.files are validated.
         Each .j2 template file should have a corresponding key in settings.compile_time.settings_dict.
-        Non-template files (like Makefile) are skipped.
+        Non-template files are skipped.
         """
         if self.templates is None or self.settings is None:
             return self
@@ -439,7 +439,7 @@ class ModelSpec(BaseModel):
             self.settings.compile_time is not None):
             
             template_files = self.templates.compile_time.filter.files or []
-            # Only validate .j2 template files - skip non-template files like Makefile
+            # Only validate .j2 template files - skip non-template files
             # Remove .j2 extension and extract base name for comparison with settings keys
             # e.g., "bgc.opt.j2" -> "bgc.opt" -> should match "bgc" key in settings_dict
             template_base_names = set()
