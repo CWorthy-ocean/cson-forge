@@ -2,16 +2,16 @@
 
 A utility for generating new regional oceanographic modeling domains and creating reproducible [C-Star](https://c-star.readthedocs.io) workflows through blueprint descriptors.
 
-[![Run Tests](https://github.com/CWorthy-ocean/cson-forge/actions/workflows/tests.yml/badge.svg)](https://github.com/CWorthy-ocean/cson-forge/actions/workflows/tests.yml?query=branch%3Amain)
-[![codecov](https://codecov.io/gh/CWorthy-ocean/cson-forge/graph/badge.svg)](https://codecov.io/gh/CWorthy-ocean/cson-forge)
+[![Run Tests](https://github.com/CWorthy-ocean/cstar-forge/actions/workflows/tests.yml/badge.svg)](https://github.com/CWorthy-ocean/cstar-forge/actions/workflows/tests.yml?query=branch%3Amain)
+[![codecov](https://codecov.io/gh/CWorthy-ocean/cstar-forge/graph/badge.svg)](https://codecov.io/gh/CWorthy-ocean/cstar-forge)
 
 ## Using C-SON Forge
-To learn how to use C-SON Forge, check out the [documentation](https://cworthy-ocean.github.io/cson-forge/overview/).
+To learn how to use C-SON Forge, check out the [documentation](https://cworthy-ocean.github.io/cstar-forge/overview/).
 
 ## The C-Star Ocean Network
-```{image} workflows/visualization/assets/cson.png
+```{image} workflows/visualization/assets/csforge.png
 :alt: C-SON Forge Logo
-:class: cson-logo
+:class: csforge-logo
 :align: center
 ```
 

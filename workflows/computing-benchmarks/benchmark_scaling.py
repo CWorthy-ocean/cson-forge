@@ -20,7 +20,7 @@ import warnings
 from pathlib import Path
 from typing import Optional
 
-import cson_forge
+import cstar_forge
 from cstar.execution.handler import ExecutionStatus
 
 
@@ -63,9 +63,9 @@ def main():
     # Resolve domains file path
     domains_file = Path(args.domains_file)
     if not domains_file.is_absolute():
-        # Try relative to current directory, then relative to cson_forge package
+        # Try relative to current directory, then relative to cstar_forge package
         if not domains_file.exists():
-            domains_file = Path(cson_forge.config.paths.here) / domains_file
+            domains_file = Path(cstar_forge.config.paths.here) / domains_file
         else:
             domains_file = domains_file.resolve()
     
@@ -83,9 +83,9 @@ def main():
     
     # Report system configuration
     print("System Configuration:")
-    print(f"  System ID: {cson_forge.config.system_id}")
+    print(f"  System ID: {cstar_forge.config.system_id}")
     print("  Paths:")
-    paths = cson_forge.config.paths
+    paths = cstar_forge.config.paths
     print(f"    here: {paths.here}")
     print(f"    source_data: {paths.source_data}")
     print(f"    input_data: {paths.input_data}")
@@ -97,7 +97,7 @@ def main():
     try:
         # Initialize engine
         print(f"Initializing CstarSpecEngine with domains file: {domains_file}")
-        engine = cson_forge.CstarSpecEngine(domains_file=str(domains_file))
+        engine = cstar_forge.CstarSpecEngine(domains_file=str(domains_file))
         
         # Generate all domains
         print("\n" + "=" * 80)

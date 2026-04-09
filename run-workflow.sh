@@ -56,27 +56,27 @@ if [[ ! -f "$workflow_yml" ]]; then
   exit 1
 fi
 
-# Minimal environment check - just verify Python and cson_forge are available
+# Minimal environment check - just verify Python and cstar_forge are available
 if ! python - <<'PY'
 import importlib.util
 import sys
 
-if not importlib.util.find_spec("cson_forge"):
-    print("Error: cson_forge module not found", file=sys.stderr)
+if not importlib.util.find_spec("cstar_forge"):
+    print("Error: cstar_forge module not found", file=sys.stderr)
     sys.exit(1)
 PY
 then
-  echo "Error: cson_forge module is not available."
+  echo "Error: cstar_forge module is not available."
   echo "Please run ./dev-setup.sh to set up the development environment."
   exit 1
 fi
 
 # Build command
 # Suppress harmless RuntimeWarning about module already in sys.modules
-# This occurs when cson_forge package imports nb_engine before running as module
+# This occurs when cstar_forge package imports nb_engine before running as module
 export PYTHONWARNINGS="ignore::RuntimeWarning:runpy"
 
-cmd=(python -m cson_forge.nb_engine)
+cmd=(python -m cstar_forge.nb_engine)
 if $force_recompute; then
   cmd+=(--force-recompute)
 fi

@@ -31,8 +31,8 @@ The tool produces **blueprint** YAML files that capture the complete configurati
 ## Project Structure
 
 ```
-cson-forge/
-├── cson_forge/                 # Main package directory
+cstar-forge/
+├── cstar_forge/                 # Main package directory
 │   ├── _core.py                # Core classes (CstarSpecBuilder, CstarSpecEngine)
 │   ├── models.py               # Model specification classes (ModelSpec, etc.)
 │   ├── source_data.py          # Dataset download and preparation
