@@ -6,6 +6,7 @@ This class provides a Pydantic-based interface for building RomsMarblBlueprint o
 from __future__ import annotations
 
 import copy
+import inspect
 import time
 import warnings
 from dataclasses import asdict as dataclass_asdict
@@ -255,7 +256,6 @@ class CstarSpecBuilder(BaseModel):
 
         # I am a parent and a child
         elif self.grid_kwargs_child is not None and self.grid_kwargs_parent is not None:
-            #import pdb;pdb.set_trace()
             grid_kwargs_child = {k: v for k, v in self.grid_kwargs_child.items() if k != "metadata"}
             grid_kwargs_parent = {k: v for k, v in self.grid_kwargs_parent.items() if k != "metadata"}
             grid_kwargs = {k: v for k, v in self.grid_kwargs.items() if k != "metadata"}
@@ -1500,7 +1500,7 @@ class CstarSpecBuilder(BaseModel):
                return
 
             # Map blueprint_elements to self.blueprint
-            # Update the blueprint with the generated input data
+            # Update theblueprint_dict["nesting_info"] = blueprint_elements.nesting_info.model_dump() if blueprint     _elements.nesting_info else None blueprint with the generated input data
             blueprint_dict = self.blueprint.model_dump()
             blueprint_dict["grid"] = blueprint_elements.grid.model_dump() if blueprint_elements.grid else None
             blueprint_dict["initial_conditions"] = blueprint_elements.initial_conditions.model_dump() if blueprint_elements.initial_conditions else None
@@ -1547,18 +1547,15 @@ class CstarSpecBuilder(BaseModel):
         # Initialize from defaults (deep copy to avoid modifying the original)
         self._settings_compile_time = copy.deepcopy(self._model_spec.settings.compile_time.settings_dict)
         if self.grid_child is not None:
-            if "metadata" not in self.grid_kwargs_child:
-                raise ValueError(
-                    "grid_kwargs_child must contain 'metadata' when grid_child is set (nested domain). "
-                    f"Got keys: {sorted(self.grid_kwargs_child.keys())}"
-                )
-            if "period" not in self.grid_kwargs_child["metadata"]:
-                raise ValueError(
-                    "grid_kwargs_child['metadata'] must contain 'period' when grid_child is set. "
-                    f"Got keys: {sorted(self.grid_kwargs_child['metadata'].keys())}"
-                )
-            self._settings_compile_time["extract_data"]["extract_period"] = self.grid_kwargs_child["metadata"]["period"]
-    
+            period_default = inspect.signature(rt.make_edata).parameters['period'].default
+            if "metadata" in self.grid_kwargs_child:
+               if "period" in self.grid_kwargs_child["metadata"]:
+                  self._settings_compile_time["extract_data"]["extract_period"] = self.grid_kwargs_child["metadata"]["period"]
+               else:
+                  self._settings_compile_time["extract_data"]["extract_period"] = period_default
+            else:
+               self._settings_compile_time["extract_data"]["extract_period"] = period_default
+
     def _init_settings_run_time(self, dt: Optional[float] = None) -> None:
         """
         Initialize run-time settings dictionary from model defaults.
