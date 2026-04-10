@@ -6,6 +6,7 @@ This class provides a Pydantic-based interface for building RomsMarblBlueprint o
 from __future__ import annotations
 
 import copy
+import inspect
 import time
 import warnings
 from dataclasses import asdict as dataclass_asdict
@@ -197,7 +198,13 @@ class CstarSpecBuilder(BaseModel):
         validate_default=False,
         exclude=True
     )
-    grid_child: Optional[rt.ChildGrid] = Field(
+    grid_child: Optional[rt.Grid] = Field(
+        default=None,
+        init=False,
+        validate_default=False,
+        exclude=True
+    )
+    metadata_child: Optional[dict[str, Any]] = Field(
         default=None,
         init=False,
         validate_default=False,
@@ -231,22 +238,50 @@ class CstarSpecBuilder(BaseModel):
         and has been persisted to disk.
         """
         
-        # Create grids
-        # I am a child
-        if self.grid_kwargs_parent is not None:
-            # make parent, but if the parent is also a child, remove the metadata
+        # Create grids, 4 cases:
+        # has child and no parent, has child and parent, has parent and no child, no parent no child
+
+        # I am a parent but not a child
+        if self.grid_kwargs_child is not None and self.grid_kwargs_parent is None:
+            # Make both parent and child, to make the nesting edata. 
+            grid_kwargs_child = {k: v for k, v in self.grid_kwargs_child.items() if k != "metadata"}
+
+            self.grid_child = rt.Grid(**grid_kwargs_child)
+            self.grid = rt.Grid(**self.grid_kwargs)
+            self.grid_child = rt.align_grids(self.grid, self.grid_child)
+
+            if 'metadata' in self.grid_kwargs_child:
+                self.metadata_child = self.grid_kwargs_child['metadata']
+
+        # I am a parent and a child
+        elif self.grid_kwargs_child is not None and self.grid_kwargs_parent is not None:
+            grid_kwargs_child = {k: v for k, v in self.grid_kwargs_child.items() if k != "metadata"}
             grid_kwargs_parent = {k: v for k, v in self.grid_kwargs_parent.items() if k != "metadata"}
-            self.grid_parent = rt.Grid(**grid_kwargs_parent)
-            self.grid = rt.ChildGrid(parent_grid=self.grid_parent, **self.grid_kwargs)
-        else:
             grid_kwargs = {k: v for k, v in self.grid_kwargs.items() if k != "metadata"}
+
+            # Adapt this grid to its parent, but create nesting data for its child
+            self.grid_parent = rt.Grid(**grid_kwargs_parent)
+            self.grid_child = rt.Grid(**grid_kwargs_child)
             self.grid = rt.Grid(**grid_kwargs)
 
-        # I am a parent
-        if self.grid_kwargs_child is not None:
-            self.grid_child = rt.ChildGrid(parent_grid=self.grid, **self.grid_kwargs_child)
+            self.grid = rt.align_grids(self.grid_parent, self.grid)
+            self.grid_child = rt.align_grids(self.grid, self.grid_child)
+
+            if 'metadata' in self.grid_kwargs_child:
+                self.metadata_child = self.grid_kwargs_child['metadata']
+
+        # I am a child but not a parent
+        elif self.grid_kwargs_child is None and self.grid_kwargs_parent is not None:
+            grid_kwargs_parent = {k: v for k, v in self.grid_kwargs_parent.items() if k != "metadata"}
+            grid_kwargs = {k: v for k, v in self.grid_kwargs.items() if k != "metadata"}
+
+            # Adapt this grid to its parent. no nesting data needed
+            self.grid_parent = rt.Grid(**grid_kwargs_parent)
+            self.grid = rt.Grid(**grid_kwargs)
+
+            self.grid = rt.align_grids(self.grid_parent, self.grid)
         else:
-            self.grid_child = None
+            self.grid = rt.Grid(**self.grid_kwargs)
 
         # Initialize blueprint with basic structure
         self._initialize_blueprint()
@@ -1442,6 +1477,7 @@ class CstarSpecBuilder(BaseModel):
                 model_spec=self._model_spec,
                 grid=self.grid,
                 grid_child=self.grid_child,
+                metadata_child=self.metadata_child,
                 boundaries=self.open_boundaries,
                 source_data=self.src_data,
                 blueprint_dir=self.blueprint_dir,
@@ -1510,18 +1546,15 @@ class CstarSpecBuilder(BaseModel):
         # Initialize from defaults (deep copy to avoid modifying the original)
         self._settings_compile_time = copy.deepcopy(self._model_spec.settings.compile_time.settings_dict)
         if self.grid_child is not None:
-            if "metadata" not in self.grid_kwargs_child:
-                raise ValueError(
-                    "grid_kwargs_child must contain 'metadata' when grid_child is set (nested domain). "
-                    f"Got keys: {sorted(self.grid_kwargs_child.keys())}"
-                )
-            if "period" not in self.grid_kwargs_child["metadata"]:
-                raise ValueError(
-                    "grid_kwargs_child['metadata'] must contain 'period' when grid_child is set. "
-                    f"Got keys: {sorted(self.grid_kwargs_child['metadata'].keys())}"
-                )
-            self._settings_compile_time["extract_data"]["extract_period"] = self.grid_kwargs_child["metadata"]["period"]
-    
+            period_default = inspect.signature(rt.make_edata).parameters['period'].default
+            if "metadata" in self.grid_kwargs_child:
+               if "period" in self.grid_kwargs_child["metadata"]:
+                  self._settings_compile_time["extract_data"]["extract_period"] = self.grid_kwargs_child["metadata"]["period"]
+               else:
+                  self._settings_compile_time["extract_data"]["extract_period"] = period_default
+            else:
+               self._settings_compile_time["extract_data"]["extract_period"] = period_default
+
     def _init_settings_run_time(self, dt: Optional[float] = None) -> None:
         """
         Initialize run-time settings dictionary from model defaults.
