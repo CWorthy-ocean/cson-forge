@@ -2,7 +2,7 @@
 version: 1
 
 project:
-  title: C-SON Forge
+  title: C-STAR Forge
   description: "Create new C-Star domains"
   license: Apache-2.0
   open_access: true

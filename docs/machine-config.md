@@ -1,6 +1,6 @@
 # Machine configuration
 
-C-SON Forge uses a configuration system to manage paths and system-specific settings.
+C-STAR Forge uses a configuration system to manage paths and system-specific settings.
 
 ## System Detection
 

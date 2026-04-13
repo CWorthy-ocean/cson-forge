@@ -1,4 +1,4 @@
-# Get Started with C-SON Forge
+# Get Started with C-STAR Forge
 
 ## Prerequisites
 
