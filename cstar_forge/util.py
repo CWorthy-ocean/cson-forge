@@ -1,5 +1,5 @@
 """
-Utility functions for CSON Forge.
+Utility functions for CSFORGE Forge.
 
 This module contains utility functions used across the codebase.
 """

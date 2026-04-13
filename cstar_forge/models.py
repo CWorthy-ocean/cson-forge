@@ -1,5 +1,5 @@
 """
-Pydantic models for CSON model input specifications.
+Pydantic models for CSFORGE model input specifications.
 
 These models represent the structure of inputs in models.yml, providing
 type validation and structure for grid, initial_conditions, and forcing

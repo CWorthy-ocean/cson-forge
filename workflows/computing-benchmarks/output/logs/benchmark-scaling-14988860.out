@@ -1,11 +1,11 @@
-Using Python: /home/x-mlong/.conda/envs/cson-forge-v0/bin/python
+Using Python: /home/x-mlong/.conda/envs/cstar-forge-v0/bin/python
 Python version: Python 3.13.11
-CONDA_PREFIX: /home/x-mlong/.conda/envs/cson-forge-v0
+CONDA_PREFIX: /home/x-mlong/.conda/envs/cstar-forge-v0
 ==========================================
 Running benchmark scaling for ensemble_id=10
-Current directory: /home/x-mlong/codes/cson-forge/workflows/computing-benchmarks
+Current directory: /home/x-mlong/codes/cstar-forge/workflows/computing-benchmarks
 ==========================================
-Using domains file: /home/x-mlong/codes/cson-forge/workflows/computing-benchmarks/domains-bm-scaling-no-bgc.yml
+Using domains file: /home/x-mlong/codes/cstar-forge/workflows/computing-benchmarks/domains-bm-scaling-no-bgc.yml
 Clobber inputs: False
 Generate only: False
 Ensemble ID: 10
@@ -13,14 +13,14 @@ Ensemble ID: 10
 System Configuration:
   System ID: RCAC_anvil
   Paths:
-    here: /home/x-mlong/codes/cson-forge/cson_forge
-    source_data: /anvil/projects/x-ees250129/cson-forge-data/source-data
-    input_data: /anvil/projects/x-ees250129/cson-forge-data/x-mlong/input-data
-    scratch: /anvil/scratch/x-mlong/cson-forge-run
-    blueprints: /home/x-mlong/codes/cson-forge/cson_forge/blueprints
-    model_configs: /home/x-mlong/codes/cson-forge/cson_forge/model-configs
+    here: /home/x-mlong/codes/cstar-forge/cstar_forge
+    source_data: /anvil/projects/x-ees250129/cstar-forge-data/source-data
+    input_data: /anvil/projects/x-ees250129/cstar-forge-data/x-mlong/input-data
+    scratch: /anvil/scratch/x-mlong/cstar-forge-run
+    blueprints: /home/x-mlong/codes/cstar-forge/cstar_forge/blueprints
+    model_configs: /home/x-mlong/codes/cstar-forge/cstar_forge/model-configs
 
-Initializing CstarSpecEngine with domains file: /home/x-mlong/codes/cson-forge/workflows/computing-benchmarks/domains-bm-scaling-no-bgc.yml
+Initializing CstarSpecEngine with domains file: /home/x-mlong/codes/cstar-forge/workflows/computing-benchmarks/domains-bm-scaling-no-bgc.yml
 
 ================================================================================
 Generating all domain configurations...
@@ -106,9 +106,9 @@ Completed ensemble_id=10
 
 ==========================================
 Running benchmark scaling for ensemble_id=20
-Current directory: /home/x-mlong/codes/cson-forge/workflows/computing-benchmarks
+Current directory: /home/x-mlong/codes/cstar-forge/workflows/computing-benchmarks
 ==========================================
-Using domains file: /home/x-mlong/codes/cson-forge/workflows/computing-benchmarks/domains-bm-scaling-no-bgc.yml
+Using domains file: /home/x-mlong/codes/cstar-forge/workflows/computing-benchmarks/domains-bm-scaling-no-bgc.yml
 Clobber inputs: False
 Generate only: False
 Ensemble ID: 20
@@ -116,14 +116,14 @@ Ensemble ID: 20
 System Configuration:
   System ID: RCAC_anvil
   Paths:
-    here: /home/x-mlong/codes/cson-forge/cson_forge
-    source_data: /anvil/projects/x-ees250129/cson-forge-data/source-data
-    input_data: /anvil/projects/x-ees250129/cson-forge-data/x-mlong/input-data
-    scratch: /anvil/scratch/x-mlong/cson-forge-run
-    blueprints: /home/x-mlong/codes/cson-forge/cson_forge/blueprints
-    model_configs: /home/x-mlong/codes/cson-forge/cson_forge/model-configs
+    here: /home/x-mlong/codes/cstar-forge/cstar_forge
+    source_data: /anvil/projects/x-ees250129/cstar-forge-data/source-data
+    input_data: /anvil/projects/x-ees250129/cstar-forge-data/x-mlong/input-data
+    scratch: /anvil/scratch/x-mlong/cstar-forge-run
+    blueprints: /home/x-mlong/codes/cstar-forge/cstar_forge/blueprints
+    model_configs: /home/x-mlong/codes/cstar-forge/cstar_forge/model-configs
 
-Initializing CstarSpecEngine with domains file: /home/x-mlong/codes/cson-forge/workflows/computing-benchmarks/domains-bm-scaling-no-bgc.yml
+Initializing CstarSpecEngine with domains file: /home/x-mlong/codes/cstar-forge/workflows/computing-benchmarks/domains-bm-scaling-no-bgc.yml
 
 ================================================================================
 Generating all domain configurations...
@@ -209,9 +209,9 @@ Completed ensemble_id=20
 
 ==========================================
 Running benchmark scaling for ensemble_id=30
-Current directory: /home/x-mlong/codes/cson-forge/workflows/computing-benchmarks
+Current directory: /home/x-mlong/codes/cstar-forge/workflows/computing-benchmarks
 ==========================================
-Using domains file: /home/x-mlong/codes/cson-forge/workflows/computing-benchmarks/domains-bm-scaling-no-bgc.yml
+Using domains file: /home/x-mlong/codes/cstar-forge/workflows/computing-benchmarks/domains-bm-scaling-no-bgc.yml
 Clobber inputs: False
 Generate only: False
 Ensemble ID: 30
@@ -219,14 +219,14 @@ Ensemble ID: 30
 System Configuration:
   System ID: RCAC_anvil
   Paths:
-    here: /home/x-mlong/codes/cson-forge/cson_forge
-    source_data: /anvil/projects/x-ees250129/cson-forge-data/source-data
-    input_data: /anvil/projects/x-ees250129/cson-forge-data/x-mlong/input-data
-    scratch: /anvil/scratch/x-mlong/cson-forge-run
-    blueprints: /home/x-mlong/codes/cson-forge/cson_forge/blueprints
-    model_configs: /home/x-mlong/codes/cson-forge/cson_forge/model-configs
+    here: /home/x-mlong/codes/cstar-forge/cstar_forge
+    source_data: /anvil/projects/x-ees250129/cstar-forge-data/source-data
+    input_data: /anvil/projects/x-ees250129/cstar-forge-data/x-mlong/input-data
+    scratch: /anvil/scratch/x-mlong/cstar-forge-run
+    blueprints: /home/x-mlong/codes/cstar-forge/cstar_forge/blueprints
+    model_configs: /home/x-mlong/codes/cstar-forge/cstar_forge/model-configs
 
-Initializing CstarSpecEngine with domains file: /home/x-mlong/codes/cson-forge/workflows/computing-benchmarks/domains-bm-scaling-no-bgc.yml
+Initializing CstarSpecEngine with domains file: /home/x-mlong/codes/cstar-forge/workflows/computing-benchmarks/domains-bm-scaling-no-bgc.yml
 
 ================================================================================
 Generating all domain configurations...
@@ -312,9 +312,9 @@ Completed ensemble_id=30
 
 ==========================================
 Running benchmark scaling for ensemble_id=40
-Current directory: /home/x-mlong/codes/cson-forge/workflows/computing-benchmarks
+Current directory: /home/x-mlong/codes/cstar-forge/workflows/computing-benchmarks
 ==========================================
-Using domains file: /home/x-mlong/codes/cson-forge/workflows/computing-benchmarks/domains-bm-scaling-no-bgc.yml
+Using domains file: /home/x-mlong/codes/cstar-forge/workflows/computing-benchmarks/domains-bm-scaling-no-bgc.yml
 Clobber inputs: False
 Generate only: False
 Ensemble ID: 40
@@ -322,14 +322,14 @@ Ensemble ID: 40
 System Configuration:
   System ID: RCAC_anvil
   Paths:
-    here: /home/x-mlong/codes/cson-forge/cson_forge
-    source_data: /anvil/projects/x-ees250129/cson-forge-data/source-data
-    input_data: /anvil/projects/x-ees250129/cson-forge-data/x-mlong/input-data
-    scratch: /anvil/scratch/x-mlong/cson-forge-run
-    blueprints: /home/x-mlong/codes/cson-forge/cson_forge/blueprints
-    model_configs: /home/x-mlong/codes/cson-forge/cson_forge/model-configs
+    here: /home/x-mlong/codes/cstar-forge/cstar_forge
+    source_data: /anvil/projects/x-ees250129/cstar-forge-data/source-data
+    input_data: /anvil/projects/x-ees250129/cstar-forge-data/x-mlong/input-data
+    scratch: /anvil/scratch/x-mlong/cstar-forge-run
+    blueprints: /home/x-mlong/codes/cstar-forge/cstar_forge/blueprints
+    model_configs: /home/x-mlong/codes/cstar-forge/cstar_forge/model-configs
 
-Initializing CstarSpecEngine with domains file: /home/x-mlong/codes/cson-forge/workflows/computing-benchmarks/domains-bm-scaling-no-bgc.yml
+Initializing CstarSpecEngine with domains file: /home/x-mlong/codes/cstar-forge/workflows/computing-benchmarks/domains-bm-scaling-no-bgc.yml
 
 ================================================================================
 Generating all domain configurations...

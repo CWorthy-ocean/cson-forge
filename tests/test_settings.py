@@ -12,7 +12,7 @@ import pytest
 import yaml
 from unittest.mock import MagicMock
 
-from cson_forge.settings import render_roms_settings, ROMSTemplateRenderer
+from cstar_forge.settings import render_roms_settings, ROMSTemplateRenderer
 
 
 class TestRenderRomsSettings:

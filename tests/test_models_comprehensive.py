@@ -18,7 +18,7 @@ import yaml
 from pydantic import ValidationError
 
 import cstar.orchestration.models as cstar_models
-from cson_forge.models import (
+from cstar_forge.models import (
     SourceSpec,
     GridInput,
     InitialConditionsInput,
@@ -327,8 +327,8 @@ class TestSettingsStage:
     
     def test_settingsstage_template_variable_resolution(self, tmp_path, monkeypatch):
         """Test SettingsStage resolves template variables in path."""
-        from cson_forge import config
-        from cson_forge.config import DataPaths
+        from cstar_forge import config
+        from cstar_forge.config import DataPaths
         
         # Create a new DataPaths instance with model_configs set to tmp_path
         # (frozen dataclasses can't be mutated, but we can create new instances)
@@ -346,7 +346,7 @@ class TestSettingsStage:
         )
         # Patch both config.paths and models.config.paths since models.py imports config
         monkeypatch.setattr(config, "paths", mocked_paths)
-        import cson_forge.models as models_module
+        import cstar_forge.models as models_module
         monkeypatch.setattr(models_module.config, "paths", mocked_paths)
         
         # Create a YAML file with template variable in path
@@ -362,8 +362,8 @@ class TestSettingsStage:
     
     def test_settingsstage_relative_path(self, tmp_path, monkeypatch):
         """Test SettingsStage resolves relative paths."""
-        from cson_forge import config
-        from cson_forge.config import DataPaths
+        from cstar_forge import config
+        from cstar_forge.config import DataPaths
         
         # Create a new DataPaths instance with model_configs set to tmp_path
         original_paths = config.paths
@@ -380,7 +380,7 @@ class TestSettingsStage:
         )
         # Patch both config.paths and models.config.paths since models.py imports config
         monkeypatch.setattr(config, "paths", mocked_paths)
-        import cson_forge.models as models_module
+        import cstar_forge.models as models_module
         monkeypatch.setattr(models_module.config, "paths", mocked_paths)
         
         # Create file in model_configs subdirectory
@@ -1151,8 +1151,8 @@ class TestExtractSourceName:
 class TestDatasetKeysFromInputs:
     """Tests for _dataset_keys_from_inputs helper function."""
     
-    @patch('cson_forge.source_data.map_source_to_dataset_key')
-    @patch('cson_forge.source_data.DATASET_REGISTRY')
+    @patch('cstar_forge.source_data.map_source_to_dataset_key')
+    @patch('cstar_forge.source_data.DATASET_REGISTRY')
     def test_dataset_keys_from_inputs_basic(self, mock_registry, mock_map):
         """Test extracting dataset keys from ModelInputs."""
         # Mock source_data module functions
@@ -1200,8 +1200,8 @@ class TestDatasetKeysFromInputs:
         assert "UNIFIED_BGC" in dataset_keys
         assert "ERA5" in dataset_keys
     
-    @patch('cson_forge.source_data.map_source_to_dataset_key')
-    @patch('cson_forge.source_data.DATASET_REGISTRY')
+    @patch('cstar_forge.source_data.map_source_to_dataset_key')
+    @patch('cstar_forge.source_data.DATASET_REGISTRY')
     def test_dataset_keys_from_inputs_with_tidal_river(self, mock_registry, mock_map):
         """Test extracting dataset keys including tidal and river."""
         mock_map.side_effect = lambda x: {
@@ -1271,7 +1271,7 @@ class TestDatasetKeysFromInputs:
         )
         
         # Mock AttributeError when source_data functions are missing
-        with patch('cson_forge.source_data.map_source_to_dataset_key', side_effect=AttributeError("Function not available")):
+        with patch('cstar_forge.source_data.map_source_to_dataset_key', side_effect=AttributeError("Function not available")):
             with pytest.raises(ValueError) as exc_info:
                 _dataset_keys_from_inputs(inputs)
             assert "source_data module functions are not available" in str(exc_info.value)
@@ -1280,7 +1280,7 @@ class TestDatasetKeysFromInputs:
 class TestCollectDatasets:
     """Tests for _collect_datasets helper function."""
     
-    @patch('cson_forge.models._dataset_keys_from_inputs')
+    @patch('cstar_forge.models._dataset_keys_from_inputs')
     def test_collect_datasets_explicit_only(self, mock_extract):
         """Test _collect_datasets with explicit datasets only."""
         mock_extract.return_value = set()
@@ -1314,7 +1314,7 @@ class TestCollectDatasets:
         assert "GLORYS_REGIONAL" in datasets
         assert "UNIFIED_BGC" in datasets
     
-    @patch('cson_forge.models._dataset_keys_from_inputs')
+    @patch('cstar_forge.models._dataset_keys_from_inputs')
     def test_collect_datasets_from_inputs_only(self, mock_extract):
         """Test _collect_datasets extracting from inputs only."""
         mock_extract.return_value = {"GLORYS_REGIONAL", "ERA5"}
@@ -1346,7 +1346,7 @@ class TestCollectDatasets:
         assert "GLORYS_REGIONAL" in datasets
         assert "ERA5" in datasets
     
-    @patch('cson_forge.models._dataset_keys_from_inputs')
+    @patch('cstar_forge.models._dataset_keys_from_inputs')
     def test_collect_datasets_combined(self, mock_extract):
         """Test _collect_datasets combining explicit and extracted."""
         mock_extract.return_value = {"GLORYS_REGIONAL", "ERA5"}
@@ -1381,7 +1381,7 @@ class TestCollectDatasets:
         assert "ERA5" in datasets
         assert "UNIFIED_BGC" in datasets
     
-    @patch('cson_forge.models._dataset_keys_from_inputs')
+    @patch('cstar_forge.models._dataset_keys_from_inputs')
     def test_collect_datasets_empty_explicit(self, mock_extract):
         """Test _collect_datasets with empty explicit list."""
         mock_extract.return_value = {"GLORYS_REGIONAL"}
@@ -1727,7 +1727,7 @@ class TestLoadModelsYaml:
         with yaml_path.open("w") as f:
             yaml.safe_dump(yaml_content, f)
         
-        with patch('cson_forge.models._dataset_keys_from_inputs', return_value=set()):
+        with patch('cstar_forge.models._dataset_keys_from_inputs', return_value=set()):
             spec = load_models_yaml(yaml_path, "test_model")
             assert "GLORYS_REGIONAL" in spec.datasets
             assert "UNIFIED_BGC" in spec.datasets
@@ -1815,9 +1815,9 @@ class TestLoadModelsYaml:
     
     def test_load_models_yaml_with_templates(self, tmp_path, monkeypatch):
         """Test load_models_yaml with templates specification."""
-        import cson_forge.models as models_module
-        from cson_forge import config
-        from cson_forge.config import DataPaths
+        import cstar_forge.models as models_module
+        from cstar_forge import config
+        from cstar_forge.config import DataPaths
         
         # Create a new DataPaths instance with model_configs set to tmp_path
         original_paths = config.paths
@@ -1901,9 +1901,9 @@ class TestLoadModelsYaml:
     
     def test_load_models_yaml_with_settings(self, tmp_path, monkeypatch):
         """Test load_models_yaml with settings specification."""
-        import cson_forge.models as models_module
-        from cson_forge import config
-        from cson_forge.config import DataPaths
+        import cstar_forge.models as models_module
+        from cstar_forge import config
+        from cstar_forge.config import DataPaths
         
         # Create a new DataPaths instance with model_configs set to tmp_path
         original_paths = config.paths
@@ -1984,9 +1984,9 @@ class TestLoadModelsYaml:
     
     def test_load_models_yaml_with_templates_and_settings(self, tmp_path, monkeypatch):
         """Test load_models_yaml with both templates and settings."""
-        import cson_forge.models as models_module
-        from cson_forge import config
-        from cson_forge.config import DataPaths
+        import cstar_forge.models as models_module
+        from cstar_forge import config
+        from cstar_forge.config import DataPaths
         
         # Create a new DataPaths instance with model_configs set to tmp_path
         original_paths = config.paths
@@ -2067,9 +2067,9 @@ class TestLoadModelsYaml:
     
     def test_load_models_yaml_template_path_resolution(self, tmp_path, monkeypatch):
         """Test load_models_yaml resolves template variables in paths."""
-        import cson_forge.models as models_module
-        from cson_forge import config
-        from cson_forge.config import DataPaths
+        import cstar_forge.models as models_module
+        from cstar_forge import config
+        from cstar_forge.config import DataPaths
         
         # Create a new DataPaths instance with model_configs set to tmp_path
         original_paths = config.paths

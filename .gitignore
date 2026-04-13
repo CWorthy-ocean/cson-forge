@@ -138,8 +138,8 @@ dask-worker-space/
 .DS_Store
 
 # binarys & temporary files
-cson_forge/builds/*/bld_tmp/*
-cson_forge/builds/*/exe/*
+cstar_forge/builds/*/bld_tmp/*
+cstar_forge/builds/*/exe/*
 *.o
 *.mod
 
@@ -155,4 +155,6 @@ workflows/_notes/*
 # MyST build outputs
 _build
 
-
+# test artifacts
+cstar_forge/blueprints/*/cson_roms-marbl_v0.1_test-grid_4procs/
+cstar_forge/builds/cson_roms-marbl_v0.1_test-grid_4procs/

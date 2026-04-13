@@ -350,8 +350,8 @@ def get_environment_info() -> EnvironmentInfo:
         kernel_name = os.environ.get("JPY_KERNEL_NAME", None)
         if not kernel_name:
             # Try to infer from Python executable path
-            if "cson-forge" in python_executable:
-                kernel_name = "cson-forge-v0"
+            if "cstar-forge" in python_executable:
+                kernel_name = "cstar-forge-v0"
             else:
                 kernel_name = None
         try:
@@ -404,7 +404,7 @@ def main(argv: list[str] | None = None) -> int:
         argv = sys.argv[1:]
 
     parser = argparse.ArgumentParser(
-        description="Inspect CSON-Forge data path configuration."
+        description="Inspect cstar-forge data path configuration."
     )
 
     subparsers = parser.add_subparsers(dest="command")
