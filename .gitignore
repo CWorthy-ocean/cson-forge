@@ -155,6 +155,6 @@ workflows/_notes/*
 # MyST build outputs
 _build
 
-
-
-cstar_forge/blueprints/MacOS/cson_roms-marbl_v0.1_test-grid_4procs/
+# test artifacts
+cstar_forge/blueprints/*/cson_roms-marbl_v0.1_test-grid_4procs/
+cstar_forge/builds/cson_roms-marbl_v0.1_test-grid_4procs/
