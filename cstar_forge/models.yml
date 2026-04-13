@@ -1,4 +1,4 @@
-cson_roms-marbl_v0.1:
+csforge_roms-marbl_v0.1:
   templates:
     compile_time:
       location: "{{ config.path.model_configs }}/{{ model.name }}/templates/compile-time"
@@ -90,7 +90,7 @@ cson_roms-marbl_v0.1:
             climatology: false
           include_bgc: true
 
-cson_roms-no-bgc_v0.1:
+csforge_roms-no-bgc_v0.1:
   templates:
     compile_time:
       location: "{{ config.path.model_configs }}/{{ model.name }}/templates/compile-time"

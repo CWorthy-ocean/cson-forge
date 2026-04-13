@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import warnings
 # Suppress harmless warning about module already being in sys.modules
-# This occurs when cson_forge package imports nb_engine before running as module
+# This occurs when cstar_forge package imports nb_engine before running as module
 # The warning is emitted by Python's runpy module, so we need to suppress it early
 warnings.filterwarnings("ignore", category=RuntimeWarning, module="runpy")
 
@@ -188,7 +188,7 @@ def run_notebook(
     output_path: Path,
     parameters: Dict[str, Any],
     force_recompute: bool = False,
-    kernel_name: str = "cson-forge-v0",
+    kernel_name: str = "cstar-forge-v0",
 ) -> None:
     """Execute notebooks with papermill and return output paths."""
     try:
@@ -332,7 +332,7 @@ def main(args: Optional[Iterable[str]] = None) -> int:
                     logger.info("Running %s -> %s", notebook_path, output_path)
                     try:
                         # Use parsed kernel or fall back to environment name from environment.yml
-                        kernel_name = parsed.kernel or _get_kernel_name_from_env() or "cson-forge-v0"
+                        kernel_name = parsed.kernel or _get_kernel_name_from_env() or "cstar-forge-v0"
                         run_notebook(
                             notebook_path,
                             output_path=output_path,

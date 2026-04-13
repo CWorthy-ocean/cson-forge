@@ -138,8 +138,8 @@ dask-worker-space/
 .DS_Store
 
 # binarys & temporary files
-cson_forge/builds/*/bld_tmp/*
-cson_forge/builds/*/exe/*
+cstar_forge/builds/*/bld_tmp/*
+cstar_forge/builds/*/exe/*
 *.o
 *.mod
 

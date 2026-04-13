@@ -1,5 +1,5 @@
 """
-cson_forge: A utility for generating regional oceanographic modeling domains
+cstar_forge: A utility for generating regional oceanographic modeling domains
 and spawning reproducible C-Star workflows.
 """
 

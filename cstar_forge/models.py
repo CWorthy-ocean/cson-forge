@@ -1,5 +1,5 @@
 """
-Pydantic models for CSON model input specifications.
+Pydantic models for CSFORGE model input specifications.
 
 These models represent the structure of inputs in models.yml, providing
 type validation and structure for grid, initial_conditions, and forcing
@@ -379,7 +379,7 @@ class ModelSpec(BaseModel):
     Parameters
     ----------
     name : str
-        Logical name of the model (e.g., "cson_roms-marbl_v0.1").
+        Logical name of the model (e.g., "csforge_roms-marbl_v0.1").
     templates : Optional[TemplatesSpec]
         Template specifications containing compile_time and run_time stages (as CodeRepository).
     settings : SettingsSpec
@@ -633,7 +633,7 @@ def load_models_yaml(path: Path, model_name: str) -> ModelSpec:
     path : Path
         Path to the models.yaml file.
     model_name : str
-        Name of the model block to load (e.g., "cson_roms-marbl_v0.1").
+        Name of the model block to load (e.g., "csforge_roms-marbl_v0.1").
     
     Returns
     -------

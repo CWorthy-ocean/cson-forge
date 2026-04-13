@@ -1,6 +1,6 @@
 ccs-12km:
   description: "California Current System"
-  model_name: "cson_roms-marbl_v0.1"
+  model_name: "csforge_roms-marbl_v0.1"
   grid_name: "ccs-12km"
   start_time: "2024-01-01"
   end_time: "2024-01-02"
@@ -29,7 +29,7 @@ ccs-12km:
 
 gulf-guinea-toy:
   description: "Gulf of Guinea (toy)"
-  model_name: "cson_roms-marbl_v0.1"
+  model_name: "csforge_roms-marbl_v0.1"
   grid_name: "gulf-guinea-toy"
   start_time: "2012-01-01"
   end_time: "2012-01-02"
@@ -53,7 +53,7 @@ gulf-guinea-toy:
 
 hvalfjörður-0:
   description: "Hvalfjörður, Iceland"
-  model_name: "cson_roms-marbl_v0.1"
+  model_name: "csforge_roms-marbl_v0.1"
   grid_name: "hvalfjörður-0"
   start_time: "2024-01-01"
   end_time: "2024-01-02"
@@ -78,7 +78,7 @@ hvalfjörður-0:
 
 wio-toy:
   description: "Western Indian Ocean (toy)"
-  model_name: "cson_roms-marbl_v0.1"
+  model_name: "csforge_roms-marbl_v0.1"
   grid_name: "wio-toy"
   start_time: "2012-01-01"
   end_time: "2012-01-02"

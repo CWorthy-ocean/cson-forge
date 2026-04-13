@@ -1,5 +1,5 @@
 [tool.coverage.run]
-source = ["cson_forge"]
+source = ["cstar_forge"]
 omit = [
     "**/__init__.py",
 ]

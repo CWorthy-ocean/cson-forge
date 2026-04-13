@@ -16,7 +16,7 @@ notebooks:
       parameters:
         domain_name: "CCS-12km"
         varname: "pCO2SURF"      
-        model_name: "cson_roms-marbl_v0.1"
+        model_name: "csforge_roms-marbl_v0.1"
         grid_name: "ccs-12km"
         fps: 6
-      output_path: outputs/papermill/pm_movie-maker_cson_roms-marbl_v0.1_ccs-12km_pCO2SURF.ipynb
+      output_path: outputs/papermill/pm_movie-maker_csforge_roms-marbl_v0.1_ccs-12km_pCO2SURF.ipynb
