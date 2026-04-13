@@ -138,7 +138,7 @@ class BlueprintCatalog:
         Extract model name and grid name from blueprint name.
         
         Blueprint names follow the pattern: {model_name}_{grid_name}
-        e.g., "csforge_roms-marbl_v0.1_test-tiny" -> ("csforge_roms-marbl_v0.1", "test-tiny")
+        e.g., "cson_roms-marbl_v0.1_test-tiny" -> ("cson_roms-marbl_v0.1", "test-tiny")
         
         Parameters
         ----------

@@ -278,7 +278,7 @@ def test_load_yaml_params_rejects_non_mapping(tmp_path):
 
 def test_parse_slurm_job_id():
     """Test parsing SLURM Job ID from log file."""
-    fixture_path = Path(__file__).parent / "fixtures" / "csforge_roms-marbl_v0-1_ccs-12km_70procs_20240101-20240102.out"
+    fixture_path = Path(__file__).parent / "fixtures" / "cson_roms-marbl_v0-1_ccs-12km_70procs_20240101-20240102.out"
     
     job_id = parse_slurm_job_id(fixture_path)
     

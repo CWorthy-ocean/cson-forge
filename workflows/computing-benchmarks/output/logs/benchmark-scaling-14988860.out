@@ -36,7 +36,7 @@ Starting generation for 5 domain(s)
 --------------------------------------------------------------------------------
 
 ✗ Error processing domain ccs-12km_1232procs: 1 validation error for CstarSpecBuilder
-  Value error, Template files with sections ['bgc'] do not have corresponding keys in settings.compile_time.settings_dict. Available keys: ['blk_frc', 'cdr_frc', 'cppdefs', 'diagnostics', 'ocean_vars', 'param', 'river_frc', 'sponge_tune', 'surf_flux', 'tides', 'tracers'] [type=value_error, input_value={'name': 'csforge_roms-no-bg... 'TPXO', 'UNIFIED_BGC']}, input_type=dict]
+  Value error, Template files with sections ['bgc'] do not have corresponding keys in settings.compile_time.settings_dict. Available keys: ['blk_frc', 'cdr_frc', 'cppdefs', 'diagnostics', 'ocean_vars', 'param', 'river_frc', 'sponge_tune', 'surf_flux', 'tides', 'tracers'] [type=value_error, input_value={'name': 'cson_roms-no-bg... 'TPXO', 'UNIFIED_BGC']}, input_type=dict]
     For further information visit https://errors.pydantic.dev/2.12/v/value_error
 
 --------------------------------------------------------------------------------
@@ -44,7 +44,7 @@ Starting generation for 5 domain(s)
 --------------------------------------------------------------------------------
 
 ✗ Error processing domain ccs-12km_20procs: 1 validation error for CstarSpecBuilder
-  Value error, Template files with sections ['bgc'] do not have corresponding keys in settings.compile_time.settings_dict. Available keys: ['blk_frc', 'cdr_frc', 'cppdefs', 'diagnostics', 'ocean_vars', 'param', 'river_frc', 'sponge_tune', 'surf_flux', 'tides', 'tracers'] [type=value_error, input_value={'name': 'csforge_roms-no-bg... 'TPXO', 'UNIFIED_BGC']}, input_type=dict]
+  Value error, Template files with sections ['bgc'] do not have corresponding keys in settings.compile_time.settings_dict. Available keys: ['blk_frc', 'cdr_frc', 'cppdefs', 'diagnostics', 'ocean_vars', 'param', 'river_frc', 'sponge_tune', 'surf_flux', 'tides', 'tracers'] [type=value_error, input_value={'name': 'cson_roms-no-bg... 'TPXO', 'UNIFIED_BGC']}, input_type=dict]
     For further information visit https://errors.pydantic.dev/2.12/v/value_error
 
 --------------------------------------------------------------------------------
@@ -52,7 +52,7 @@ Starting generation for 5 domain(s)
 --------------------------------------------------------------------------------
 
 ✗ Error processing domain ccs-12km_280procs: 1 validation error for CstarSpecBuilder
-  Value error, Template files with sections ['bgc'] do not have corresponding keys in settings.compile_time.settings_dict. Available keys: ['blk_frc', 'cdr_frc', 'cppdefs', 'diagnostics', 'ocean_vars', 'param', 'river_frc', 'sponge_tune', 'surf_flux', 'tides', 'tracers'] [type=value_error, input_value={'name': 'csforge_roms-no-bg... 'TPXO', 'UNIFIED_BGC']}, input_type=dict]
+  Value error, Template files with sections ['bgc'] do not have corresponding keys in settings.compile_time.settings_dict. Available keys: ['blk_frc', 'cdr_frc', 'cppdefs', 'diagnostics', 'ocean_vars', 'param', 'river_frc', 'sponge_tune', 'surf_flux', 'tides', 'tracers'] [type=value_error, input_value={'name': 'cson_roms-no-bg... 'TPXO', 'UNIFIED_BGC']}, input_type=dict]
     For further information visit https://errors.pydantic.dev/2.12/v/value_error
 
 --------------------------------------------------------------------------------
@@ -60,7 +60,7 @@ Starting generation for 5 domain(s)
 --------------------------------------------------------------------------------
 
 ✗ Error processing domain ccs-12km_352procs: 1 validation error for CstarSpecBuilder
-  Value error, Template files with sections ['bgc'] do not have corresponding keys in settings.compile_time.settings_dict. Available keys: ['blk_frc', 'cdr_frc', 'cppdefs', 'diagnostics', 'ocean_vars', 'param', 'river_frc', 'sponge_tune', 'surf_flux', 'tides', 'tracers'] [type=value_error, input_value={'name': 'csforge_roms-no-bg... 'TPXO', 'UNIFIED_BGC']}, input_type=dict]
+  Value error, Template files with sections ['bgc'] do not have corresponding keys in settings.compile_time.settings_dict. Available keys: ['blk_frc', 'cdr_frc', 'cppdefs', 'diagnostics', 'ocean_vars', 'param', 'river_frc', 'sponge_tune', 'surf_flux', 'tides', 'tracers'] [type=value_error, input_value={'name': 'cson_roms-no-bg... 'TPXO', 'UNIFIED_BGC']}, input_type=dict]
     For further information visit https://errors.pydantic.dev/2.12/v/value_error
 
 --------------------------------------------------------------------------------
@@ -68,26 +68,26 @@ Starting generation for 5 domain(s)
 --------------------------------------------------------------------------------
 
 ✗ Error processing domain ccs-12km_70procs: 1 validation error for CstarSpecBuilder
-  Value error, Template files with sections ['bgc'] do not have corresponding keys in settings.compile_time.settings_dict. Available keys: ['blk_frc', 'cdr_frc', 'cppdefs', 'diagnostics', 'ocean_vars', 'param', 'river_frc', 'sponge_tune', 'surf_flux', 'tides', 'tracers'] [type=value_error, input_value={'name': 'csforge_roms-no-bg... 'TPXO', 'UNIFIED_BGC']}, input_type=dict]
+  Value error, Template files with sections ['bgc'] do not have corresponding keys in settings.compile_time.settings_dict. Available keys: ['blk_frc', 'cdr_frc', 'cppdefs', 'diagnostics', 'ocean_vars', 'param', 'river_frc', 'sponge_tune', 'surf_flux', 'tides', 'tracers'] [type=value_error, input_value={'name': 'cson_roms-no-bg... 'TPXO', 'UNIFIED_BGC']}, input_type=dict]
     For further information visit https://errors.pydantic.dev/2.12/v/value_error
 
 ================================================================================
 Completed generation for all 5 domain(s)
 ⚠ 5 domain(s) failed:
   - ccs-12km_1232procs: 1 validation error for CstarSpecBuilder
-  Value error, Template files with sections ['bgc'] do not have corresponding keys in settings.compile_time.settings_dict. Available keys: ['blk_frc', 'cdr_frc', 'cppdefs', 'diagnostics', 'ocean_vars', 'param', 'river_frc', 'sponge_tune', 'surf_flux', 'tides', 'tracers'] [type=value_error, input_value={'name': 'csforge_roms-no-bg... 'TPXO', 'UNIFIED_BGC']}, input_type=dict]
+  Value error, Template files with sections ['bgc'] do not have corresponding keys in settings.compile_time.settings_dict. Available keys: ['blk_frc', 'cdr_frc', 'cppdefs', 'diagnostics', 'ocean_vars', 'param', 'river_frc', 'sponge_tune', 'surf_flux', 'tides', 'tracers'] [type=value_error, input_value={'name': 'cson_roms-no-bg... 'TPXO', 'UNIFIED_BGC']}, input_type=dict]
     For further information visit https://errors.pydantic.dev/2.12/v/value_error
   - ccs-12km_20procs: 1 validation error for CstarSpecBuilder
-  Value error, Template files with sections ['bgc'] do not have corresponding keys in settings.compile_time.settings_dict. Available keys: ['blk_frc', 'cdr_frc', 'cppdefs', 'diagnostics', 'ocean_vars', 'param', 'river_frc', 'sponge_tune', 'surf_flux', 'tides', 'tracers'] [type=value_error, input_value={'name': 'csforge_roms-no-bg... 'TPXO', 'UNIFIED_BGC']}, input_type=dict]
+  Value error, Template files with sections ['bgc'] do not have corresponding keys in settings.compile_time.settings_dict. Available keys: ['blk_frc', 'cdr_frc', 'cppdefs', 'diagnostics', 'ocean_vars', 'param', 'river_frc', 'sponge_tune', 'surf_flux', 'tides', 'tracers'] [type=value_error, input_value={'name': 'cson_roms-no-bg... 'TPXO', 'UNIFIED_BGC']}, input_type=dict]
     For further information visit https://errors.pydantic.dev/2.12/v/value_error
   - ccs-12km_280procs: 1 validation error for CstarSpecBuilder
-  Value error, Template files with sections ['bgc'] do not have corresponding keys in settings.compile_time.settings_dict. Available keys: ['blk_frc', 'cdr_frc', 'cppdefs', 'diagnostics', 'ocean_vars', 'param', 'river_frc', 'sponge_tune', 'surf_flux', 'tides', 'tracers'] [type=value_error, input_value={'name': 'csforge_roms-no-bg... 'TPXO', 'UNIFIED_BGC']}, input_type=dict]
+  Value error, Template files with sections ['bgc'] do not have corresponding keys in settings.compile_time.settings_dict. Available keys: ['blk_frc', 'cdr_frc', 'cppdefs', 'diagnostics', 'ocean_vars', 'param', 'river_frc', 'sponge_tune', 'surf_flux', 'tides', 'tracers'] [type=value_error, input_value={'name': 'cson_roms-no-bg... 'TPXO', 'UNIFIED_BGC']}, input_type=dict]
     For further information visit https://errors.pydantic.dev/2.12/v/value_error
   - ccs-12km_352procs: 1 validation error for CstarSpecBuilder
-  Value error, Template files with sections ['bgc'] do not have corresponding keys in settings.compile_time.settings_dict. Available keys: ['blk_frc', 'cdr_frc', 'cppdefs', 'diagnostics', 'ocean_vars', 'param', 'river_frc', 'sponge_tune', 'surf_flux', 'tides', 'tracers'] [type=value_error, input_value={'name': 'csforge_roms-no-bg... 'TPXO', 'UNIFIED_BGC']}, input_type=dict]
+  Value error, Template files with sections ['bgc'] do not have corresponding keys in settings.compile_time.settings_dict. Available keys: ['blk_frc', 'cdr_frc', 'cppdefs', 'diagnostics', 'ocean_vars', 'param', 'river_frc', 'sponge_tune', 'surf_flux', 'tides', 'tracers'] [type=value_error, input_value={'name': 'cson_roms-no-bg... 'TPXO', 'UNIFIED_BGC']}, input_type=dict]
     For further information visit https://errors.pydantic.dev/2.12/v/value_error
   - ccs-12km_70procs: 1 validation error for CstarSpecBuilder
-  Value error, Template files with sections ['bgc'] do not have corresponding keys in settings.compile_time.settings_dict. Available keys: ['blk_frc', 'cdr_frc', 'cppdefs', 'diagnostics', 'ocean_vars', 'param', 'river_frc', 'sponge_tune', 'surf_flux', 'tides', 'tracers'] [type=value_error, input_value={'name': 'csforge_roms-no-bg... 'TPXO', 'UNIFIED_BGC']}, input_type=dict]
+  Value error, Template files with sections ['bgc'] do not have corresponding keys in settings.compile_time.settings_dict. Available keys: ['blk_frc', 'cdr_frc', 'cppdefs', 'diagnostics', 'ocean_vars', 'param', 'river_frc', 'sponge_tune', 'surf_flux', 'tides', 'tracers'] [type=value_error, input_value={'name': 'cson_roms-no-bg... 'TPXO', 'UNIFIED_BGC']}, input_type=dict]
     For further information visit https://errors.pydantic.dev/2.12/v/value_error
 ================================================================================
 
@@ -139,7 +139,7 @@ Starting generation for 5 domain(s)
 --------------------------------------------------------------------------------
 
 ✗ Error processing domain ccs-12km_1232procs: 1 validation error for CstarSpecBuilder
-  Value error, Template files with sections ['bgc'] do not have corresponding keys in settings.compile_time.settings_dict. Available keys: ['blk_frc', 'cdr_frc', 'cppdefs', 'diagnostics', 'ocean_vars', 'param', 'river_frc', 'sponge_tune', 'surf_flux', 'tides', 'tracers'] [type=value_error, input_value={'name': 'csforge_roms-no-bg... 'TPXO', 'UNIFIED_BGC']}, input_type=dict]
+  Value error, Template files with sections ['bgc'] do not have corresponding keys in settings.compile_time.settings_dict. Available keys: ['blk_frc', 'cdr_frc', 'cppdefs', 'diagnostics', 'ocean_vars', 'param', 'river_frc', 'sponge_tune', 'surf_flux', 'tides', 'tracers'] [type=value_error, input_value={'name': 'cson_roms-no-bg... 'TPXO', 'UNIFIED_BGC']}, input_type=dict]
     For further information visit https://errors.pydantic.dev/2.12/v/value_error
 
 --------------------------------------------------------------------------------
@@ -147,7 +147,7 @@ Starting generation for 5 domain(s)
 --------------------------------------------------------------------------------
 
 ✗ Error processing domain ccs-12km_20procs: 1 validation error for CstarSpecBuilder
-  Value error, Template files with sections ['bgc'] do not have corresponding keys in settings.compile_time.settings_dict. Available keys: ['blk_frc', 'cdr_frc', 'cppdefs', 'diagnostics', 'ocean_vars', 'param', 'river_frc', 'sponge_tune', 'surf_flux', 'tides', 'tracers'] [type=value_error, input_value={'name': 'csforge_roms-no-bg... 'TPXO', 'UNIFIED_BGC']}, input_type=dict]
+  Value error, Template files with sections ['bgc'] do not have corresponding keys in settings.compile_time.settings_dict. Available keys: ['blk_frc', 'cdr_frc', 'cppdefs', 'diagnostics', 'ocean_vars', 'param', 'river_frc', 'sponge_tune', 'surf_flux', 'tides', 'tracers'] [type=value_error, input_value={'name': 'cson_roms-no-bg... 'TPXO', 'UNIFIED_BGC']}, input_type=dict]
     For further information visit https://errors.pydantic.dev/2.12/v/value_error
 
 --------------------------------------------------------------------------------
@@ -155,7 +155,7 @@ Starting generation for 5 domain(s)
 --------------------------------------------------------------------------------
 
 ✗ Error processing domain ccs-12km_280procs: 1 validation error for CstarSpecBuilder
-  Value error, Template files with sections ['bgc'] do not have corresponding keys in settings.compile_time.settings_dict. Available keys: ['blk_frc', 'cdr_frc', 'cppdefs', 'diagnostics', 'ocean_vars', 'param', 'river_frc', 'sponge_tune', 'surf_flux', 'tides', 'tracers'] [type=value_error, input_value={'name': 'csforge_roms-no-bg... 'TPXO', 'UNIFIED_BGC']}, input_type=dict]
+  Value error, Template files with sections ['bgc'] do not have corresponding keys in settings.compile_time.settings_dict. Available keys: ['blk_frc', 'cdr_frc', 'cppdefs', 'diagnostics', 'ocean_vars', 'param', 'river_frc', 'sponge_tune', 'surf_flux', 'tides', 'tracers'] [type=value_error, input_value={'name': 'cson_roms-no-bg... 'TPXO', 'UNIFIED_BGC']}, input_type=dict]
     For further information visit https://errors.pydantic.dev/2.12/v/value_error
 
 --------------------------------------------------------------------------------
@@ -163,7 +163,7 @@ Starting generation for 5 domain(s)
 --------------------------------------------------------------------------------
 
 ✗ Error processing domain ccs-12km_352procs: 1 validation error for CstarSpecBuilder
-  Value error, Template files with sections ['bgc'] do not have corresponding keys in settings.compile_time.settings_dict. Available keys: ['blk_frc', 'cdr_frc', 'cppdefs', 'diagnostics', 'ocean_vars', 'param', 'river_frc', 'sponge_tune', 'surf_flux', 'tides', 'tracers'] [type=value_error, input_value={'name': 'csforge_roms-no-bg... 'TPXO', 'UNIFIED_BGC']}, input_type=dict]
+  Value error, Template files with sections ['bgc'] do not have corresponding keys in settings.compile_time.settings_dict. Available keys: ['blk_frc', 'cdr_frc', 'cppdefs', 'diagnostics', 'ocean_vars', 'param', 'river_frc', 'sponge_tune', 'surf_flux', 'tides', 'tracers'] [type=value_error, input_value={'name': 'cson_roms-no-bg... 'TPXO', 'UNIFIED_BGC']}, input_type=dict]
     For further information visit https://errors.pydantic.dev/2.12/v/value_error
 
 --------------------------------------------------------------------------------
@@ -171,26 +171,26 @@ Starting generation for 5 domain(s)
 --------------------------------------------------------------------------------
 
 ✗ Error processing domain ccs-12km_70procs: 1 validation error for CstarSpecBuilder
-  Value error, Template files with sections ['bgc'] do not have corresponding keys in settings.compile_time.settings_dict. Available keys: ['blk_frc', 'cdr_frc', 'cppdefs', 'diagnostics', 'ocean_vars', 'param', 'river_frc', 'sponge_tune', 'surf_flux', 'tides', 'tracers'] [type=value_error, input_value={'name': 'csforge_roms-no-bg... 'TPXO', 'UNIFIED_BGC']}, input_type=dict]
+  Value error, Template files with sections ['bgc'] do not have corresponding keys in settings.compile_time.settings_dict. Available keys: ['blk_frc', 'cdr_frc', 'cppdefs', 'diagnostics', 'ocean_vars', 'param', 'river_frc', 'sponge_tune', 'surf_flux', 'tides', 'tracers'] [type=value_error, input_value={'name': 'cson_roms-no-bg... 'TPXO', 'UNIFIED_BGC']}, input_type=dict]
     For further information visit https://errors.pydantic.dev/2.12/v/value_error
 
 ================================================================================
 Completed generation for all 5 domain(s)
 ⚠ 5 domain(s) failed:
   - ccs-12km_1232procs: 1 validation error for CstarSpecBuilder
-  Value error, Template files with sections ['bgc'] do not have corresponding keys in settings.compile_time.settings_dict. Available keys: ['blk_frc', 'cdr_frc', 'cppdefs', 'diagnostics', 'ocean_vars', 'param', 'river_frc', 'sponge_tune', 'surf_flux', 'tides', 'tracers'] [type=value_error, input_value={'name': 'csforge_roms-no-bg... 'TPXO', 'UNIFIED_BGC']}, input_type=dict]
+  Value error, Template files with sections ['bgc'] do not have corresponding keys in settings.compile_time.settings_dict. Available keys: ['blk_frc', 'cdr_frc', 'cppdefs', 'diagnostics', 'ocean_vars', 'param', 'river_frc', 'sponge_tune', 'surf_flux', 'tides', 'tracers'] [type=value_error, input_value={'name': 'cson_roms-no-bg... 'TPXO', 'UNIFIED_BGC']}, input_type=dict]
     For further information visit https://errors.pydantic.dev/2.12/v/value_error
   - ccs-12km_20procs: 1 validation error for CstarSpecBuilder
-  Value error, Template files with sections ['bgc'] do not have corresponding keys in settings.compile_time.settings_dict. Available keys: ['blk_frc', 'cdr_frc', 'cppdefs', 'diagnostics', 'ocean_vars', 'param', 'river_frc', 'sponge_tune', 'surf_flux', 'tides', 'tracers'] [type=value_error, input_value={'name': 'csforge_roms-no-bg... 'TPXO', 'UNIFIED_BGC']}, input_type=dict]
+  Value error, Template files with sections ['bgc'] do not have corresponding keys in settings.compile_time.settings_dict. Available keys: ['blk_frc', 'cdr_frc', 'cppdefs', 'diagnostics', 'ocean_vars', 'param', 'river_frc', 'sponge_tune', 'surf_flux', 'tides', 'tracers'] [type=value_error, input_value={'name': 'cson_roms-no-bg... 'TPXO', 'UNIFIED_BGC']}, input_type=dict]
     For further information visit https://errors.pydantic.dev/2.12/v/value_error
   - ccs-12km_280procs: 1 validation error for CstarSpecBuilder
-  Value error, Template files with sections ['bgc'] do not have corresponding keys in settings.compile_time.settings_dict. Available keys: ['blk_frc', 'cdr_frc', 'cppdefs', 'diagnostics', 'ocean_vars', 'param', 'river_frc', 'sponge_tune', 'surf_flux', 'tides', 'tracers'] [type=value_error, input_value={'name': 'csforge_roms-no-bg... 'TPXO', 'UNIFIED_BGC']}, input_type=dict]
+  Value error, Template files with sections ['bgc'] do not have corresponding keys in settings.compile_time.settings_dict. Available keys: ['blk_frc', 'cdr_frc', 'cppdefs', 'diagnostics', 'ocean_vars', 'param', 'river_frc', 'sponge_tune', 'surf_flux', 'tides', 'tracers'] [type=value_error, input_value={'name': 'cson_roms-no-bg... 'TPXO', 'UNIFIED_BGC']}, input_type=dict]
     For further information visit https://errors.pydantic.dev/2.12/v/value_error
   - ccs-12km_352procs: 1 validation error for CstarSpecBuilder
-  Value error, Template files with sections ['bgc'] do not have corresponding keys in settings.compile_time.settings_dict. Available keys: ['blk_frc', 'cdr_frc', 'cppdefs', 'diagnostics', 'ocean_vars', 'param', 'river_frc', 'sponge_tune', 'surf_flux', 'tides', 'tracers'] [type=value_error, input_value={'name': 'csforge_roms-no-bg... 'TPXO', 'UNIFIED_BGC']}, input_type=dict]
+  Value error, Template files with sections ['bgc'] do not have corresponding keys in settings.compile_time.settings_dict. Available keys: ['blk_frc', 'cdr_frc', 'cppdefs', 'diagnostics', 'ocean_vars', 'param', 'river_frc', 'sponge_tune', 'surf_flux', 'tides', 'tracers'] [type=value_error, input_value={'name': 'cson_roms-no-bg... 'TPXO', 'UNIFIED_BGC']}, input_type=dict]
     For further information visit https://errors.pydantic.dev/2.12/v/value_error
   - ccs-12km_70procs: 1 validation error for CstarSpecBuilder
-  Value error, Template files with sections ['bgc'] do not have corresponding keys in settings.compile_time.settings_dict. Available keys: ['blk_frc', 'cdr_frc', 'cppdefs', 'diagnostics', 'ocean_vars', 'param', 'river_frc', 'sponge_tune', 'surf_flux', 'tides', 'tracers'] [type=value_error, input_value={'name': 'csforge_roms-no-bg... 'TPXO', 'UNIFIED_BGC']}, input_type=dict]
+  Value error, Template files with sections ['bgc'] do not have corresponding keys in settings.compile_time.settings_dict. Available keys: ['blk_frc', 'cdr_frc', 'cppdefs', 'diagnostics', 'ocean_vars', 'param', 'river_frc', 'sponge_tune', 'surf_flux', 'tides', 'tracers'] [type=value_error, input_value={'name': 'cson_roms-no-bg... 'TPXO', 'UNIFIED_BGC']}, input_type=dict]
     For further information visit https://errors.pydantic.dev/2.12/v/value_error
 ================================================================================
 
@@ -242,7 +242,7 @@ Starting generation for 5 domain(s)
 --------------------------------------------------------------------------------
 
 ✗ Error processing domain ccs-12km_1232procs: 1 validation error for CstarSpecBuilder
-  Value error, Template files with sections ['bgc'] do not have corresponding keys in settings.compile_time.settings_dict. Available keys: ['blk_frc', 'cdr_frc', 'cppdefs', 'diagnostics', 'ocean_vars', 'param', 'river_frc', 'sponge_tune', 'surf_flux', 'tides', 'tracers'] [type=value_error, input_value={'name': 'csforge_roms-no-bg... 'TPXO', 'UNIFIED_BGC']}, input_type=dict]
+  Value error, Template files with sections ['bgc'] do not have corresponding keys in settings.compile_time.settings_dict. Available keys: ['blk_frc', 'cdr_frc', 'cppdefs', 'diagnostics', 'ocean_vars', 'param', 'river_frc', 'sponge_tune', 'surf_flux', 'tides', 'tracers'] [type=value_error, input_value={'name': 'cson_roms-no-bg... 'TPXO', 'UNIFIED_BGC']}, input_type=dict]
     For further information visit https://errors.pydantic.dev/2.12/v/value_error
 
 --------------------------------------------------------------------------------
@@ -250,7 +250,7 @@ Starting generation for 5 domain(s)
 --------------------------------------------------------------------------------
 
 ✗ Error processing domain ccs-12km_20procs: 1 validation error for CstarSpecBuilder
-  Value error, Template files with sections ['bgc'] do not have corresponding keys in settings.compile_time.settings_dict. Available keys: ['blk_frc', 'cdr_frc', 'cppdefs', 'diagnostics', 'ocean_vars', 'param', 'river_frc', 'sponge_tune', 'surf_flux', 'tides', 'tracers'] [type=value_error, input_value={'name': 'csforge_roms-no-bg... 'TPXO', 'UNIFIED_BGC']}, input_type=dict]
+  Value error, Template files with sections ['bgc'] do not have corresponding keys in settings.compile_time.settings_dict. Available keys: ['blk_frc', 'cdr_frc', 'cppdefs', 'diagnostics', 'ocean_vars', 'param', 'river_frc', 'sponge_tune', 'surf_flux', 'tides', 'tracers'] [type=value_error, input_value={'name': 'cson_roms-no-bg... 'TPXO', 'UNIFIED_BGC']}, input_type=dict]
     For further information visit https://errors.pydantic.dev/2.12/v/value_error
 
 --------------------------------------------------------------------------------
@@ -258,7 +258,7 @@ Starting generation for 5 domain(s)
 --------------------------------------------------------------------------------
 
 ✗ Error processing domain ccs-12km_280procs: 1 validation error for CstarSpecBuilder
-  Value error, Template files with sections ['bgc'] do not have corresponding keys in settings.compile_time.settings_dict. Available keys: ['blk_frc', 'cdr_frc', 'cppdefs', 'diagnostics', 'ocean_vars', 'param', 'river_frc', 'sponge_tune', 'surf_flux', 'tides', 'tracers'] [type=value_error, input_value={'name': 'csforge_roms-no-bg... 'TPXO', 'UNIFIED_BGC']}, input_type=dict]
+  Value error, Template files with sections ['bgc'] do not have corresponding keys in settings.compile_time.settings_dict. Available keys: ['blk_frc', 'cdr_frc', 'cppdefs', 'diagnostics', 'ocean_vars', 'param', 'river_frc', 'sponge_tune', 'surf_flux', 'tides', 'tracers'] [type=value_error, input_value={'name': 'cson_roms-no-bg... 'TPXO', 'UNIFIED_BGC']}, input_type=dict]
     For further information visit https://errors.pydantic.dev/2.12/v/value_error
 
 --------------------------------------------------------------------------------
@@ -266,7 +266,7 @@ Starting generation for 5 domain(s)
 --------------------------------------------------------------------------------
 
 ✗ Error processing domain ccs-12km_352procs: 1 validation error for CstarSpecBuilder
-  Value error, Template files with sections ['bgc'] do not have corresponding keys in settings.compile_time.settings_dict. Available keys: ['blk_frc', 'cdr_frc', 'cppdefs', 'diagnostics', 'ocean_vars', 'param', 'river_frc', 'sponge_tune', 'surf_flux', 'tides', 'tracers'] [type=value_error, input_value={'name': 'csforge_roms-no-bg... 'TPXO', 'UNIFIED_BGC']}, input_type=dict]
+  Value error, Template files with sections ['bgc'] do not have corresponding keys in settings.compile_time.settings_dict. Available keys: ['blk_frc', 'cdr_frc', 'cppdefs', 'diagnostics', 'ocean_vars', 'param', 'river_frc', 'sponge_tune', 'surf_flux', 'tides', 'tracers'] [type=value_error, input_value={'name': 'cson_roms-no-bg... 'TPXO', 'UNIFIED_BGC']}, input_type=dict]
     For further information visit https://errors.pydantic.dev/2.12/v/value_error
 
 --------------------------------------------------------------------------------
@@ -274,26 +274,26 @@ Starting generation for 5 domain(s)
 --------------------------------------------------------------------------------
 
 ✗ Error processing domain ccs-12km_70procs: 1 validation error for CstarSpecBuilder
-  Value error, Template files with sections ['bgc'] do not have corresponding keys in settings.compile_time.settings_dict. Available keys: ['blk_frc', 'cdr_frc', 'cppdefs', 'diagnostics', 'ocean_vars', 'param', 'river_frc', 'sponge_tune', 'surf_flux', 'tides', 'tracers'] [type=value_error, input_value={'name': 'csforge_roms-no-bg... 'TPXO', 'UNIFIED_BGC']}, input_type=dict]
+  Value error, Template files with sections ['bgc'] do not have corresponding keys in settings.compile_time.settings_dict. Available keys: ['blk_frc', 'cdr_frc', 'cppdefs', 'diagnostics', 'ocean_vars', 'param', 'river_frc', 'sponge_tune', 'surf_flux', 'tides', 'tracers'] [type=value_error, input_value={'name': 'cson_roms-no-bg... 'TPXO', 'UNIFIED_BGC']}, input_type=dict]
     For further information visit https://errors.pydantic.dev/2.12/v/value_error
 
 ================================================================================
 Completed generation for all 5 domain(s)
 ⚠ 5 domain(s) failed:
   - ccs-12km_1232procs: 1 validation error for CstarSpecBuilder
-  Value error, Template files with sections ['bgc'] do not have corresponding keys in settings.compile_time.settings_dict. Available keys: ['blk_frc', 'cdr_frc', 'cppdefs', 'diagnostics', 'ocean_vars', 'param', 'river_frc', 'sponge_tune', 'surf_flux', 'tides', 'tracers'] [type=value_error, input_value={'name': 'csforge_roms-no-bg... 'TPXO', 'UNIFIED_BGC']}, input_type=dict]
+  Value error, Template files with sections ['bgc'] do not have corresponding keys in settings.compile_time.settings_dict. Available keys: ['blk_frc', 'cdr_frc', 'cppdefs', 'diagnostics', 'ocean_vars', 'param', 'river_frc', 'sponge_tune', 'surf_flux', 'tides', 'tracers'] [type=value_error, input_value={'name': 'cson_roms-no-bg... 'TPXO', 'UNIFIED_BGC']}, input_type=dict]
     For further information visit https://errors.pydantic.dev/2.12/v/value_error
   - ccs-12km_20procs: 1 validation error for CstarSpecBuilder
-  Value error, Template files with sections ['bgc'] do not have corresponding keys in settings.compile_time.settings_dict. Available keys: ['blk_frc', 'cdr_frc', 'cppdefs', 'diagnostics', 'ocean_vars', 'param', 'river_frc', 'sponge_tune', 'surf_flux', 'tides', 'tracers'] [type=value_error, input_value={'name': 'csforge_roms-no-bg... 'TPXO', 'UNIFIED_BGC']}, input_type=dict]
+  Value error, Template files with sections ['bgc'] do not have corresponding keys in settings.compile_time.settings_dict. Available keys: ['blk_frc', 'cdr_frc', 'cppdefs', 'diagnostics', 'ocean_vars', 'param', 'river_frc', 'sponge_tune', 'surf_flux', 'tides', 'tracers'] [type=value_error, input_value={'name': 'cson_roms-no-bg... 'TPXO', 'UNIFIED_BGC']}, input_type=dict]
     For further information visit https://errors.pydantic.dev/2.12/v/value_error
   - ccs-12km_280procs: 1 validation error for CstarSpecBuilder
-  Value error, Template files with sections ['bgc'] do not have corresponding keys in settings.compile_time.settings_dict. Available keys: ['blk_frc', 'cdr_frc', 'cppdefs', 'diagnostics', 'ocean_vars', 'param', 'river_frc', 'sponge_tune', 'surf_flux', 'tides', 'tracers'] [type=value_error, input_value={'name': 'csforge_roms-no-bg... 'TPXO', 'UNIFIED_BGC']}, input_type=dict]
+  Value error, Template files with sections ['bgc'] do not have corresponding keys in settings.compile_time.settings_dict. Available keys: ['blk_frc', 'cdr_frc', 'cppdefs', 'diagnostics', 'ocean_vars', 'param', 'river_frc', 'sponge_tune', 'surf_flux', 'tides', 'tracers'] [type=value_error, input_value={'name': 'cson_roms-no-bg... 'TPXO', 'UNIFIED_BGC']}, input_type=dict]
     For further information visit https://errors.pydantic.dev/2.12/v/value_error
   - ccs-12km_352procs: 1 validation error for CstarSpecBuilder
-  Value error, Template files with sections ['bgc'] do not have corresponding keys in settings.compile_time.settings_dict. Available keys: ['blk_frc', 'cdr_frc', 'cppdefs', 'diagnostics', 'ocean_vars', 'param', 'river_frc', 'sponge_tune', 'surf_flux', 'tides', 'tracers'] [type=value_error, input_value={'name': 'csforge_roms-no-bg... 'TPXO', 'UNIFIED_BGC']}, input_type=dict]
+  Value error, Template files with sections ['bgc'] do not have corresponding keys in settings.compile_time.settings_dict. Available keys: ['blk_frc', 'cdr_frc', 'cppdefs', 'diagnostics', 'ocean_vars', 'param', 'river_frc', 'sponge_tune', 'surf_flux', 'tides', 'tracers'] [type=value_error, input_value={'name': 'cson_roms-no-bg... 'TPXO', 'UNIFIED_BGC']}, input_type=dict]
     For further information visit https://errors.pydantic.dev/2.12/v/value_error
   - ccs-12km_70procs: 1 validation error for CstarSpecBuilder
-  Value error, Template files with sections ['bgc'] do not have corresponding keys in settings.compile_time.settings_dict. Available keys: ['blk_frc', 'cdr_frc', 'cppdefs', 'diagnostics', 'ocean_vars', 'param', 'river_frc', 'sponge_tune', 'surf_flux', 'tides', 'tracers'] [type=value_error, input_value={'name': 'csforge_roms-no-bg... 'TPXO', 'UNIFIED_BGC']}, input_type=dict]
+  Value error, Template files with sections ['bgc'] do not have corresponding keys in settings.compile_time.settings_dict. Available keys: ['blk_frc', 'cdr_frc', 'cppdefs', 'diagnostics', 'ocean_vars', 'param', 'river_frc', 'sponge_tune', 'surf_flux', 'tides', 'tracers'] [type=value_error, input_value={'name': 'cson_roms-no-bg... 'TPXO', 'UNIFIED_BGC']}, input_type=dict]
     For further information visit https://errors.pydantic.dev/2.12/v/value_error
 ================================================================================
 
@@ -345,7 +345,7 @@ Starting generation for 5 domain(s)
 --------------------------------------------------------------------------------
 
 ✗ Error processing domain ccs-12km_1232procs: 1 validation error for CstarSpecBuilder
-  Value error, Template files with sections ['bgc'] do not have corresponding keys in settings.compile_time.settings_dict. Available keys: ['blk_frc', 'cdr_frc', 'cppdefs', 'diagnostics', 'ocean_vars', 'param', 'river_frc', 'sponge_tune', 'surf_flux', 'tides', 'tracers'] [type=value_error, input_value={'name': 'csforge_roms-no-bg... 'TPXO', 'UNIFIED_BGC']}, input_type=dict]
+  Value error, Template files with sections ['bgc'] do not have corresponding keys in settings.compile_time.settings_dict. Available keys: ['blk_frc', 'cdr_frc', 'cppdefs', 'diagnostics', 'ocean_vars', 'param', 'river_frc', 'sponge_tune', 'surf_flux', 'tides', 'tracers'] [type=value_error, input_value={'name': 'cson_roms-no-bg... 'TPXO', 'UNIFIED_BGC']}, input_type=dict]
     For further information visit https://errors.pydantic.dev/2.12/v/value_error
 
 --------------------------------------------------------------------------------
@@ -353,7 +353,7 @@ Starting generation for 5 domain(s)
 --------------------------------------------------------------------------------
 
 ✗ Error processing domain ccs-12km_20procs: 1 validation error for CstarSpecBuilder
-  Value error, Template files with sections ['bgc'] do not have corresponding keys in settings.compile_time.settings_dict. Available keys: ['blk_frc', 'cdr_frc', 'cppdefs', 'diagnostics', 'ocean_vars', 'param', 'river_frc', 'sponge_tune', 'surf_flux', 'tides', 'tracers'] [type=value_error, input_value={'name': 'csforge_roms-no-bg... 'TPXO', 'UNIFIED_BGC']}, input_type=dict]
+  Value error, Template files with sections ['bgc'] do not have corresponding keys in settings.compile_time.settings_dict. Available keys: ['blk_frc', 'cdr_frc', 'cppdefs', 'diagnostics', 'ocean_vars', 'param', 'river_frc', 'sponge_tune', 'surf_flux', 'tides', 'tracers'] [type=value_error, input_value={'name': 'cson_roms-no-bg... 'TPXO', 'UNIFIED_BGC']}, input_type=dict]
     For further information visit https://errors.pydantic.dev/2.12/v/value_error
 
 --------------------------------------------------------------------------------
@@ -361,7 +361,7 @@ Starting generation for 5 domain(s)
 --------------------------------------------------------------------------------
 
 ✗ Error processing domain ccs-12km_280procs: 1 validation error for CstarSpecBuilder
-  Value error, Template files with sections ['bgc'] do not have corresponding keys in settings.compile_time.settings_dict. Available keys: ['blk_frc', 'cdr_frc', 'cppdefs', 'diagnostics', 'ocean_vars', 'param', 'river_frc', 'sponge_tune', 'surf_flux', 'tides', 'tracers'] [type=value_error, input_value={'name': 'csforge_roms-no-bg... 'TPXO', 'UNIFIED_BGC']}, input_type=dict]
+  Value error, Template files with sections ['bgc'] do not have corresponding keys in settings.compile_time.settings_dict. Available keys: ['blk_frc', 'cdr_frc', 'cppdefs', 'diagnostics', 'ocean_vars', 'param', 'river_frc', 'sponge_tune', 'surf_flux', 'tides', 'tracers'] [type=value_error, input_value={'name': 'cson_roms-no-bg... 'TPXO', 'UNIFIED_BGC']}, input_type=dict]
     For further information visit https://errors.pydantic.dev/2.12/v/value_error
 
 --------------------------------------------------------------------------------
@@ -369,7 +369,7 @@ Starting generation for 5 domain(s)
 --------------------------------------------------------------------------------
 
 ✗ Error processing domain ccs-12km_352procs: 1 validation error for CstarSpecBuilder
-  Value error, Template files with sections ['bgc'] do not have corresponding keys in settings.compile_time.settings_dict. Available keys: ['blk_frc', 'cdr_frc', 'cppdefs', 'diagnostics', 'ocean_vars', 'param', 'river_frc', 'sponge_tune', 'surf_flux', 'tides', 'tracers'] [type=value_error, input_value={'name': 'csforge_roms-no-bg... 'TPXO', 'UNIFIED_BGC']}, input_type=dict]
+  Value error, Template files with sections ['bgc'] do not have corresponding keys in settings.compile_time.settings_dict. Available keys: ['blk_frc', 'cdr_frc', 'cppdefs', 'diagnostics', 'ocean_vars', 'param', 'river_frc', 'sponge_tune', 'surf_flux', 'tides', 'tracers'] [type=value_error, input_value={'name': 'cson_roms-no-bg... 'TPXO', 'UNIFIED_BGC']}, input_type=dict]
     For further information visit https://errors.pydantic.dev/2.12/v/value_error
 
 --------------------------------------------------------------------------------
@@ -377,26 +377,26 @@ Starting generation for 5 domain(s)
 --------------------------------------------------------------------------------
 
 ✗ Error processing domain ccs-12km_70procs: 1 validation error for CstarSpecBuilder
-  Value error, Template files with sections ['bgc'] do not have corresponding keys in settings.compile_time.settings_dict. Available keys: ['blk_frc', 'cdr_frc', 'cppdefs', 'diagnostics', 'ocean_vars', 'param', 'river_frc', 'sponge_tune', 'surf_flux', 'tides', 'tracers'] [type=value_error, input_value={'name': 'csforge_roms-no-bg... 'TPXO', 'UNIFIED_BGC']}, input_type=dict]
+  Value error, Template files with sections ['bgc'] do not have corresponding keys in settings.compile_time.settings_dict. Available keys: ['blk_frc', 'cdr_frc', 'cppdefs', 'diagnostics', 'ocean_vars', 'param', 'river_frc', 'sponge_tune', 'surf_flux', 'tides', 'tracers'] [type=value_error, input_value={'name': 'cson_roms-no-bg... 'TPXO', 'UNIFIED_BGC']}, input_type=dict]
     For further information visit https://errors.pydantic.dev/2.12/v/value_error
 
 ================================================================================
 Completed generation for all 5 domain(s)
 ⚠ 5 domain(s) failed:
   - ccs-12km_1232procs: 1 validation error for CstarSpecBuilder
-  Value error, Template files with sections ['bgc'] do not have corresponding keys in settings.compile_time.settings_dict. Available keys: ['blk_frc', 'cdr_frc', 'cppdefs', 'diagnostics', 'ocean_vars', 'param', 'river_frc', 'sponge_tune', 'surf_flux', 'tides', 'tracers'] [type=value_error, input_value={'name': 'csforge_roms-no-bg... 'TPXO', 'UNIFIED_BGC']}, input_type=dict]
+  Value error, Template files with sections ['bgc'] do not have corresponding keys in settings.compile_time.settings_dict. Available keys: ['blk_frc', 'cdr_frc', 'cppdefs', 'diagnostics', 'ocean_vars', 'param', 'river_frc', 'sponge_tune', 'surf_flux', 'tides', 'tracers'] [type=value_error, input_value={'name': 'cson_roms-no-bg... 'TPXO', 'UNIFIED_BGC']}, input_type=dict]
     For further information visit https://errors.pydantic.dev/2.12/v/value_error
   - ccs-12km_20procs: 1 validation error for CstarSpecBuilder
-  Value error, Template files with sections ['bgc'] do not have corresponding keys in settings.compile_time.settings_dict. Available keys: ['blk_frc', 'cdr_frc', 'cppdefs', 'diagnostics', 'ocean_vars', 'param', 'river_frc', 'sponge_tune', 'surf_flux', 'tides', 'tracers'] [type=value_error, input_value={'name': 'csforge_roms-no-bg... 'TPXO', 'UNIFIED_BGC']}, input_type=dict]
+  Value error, Template files with sections ['bgc'] do not have corresponding keys in settings.compile_time.settings_dict. Available keys: ['blk_frc', 'cdr_frc', 'cppdefs', 'diagnostics', 'ocean_vars', 'param', 'river_frc', 'sponge_tune', 'surf_flux', 'tides', 'tracers'] [type=value_error, input_value={'name': 'cson_roms-no-bg... 'TPXO', 'UNIFIED_BGC']}, input_type=dict]
     For further information visit https://errors.pydantic.dev/2.12/v/value_error
   - ccs-12km_280procs: 1 validation error for CstarSpecBuilder
-  Value error, Template files with sections ['bgc'] do not have corresponding keys in settings.compile_time.settings_dict. Available keys: ['blk_frc', 'cdr_frc', 'cppdefs', 'diagnostics', 'ocean_vars', 'param', 'river_frc', 'sponge_tune', 'surf_flux', 'tides', 'tracers'] [type=value_error, input_value={'name': 'csforge_roms-no-bg... 'TPXO', 'UNIFIED_BGC']}, input_type=dict]
+  Value error, Template files with sections ['bgc'] do not have corresponding keys in settings.compile_time.settings_dict. Available keys: ['blk_frc', 'cdr_frc', 'cppdefs', 'diagnostics', 'ocean_vars', 'param', 'river_frc', 'sponge_tune', 'surf_flux', 'tides', 'tracers'] [type=value_error, input_value={'name': 'cson_roms-no-bg... 'TPXO', 'UNIFIED_BGC']}, input_type=dict]
     For further information visit https://errors.pydantic.dev/2.12/v/value_error
   - ccs-12km_352procs: 1 validation error for CstarSpecBuilder
-  Value error, Template files with sections ['bgc'] do not have corresponding keys in settings.compile_time.settings_dict. Available keys: ['blk_frc', 'cdr_frc', 'cppdefs', 'diagnostics', 'ocean_vars', 'param', 'river_frc', 'sponge_tune', 'surf_flux', 'tides', 'tracers'] [type=value_error, input_value={'name': 'csforge_roms-no-bg... 'TPXO', 'UNIFIED_BGC']}, input_type=dict]
+  Value error, Template files with sections ['bgc'] do not have corresponding keys in settings.compile_time.settings_dict. Available keys: ['blk_frc', 'cdr_frc', 'cppdefs', 'diagnostics', 'ocean_vars', 'param', 'river_frc', 'sponge_tune', 'surf_flux', 'tides', 'tracers'] [type=value_error, input_value={'name': 'cson_roms-no-bg... 'TPXO', 'UNIFIED_BGC']}, input_type=dict]
     For further information visit https://errors.pydantic.dev/2.12/v/value_error
   - ccs-12km_70procs: 1 validation error for CstarSpecBuilder
-  Value error, Template files with sections ['bgc'] do not have corresponding keys in settings.compile_time.settings_dict. Available keys: ['blk_frc', 'cdr_frc', 'cppdefs', 'diagnostics', 'ocean_vars', 'param', 'river_frc', 'sponge_tune', 'surf_flux', 'tides', 'tracers'] [type=value_error, input_value={'name': 'csforge_roms-no-bg... 'TPXO', 'UNIFIED_BGC']}, input_type=dict]
+  Value error, Template files with sections ['bgc'] do not have corresponding keys in settings.compile_time.settings_dict. Available keys: ['blk_frc', 'cdr_frc', 'cppdefs', 'diagnostics', 'ocean_vars', 'param', 'river_frc', 'sponge_tune', 'surf_flux', 'tides', 'tracers'] [type=value_error, input_value={'name': 'cson_roms-no-bg... 'TPXO', 'UNIFIED_BGC']}, input_type=dict]
     For further information visit https://errors.pydantic.dev/2.12/v/value_error
 ================================================================================
 

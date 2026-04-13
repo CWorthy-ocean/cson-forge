@@ -1,6 +1,6 @@
 PAC_2fth_deg:
   description: "Pacific 2/15 deg (nested)"
-  model_name: "csforge_roms-marbl_v0.1"
+  model_name: "cson_roms-marbl_v0.1"
   grid_name: "PAC_2fth_deg"
   start_time: "2012-01-01"
   end_time: "2012-01-02"
@@ -28,7 +28,7 @@ PAC_2fth_deg:
 
 NEP-4th_deg:
   description: "Northeast Pacific 1/4 deg (nested)"
-  model_name: "csforge_roms-marbl_v0.1"
+  model_name: "cson_roms-marbl_v0.1"
   grid_name: "NEP-4th_deg"
   start_time: "2012-01-01"
   end_time: "2012-01-02"
@@ -61,7 +61,7 @@ NEP-4th_deg:
 
 GoA-10th_deg:
   description: "Gulf of Alaska 1/10 deg (nested)"
-  model_name: "csforge_roms-marbl_v0.1"
+  model_name: "cson_roms-marbl_v0.1"
   grid_name: "GoA-10th_deg"
   start_time: "2012-01-01"
   end_time: "2012-01-02"

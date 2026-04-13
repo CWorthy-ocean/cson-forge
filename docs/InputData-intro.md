@@ -192,10 +192,10 @@ All input files are written to:
 ```
 
 For example:
-- `csforge_roms-marbl_v0.1_test-tiny_grid.nc`
-- `csforge_roms-marbl_v0.1_test-tiny_initial_conditions.nc`
-- `csforge_roms-marbl_v0.1_test-tiny_surface-physics_201201.nc`
-- `csforge_roms-marbl_v0.1_test-tiny_boundary-physics_201201.nc`
+- `cson_roms-marbl_v0.1_test-tiny_grid.nc`
+- `cson_roms-marbl_v0.1_test-tiny_initial_conditions.nc`
+- `cson_roms-marbl_v0.1_test-tiny_surface-physics_201201.nc`
+- `cson_roms-marbl_v0.1_test-tiny_boundary-physics_201201.nc`
 
 ## Usage Pattern
 
@@ -204,7 +204,7 @@ from cstar_forge.input_data import RomsMarblInputData
 
 # Create input data generator
 input_gen = RomsMarblInputData(
-    model_name="csforge_roms-marbl_v0.1",
+    model_name="cson_roms-marbl_v0.1",
     grid_name="test-tiny",
     start_date=datetime(2012, 1, 1),
     end_date=datetime(2012, 1, 2),

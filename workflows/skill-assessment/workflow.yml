@@ -16,5 +16,5 @@ notebooks:
       parameters:
         domain_name: "CCS-12km"
         grid_name: "ccs-12km"
-        model_name: "csforge_roms-marbl_v0.1"
-      output_path: outputs/papermill/pm_compare-to-glodap_csforge_roms-marbl_v0.1_ccs-12km.ipynb
+        model_name: "cson_roms-marbl_v0.1"
+      output_path: outputs/papermill/pm_compare-to-glodap_cson_roms-marbl_v0.1_ccs-12km.ipynb

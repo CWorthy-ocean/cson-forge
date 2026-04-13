@@ -171,7 +171,7 @@ def minimal_cstar_spec_builder_args(
 ):
     """Minimal arguments for creating a CstarSpecBuilder."""
     return {
-        "model_name": "csforge_roms-marbl_v0.1",
+        "model_name": "cson_roms-marbl_v0.1",
         "grid_name": "test-grid",
         "grid_kwargs": sample_grid_kwargs,
         "open_boundaries": sample_open_boundaries,
@@ -185,7 +185,7 @@ def minimal_cstar_spec_builder_args(
 def mock_model_spec():
     """Mock ModelSpec for testing."""
     mock_spec = MagicMock(spec=forge_models.ModelSpec)
-    mock_spec.name = "csforge_roms-marbl_v0.1"
+    mock_spec.name = "cson_roms-marbl_v0.1"
     # Create a proper ROMSCompositeCodeRepository
     mock_spec.code = cstar_models.ROMSCompositeCodeRepository(
         roms=cstar_models.CodeRepository(
@@ -295,7 +295,7 @@ class TestCstarSpecBuilderInitialization:
                 
                 builder = CstarSpecBuilder(**minimal_cstar_spec_builder_args)
                 
-                assert builder.model_name == "csforge_roms-marbl_v0.1"
+                assert builder.model_name == "cson_roms-marbl_v0.1"
                 assert builder.grid_name == "test-grid"
                 assert builder.description == "Generated blueprint"  # Default value
 
@@ -1176,7 +1176,7 @@ class TestCstarSpecBuilderBuildAndRun:
         with patch("cstar_forge._core.forge_models.load_models_yaml") as mock_load:
             # Create a mock_model_spec without compile_time templates
             mock_spec_no_compile_time = MagicMock(spec=forge_models.ModelSpec)
-            mock_spec_no_compile_time.name = "csforge_roms-marbl_v0.1"
+            mock_spec_no_compile_time.name = "cson_roms-marbl_v0.1"
             mock_spec_no_compile_time.code = mock_model_spec.code
             mock_spec_no_compile_time.datasets = mock_model_spec.datasets
             mock_spec_no_compile_time.settings = mock_model_spec.settings
