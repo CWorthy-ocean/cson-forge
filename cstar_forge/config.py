@@ -137,10 +137,10 @@ def register_system(tag: str) -> Callable[[SystemLayoutFn], SystemLayoutFn]:
 
 @register_system("MacOS")
 def _layout_mac(home: Path, env: dict) -> Tuple[Path, Path, Path]:
-    base = home / "cstar-forge-data"
+    base = home / "cson-forge-data"
     source_data = base / "source-data"
     input_data = base / "input-data"
-    scratch = base / "cstar-forge-run"
+    scratch = base / "cson-forge-run"
     return source_data, input_data, scratch
 
 
@@ -149,30 +149,30 @@ def _layout_RCAC_anvil(home: Path, env: dict) -> Tuple[Path, Path, Path]:
     work = Path(env.get("WORK", home / "work"))
     scratch_root = Path(env.get("SCRATCH", work / "scratch"))
 
-    base = work / "cstar-forge-data"
+    base = work / "cson-forge-data"
     source_data = base / "source-data"
     input_data = base / USER / "input-data"
-    scratch = scratch_root / "cstar-forge-run"
+    scratch = scratch_root / "cson-forge-run"
     return source_data, input_data, scratch
 
 
 @register_system("NERSC_perlmutter")
 def _layout_NERSC_perlmutter(home: Path, env: dict) -> Tuple[Path, Path, Path]:
     scratch_root = Path(env.get("SCRATCH", home / "scratch"))
-    base = scratch_root / "cstar-forge-data"
+    base = scratch_root / "cson-forge-data"
 
     source_data = base / "source-data"
     input_data = base / USER / "input-data"
-    scratch = base / "cstar-forge-run"
+    scratch = base / "cson-forge-run"
     return source_data, input_data, scratch
 
 
 @register_system("unknown")
 def _layout_unknown(home: Path, env: dict) -> Tuple[Path, Path, Path]:
-    base = home / "cstar-forge-data"
+    base = home / "cson-forge-data"
     source_data = base / "source-data"
     input_data = base / "input-data"
-    scratch = base / "cstar-forge-run"
+    scratch = base / "cson-forge-run"
     return source_data, input_data, scratch
 
 
