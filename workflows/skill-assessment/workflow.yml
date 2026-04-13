@@ -7,7 +7,7 @@ dask_cluster_kwargs:
   scheduler_file: null
 
 notebooks:
-  - title: C-SON Skill Assessment
+  - title: C-Star Skill Assessment
     name: skill-assessment
     use_dask_cluster: false    
     description: "Comparison of model solutions to observational metrics."
