@@ -18,6 +18,7 @@ dependencies:
   - h5py
   - holoviews
   - ipykernel
+  - jupyter_client
   - ipywidgets
   - gdown
   - jupyterlab

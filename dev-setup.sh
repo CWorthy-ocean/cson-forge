@@ -313,6 +313,9 @@ if [[ -z "${CONDA_DEFAULT_ENV:-}" ]] || [[ "$CONDA_DEFAULT_ENV" != "$KERNEL_NAME
   micromamba activate "$KERNEL_NAME"
 fi
 
+# Kernel discovery uses jupyter_client; keep it explicit so older envs still work.
+micromamba install -y jupyter_client
+
 # Check if kernel exists
 if python - "$KERNEL_NAME" <<'PY'
 from jupyter_client.kernelspec import KernelSpecManager
