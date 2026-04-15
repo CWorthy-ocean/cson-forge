@@ -170,6 +170,7 @@ class RomsMarblInputData(InputData):
     blueprint_dir: Path
     partitioning: cstar_models.PartitioningParameterSet
     grid_child: Optional[rt.Grid] = None
+    metadata_child: Optional[dict[str, Any]] = None
     use_dask: bool = True
    
     # Blueprint elements containing input data
@@ -421,7 +422,7 @@ class RomsMarblInputData(InputData):
                 )
 
             out_path_nesting = self._forcing_filename(input_name="nesting")
-            self.grid_child.save_nesting(out_path_nesting)
+            rt.make_edata(self.grid, self.grid_child, out_path_nesting, **(self.metadata_child or {}))
             self.blueprint_elements.nesting_info = cstar_models.Dataset(
                 data=[cstar_models.Resource(location=str(out_path_nesting), partitioned=False)]
             )
@@ -596,7 +597,7 @@ class RomsMarblInputData(InputData):
     @register_input(name="forcing.boundary", order=40, label="Generating boundary forcing")
     def _generate_boundary_forcing(self, key: str = "forcing.boundary", **kwargs):
         """Generate boundary forcing input files."""
-        if isinstance(self.grid, rt.ChildGrid):
+        if hasattr(self, 'grid_parent'):
             return
         # Extract subkey from "forcing.boundary" -> "boundary"
         subkey = key.split(".", 1)[1] if "." in key else key
