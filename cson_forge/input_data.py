@@ -293,6 +293,9 @@ class RomsMarblInputData(InputData):
         
         # Execute
         for idx, (step, kwargs) in enumerate(step_kwargs_list, start=1):
+            if step.name == "forcing.boundary" and not any(self.boundaries.model_dump().values()):
+                print(f"\n⏭️  [{idx}/{total}] Skipping boundary forcing (all open boundaries are False).")
+                continue
             if test and step.name != "forcing.boundary":
                 continue
             print(f"\n▶️  [{idx}/{total}] {step.label}...")
