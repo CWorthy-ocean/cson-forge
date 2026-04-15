@@ -176,6 +176,23 @@ if [[ "$MICROMAMBA_CMD" != "micromamba" ]]; then
   export PATH="$LOCAL_BIN_DIR:$PATH"
 fi
 
+# Micromamba prints a boilerplate footer after env create / some installs; strip it from logs.
+_micromamba_strip_activation_footer() {
+  awk '
+    /To activate this environment/ { skip = 1; next }
+    skip && /micromamba run -n/ && /mycommand/ { skip = 0; next }
+    skip { next }
+    { print }
+  '
+}
+
+micromamba_filtered() {
+  (
+    set -o pipefail
+    "$@" 2>&1 | _micromamba_strip_activation_footer
+  )
+}
+
 # Initialize and activate environment
 set +u
 # Single root for all micromamba envs so short names resolve in every shell.
@@ -215,7 +232,7 @@ if [[ "$ENV_EXISTS" == "false" ]]; then
   tmp_env_file="$(mktemp "${TMPDIR:-/tmp}/cson-forge-env.XXXXXX.yml")"
   trap 'rm -f "$tmp_env_file"' EXIT
   awk '!/^(name|prefix)[[:space:]]*:/' "$env_file" > "$tmp_env_file"
-  "$MICROMAMBA_CMD" env create -n "$KERNEL_NAME" -f "$tmp_env_file" -y
+  micromamba_filtered "$MICROMAMBA_CMD" env create -n "$KERNEL_NAME" -f "$tmp_env_file" -y
   rm -f "$tmp_env_file"
   trap - EXIT
 fi
@@ -244,7 +261,7 @@ if [[ "$(uname)" == "Darwin" ]]; then
   # Package manager install may run deactivation scripts that reference unset variables
   # set +u is already active from the initialization section above
   # These packages are only installed on macOS; on HPC systems, we rely on system modules
-  micromamba install -y -c conda-forge compilers mpich netcdf-fortran esmpy xesmf
+  micromamba_filtered micromamba install -y -c conda-forge compilers mpich netcdf-fortran esmpy xesmf
   echo "✓ Compiler installation completed successfully!"
 else
   echo "Not macOS - skipping compiler installation"
@@ -314,7 +331,7 @@ if [[ -z "${CONDA_DEFAULT_ENV:-}" ]] || [[ "$CONDA_DEFAULT_ENV" != "$KERNEL_NAME
 fi
 
 # Kernel discovery uses jupyter_client; keep it explicit so older envs still work.
-micromamba install -y jupyter_client
+micromamba_filtered micromamba install -y jupyter_client
 
 # Check if kernel exists
 if python - "$KERNEL_NAME" <<'PY'
