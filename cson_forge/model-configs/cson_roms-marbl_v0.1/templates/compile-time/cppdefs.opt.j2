@@ -15,11 +15,11 @@
 #define EXACT_RESTARTS
 
 ! Use Jackett and McDougall (1995) nonlinear equation of state
-! Usage notes:
+! Usage notes: None
 #define NONLIN_EOS
 
 ! Use salinity as a thermodynamic variable
-! Usage notes:
+! Usage notes: None
 #define SALINITY
 
 ! Solve the governing equations in three dimensions
@@ -27,25 +27,25 @@
 #define SOLVE3D
 
 ! Use an equation of state that ensures that monotonically increasing density is equivalent to stable stratification
-! Usage notes:
+! Usage notes: None
 #define SPLIT_EOS
 
 ! Apply tidal forcing
-! Usage notes:
+! Usage notes: None
 #define TIDES
 
 ! Use advection in horizontal momentum equations
-! Usage notes:
+! Usage notes: None
 #define UV_ADV
 
 ! Use Coriolis term in horizontal momentum equations
-! Usage notes:
+! Usage notes: None
 #define UV_COR
 
 !----------------------------------------------------------
 
 ! Rotate the advection and diffusion operators so they are oriented in the isoneutral direction
-! Usage notes:
+! Usage notes: None
 #undef ADV_ISONEUTRAL
 
 ! Switch to allow mixed [tiled + single-block] execution in OpenMP.
@@ -61,7 +61,7 @@
 #undef DIAGNOSTICS
 
 ! Enable the calculation and writing of "diagnostics" for the nonhydrostatic vertical velocity equation
-! Usage notes:
+! Usage notes: None
 #undef DIAGNOSTICS_NHMG
 
 ! Use non-hydrostatic momentum equations
@@ -70,15 +70,15 @@
 #undef NHMG
 
 ! Write momentum equation diagnostics for non-hydrostatic mode
-! Usage notes:
+! Usage notes: None
 #undef NHMGDIAG
 
 ! During initialization print information about the HPC cluster and MPI setup
-! Usage notes:
+! Usage notes: None
 #undef PRINT_HOSTNAME
 
 ! Make each MPI rank print the size of its local subdomain
-! Usage notes:
+! Usage notes: None
 #undef PRINT_TILE_RANGES
 
 ! Enable special forcing for marine CO2 removal
@@ -156,11 +156,11 @@
 #undef DIURNAL_SRFLUX
 
 ! Apply restoring to sea surface temperature
-! Usage notes:
+! Usage notes: None
 #undef QCORRECTION
 
 ! Apply restoring to sea surface salinity
-! Usage notes:
+! Usage notes: None
 #undef SFLX_CORR
 
 ! Apply a correction to the wind stress to bring it closer to observations
@@ -195,7 +195,7 @@
 {% endif %}
 
 ! Use the Flather scheme for the 2D dynamical fields at open boundaries
-! Usage notes:
+! Usage notes: None
 #define OBC_M2FLATHER
 
 ! Use the Orlanski scheme for the 3D dynamical fields at open boundaries
@@ -240,7 +240,7 @@
 #undef OBC_M2ORLANSKI
 
 ! Use "clamped" boundary conditions for the 3D dynamical fields at open boundaries
-! Usage notes:
+! Usage notes: None
 #undef OBC_M3SPECIFIED
 
 ! Calculate radiation for the Orlanski scheme using only the normal component of the velocity
@@ -252,7 +252,7 @@
 #undef OBC_RAD_NPO
 
 ! Use "clamped" boundary conditions for the thermodynamical fields at open boundaries
-! Usage notes:
+! Usage notes: None
 #undef OBC_TSPECIFIED
 
 ! Add baroclinic pressure fluxes at open boundaries
@@ -263,15 +263,15 @@
 !!!!!!!!!!!!!!!!!!!!!!!!! MIXING OPTIONS !!!!!!!!!!!!!!!!!!!!!!!!!
 
 ! Use the KPP parameterization (Large et al., 1994) in the bottom boundary layer
-! Usage notes:
+! Usage notes: None
 #define LMD_BKPP
 
 ! Compute double-diffusive mixing (Large et al., 1994)
-! Usage notes:
+! Usage notes: None
 #undef LMD_DDMIX
 
 ! Use the KPP parameterization (Large et al., 1994) in the surface boundary layer
-! Usage notes:
+! Usage notes: None
 #define LMD_KPP
 
 ! Enable and compute various parameterizations from Large et al., 1994 (KPP, etc.)
@@ -309,7 +309,7 @@
 #undef MERGE_OVERLAP
 
 ! Mellor-Yamada second-order vertical mixing scheme
-! Usage notes:
+! Usage notes: None
 #undef MY25_MIXING
 
 ! Treat the northern boundary as if it is a "wall" in the calculation of the biharmonic viscosity
@@ -333,24 +333,25 @@
 
 ! Use the MARBL biogeochemical library
 ! Usage notes: Cannot be used simultaneously with BIOLOGY_BEC2
-{% if cppdefs.marbl %}#define MARBL
-{% endif %}
+#define MARBL
 
+#ifdef MARBL
 ! Enable the writing of diagnostics and other variables from the MARBL biogeochemical library
 ! Usage notes: Specific variables can be requested in the runtime "marbl_diagnostic_output_list" file
 #define MARBL_DIAGS
 
 ! Use ammonia atmospheric forcing
-! Usage notes:
+! Usage notes: None
 #define NHY_FORCING
 
 ! Use nitrogen oxide atmospheric forcing
-! Usage notes:
+! Usage notes: None
 #define NOX_FORCING
 
 ! Use atmospheric forcing for CO2
-! Usage notes:
+! Usage notes: None
 #define PCO2AIR_FORCING
+#endif ! MARBL
 
 !----------------------------------------------------------
 
@@ -358,6 +359,7 @@
 ! Usage notes: Only associated with BEC
 #undef BIOLOGY_BEC2
 
+#ifdef BIOLOGY_BEC2
 ! Enable BEC diagnostics
 ! Usage notes: Only associated with BEC
 #undef BEC2_DIAG
@@ -385,6 +387,7 @@
 ! Apply temperature dependency for particulate remineralization
 ! Usage notes: Only used in the BEC2 biogeochemical module.
 #undef TDEP_REMIN
+#endif ! BIOLOGY_BEC2
 
 !!!!!!!!!!!!!!!!!!!!!!!!! MISCELLANEOUS !!!!!!!!!!!!!!!!!!!!!!!!!
 
