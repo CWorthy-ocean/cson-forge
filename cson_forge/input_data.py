@@ -704,8 +704,23 @@ class RomsMarblInputData(InputData):
         )
         input_args = self._build_input_args(key, extra=extra, base_kwargs=kwargs)
         
-        river = rt.RiverForcing(grid=self.grid, **input_args)
+        try:
+            river = rt.RiverForcing(grid=self.grid, **input_args)
+        except ValueError as e:
+            warnings.warn(
+                f"Skipping river forcing generation due to invalid river configuration: {e}",
+                UserWarning,
+                stacklevel=2,
+            )
+            if self.blueprint_elements.forcing is not None:
+                self.blueprint_elements.forcing.river = None
+            river = rt.RiverForcing.__new__(rt.RiverForcing)
+            return river
         paths = river.save(self._forcing_filename(subkey))
+        if isinstance(paths, (list, tuple)) and len(paths) == 0:
+            if self.blueprint_elements.forcing is not None:
+                self.blueprint_elements.forcing.river = None
+            return river
         try:
             river.to_yaml(yaml_path)
         except Exception as e:
