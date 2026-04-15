@@ -12,7 +12,6 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Union
 
-import xarray as xr
 from pydantic import BaseModel, ConfigDict, Field
 
 import cstar.orchestration.models as cstar_models
