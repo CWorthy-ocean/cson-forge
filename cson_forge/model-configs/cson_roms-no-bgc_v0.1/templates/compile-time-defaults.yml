@@ -11,6 +11,7 @@ cppdefs:
   obc_north: true
   obc_south: true
   marbl: false
+  cdr_forcing: false
 
 param:
   LLm: 512
@@ -106,7 +107,7 @@ cdr_frc:
   cdr_source: false
   cdr_volume: false
   cdr_analytical: false
-  ncdr: 1
+  ncdr_parm: 1
   cdr_file: 'cdr_forcing.nc'
   cdrvol_vname: 'cdr_volume'
   cdrvol_tname: 'cdr_time'
@@ -119,6 +120,7 @@ cdr_frc:
   cdr_loc_dep: 'cdr_dep'
   cdr_scl_hor: 'cdr_hsc'
   cdr_scl_vrt: 'cdr_vsc'
+  nz_chd: 50
 
 sponge_tune:
   pflx_w_vname: 'up_west'

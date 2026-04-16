@@ -83,7 +83,9 @@
 
 ! Enable special forcing for marine CO2 removal
 ! Usage notes: Required inputs and fields are specified in cdr_frc.opt.
-#undef CDR_FORCING
+{% if cppdefs.cdr_forcing|default(false) %}#define CDR_FORCING
+{% else %}#undef CDR_FORCING
+{% endif %}
 
 ! Save advective tendencies at lateral boundaries for use in upscaling applications.
 ! Usage notes: Meant to be used in child domains when forcing will be subsequently applied to parent domains. Only saves ALK and DIC perturbations. Requires MARBL and MARBL_DIAGS to be enabled.
