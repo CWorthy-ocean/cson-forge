@@ -13,6 +13,7 @@ from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Union
 
 from pydantic import BaseModel, ConfigDict, Field
+import xarray as xr
 
 import cstar.orchestration.models as cstar_models
 from . import config
@@ -92,7 +93,14 @@ class InputData:
         existing = list(self.input_data_dir.glob("*.nc"))
         
         if existing and not clobber:
-            return False
+            # Count is all *.nc in the directory; reuse applies only to *planned* outputs
+            # (see generate_all), which may be fewer — e.g. partitioned/suffixed names or
+            # leftover files from other runs.
+            print(
+                f"ℹ️  Input directory contains {len(existing)} .nc file(s): {self.input_data_dir}\n"
+                "   (Continuing without clobber; per-step reuse follows the planned output list.)"
+            )
+            return True
         
         if existing and clobber:
             print(
@@ -182,6 +190,8 @@ class RomsMarblInputData(InputData):
     
     # Coarse grid dimension flag (set during surface forcing generation)
     include_coarse_dims: Optional[bool] = field(default=None)
+    _clobber: bool = field(default=False, init=False)
+    _existing_planned_outputs: set[Path] = field(default_factory=set, init=False)
 
     def __post_init__(self):
         """Initialize paths, storage, and input list."""
@@ -279,6 +289,7 @@ class RomsMarblInputData(InputData):
         test : bool, optional
             If True, truncate the loop after 2 iterations for testing purposes.
         """
+        self._clobber = clobber
         if not self._ensure_empty_or_clobber(clobber):
             return None, {}, {}
         
@@ -291,6 +302,22 @@ class RomsMarblInputData(InputData):
         
         step_kwargs_list.sort(key=lambda x: x[0].order)
         total = len(step_kwargs_list) + (1 if partition_files else 0)
+
+        # Compute planned outputs once at the start of execution, and record which already exist.
+        planned = self._planned_netcdf_outputs(step_kwargs_list)
+        self._existing_planned_outputs = {
+            path.resolve()
+            for path in planned
+            if self._planned_netcdf_already_present(path)
+        }
+        n_planned = len(planned)
+        n_already = len(self._existing_planned_outputs)
+        if n_already:
+            print(
+                f"ℹ️  Planned NetCDF outputs this run: {n_planned}; "
+                f"{n_already} already on disk (exact or stem match, e.g. *_0001.nc) — "
+                "generation/save will be skipped for those."
+            )
         
         # Execute
         for idx, (step, kwargs) in enumerate(step_kwargs_list, start=1):
@@ -314,7 +341,112 @@ class RomsMarblInputData(InputData):
             print("\n✅ All input files generated.\n")
         
         return self.blueprint_elements, self._settings_compile_time, self._settings_run_time
-    
+
+    def _planned_netcdf_outputs(self, step_kwargs_list: List[tuple[InputStep, Dict[str, Any]]]) -> List[Path]:
+        """Return the planned NetCDF outputs for this generation run."""
+        planned: List[Path] = []
+        for step, kwargs in step_kwargs_list:
+            if step.name == "grid":
+                planned.append(self._forcing_filename("grid"))
+                if self.grid_child is not None:
+                    planned.append(self._forcing_filename("grid_child"))
+                    planned.append(self._forcing_filename("nesting"))
+                continue
+
+            if step.name == "initial_conditions":
+                planned.append(self._forcing_filename("initial_conditions"))
+                continue
+
+            if step.name == "forcing.boundary" and not any(self.boundaries.model_dump().values()):
+                # Keep planned outputs consistent with generate_all(), which skips this step
+                # when all open boundaries are disabled.
+                continue
+
+            if step.name in {"forcing.surface", "forcing.boundary"}:
+                forcing_type = kwargs.get("type") if isinstance(kwargs, dict) else None
+                suffix = f"{step.name.split('.', 1)[1]}-{forcing_type}" if forcing_type else step.name.split(".", 1)[1]
+                planned.append(self._forcing_filename(suffix))
+                continue
+
+            if step.name.startswith("forcing."):
+                planned.append(self._forcing_filename(step.name.split(".", 1)[1]))
+                continue
+
+            if step.name == "cdr_forcing":
+                planned.append(self._forcing_filename("cdr_forcing"))
+
+        # Preserve order while deduplicating
+        deduped: List[Path] = []
+        for p in planned:
+            if p not in deduped:
+                deduped.append(p)
+        return deduped
+
+    def _planned_netcdf_already_present(self, path: Path) -> bool:
+        """
+        True if this planned output is already on disk: exact path, or roms_tools-style
+        suffixed files sharing the same stem (``stem*.nc``).
+        """
+        if path.exists():
+            return True
+        pattern = f"{path.stem}*.nc"
+        return bool(list(path.parent.glob(pattern)))
+
+    def _should_reuse_existing_output(self, path: Path) -> bool:
+        """Return True when this planned output already exists and clobber=False."""
+        if self._clobber:
+            return False
+        return path.resolve() in self._existing_planned_outputs
+
+    def _existing_output_paths(self, path: Path) -> List[str]:
+        """
+        Return existing NetCDF paths that correspond to a planned output path.
+
+        Some roms_tools writers produce suffixed outputs that share the same stem.
+        For example, planning may include ``foo_surface-physics.nc`` while existing
+        files are ``foo_surface-physics_0001.nc`` etc.
+        """
+        if self._clobber:
+            return []
+
+        matches: List[Path] = []
+        if path.exists():
+            matches.append(path)
+        else:
+            pattern = f"{path.stem}*.nc"
+            matches.extend(sorted(path.parent.glob(pattern)))
+
+        # De-duplicate while preserving order.
+        unique: List[str] = []
+        for match in matches:
+            match_str = str(match)
+            if match_str not in unique:
+                unique.append(match_str)
+        return unique
+
+    def _interp_frc_surface_reuse(
+        self, input_args: Dict[str, Any], nc_path: Path
+    ) -> int:
+        """
+        Infer blk/bgc ``interp_frc`` when reusing NetCDF without a ``SurfaceForcing`` instance.
+
+        Uses ``coarse_grid_mode`` when unambiguous; for ``auto``, peeks at the existing file.
+        """
+        mode = input_args.get("coarse_grid_mode", "auto")
+        if mode == "never":
+            return 0
+        if mode == "always":
+            return 1
+        try:
+            with xr.open_dataset(nc_path, decode_times=False) as ds:
+                sizes = getattr(ds, "sizes", ds.dims)
+                for dim in ("xi_coarse", "eta_coarse"):
+                    if dim in sizes:
+                        return 1
+        except Exception:
+            pass
+        return 0
+
     def _yaml_filename(self, input_name: str) -> Path:
         """Construct the YAML filename for a given input key."""
         self.blueprint_dir.mkdir(parents=True, exist_ok=True)
@@ -395,7 +527,10 @@ class RomsMarblInputData(InputData):
         out_path = self._forcing_filename(input_name="grid")
         yaml_path = self._yaml_filename(key)
         
-        self.grid.save(out_path)       
+        if self._should_reuse_existing_output(out_path):
+            print(f"   ↪ Reusing existing file: {out_path}")
+        else:
+            self.grid.save(out_path)
 
         try:
             self.grid.to_yaml(yaml_path)
@@ -409,7 +544,10 @@ class RomsMarblInputData(InputData):
         out_path_nesting = None
         if self.grid_child is not None:
             out_path_child = self._forcing_filename(input_name="grid_child")
-            self.grid_child.save(out_path_child)
+            if self._should_reuse_existing_output(out_path_child):
+                print(f"   ↪ Reusing existing file: {out_path_child}")
+            else:
+                self.grid_child.save(out_path_child)
             yaml_path_child = self._yaml_filename(key + "_child")
 
             try:
@@ -422,7 +560,10 @@ class RomsMarblInputData(InputData):
                 )
 
             out_path_nesting = self._forcing_filename(input_name="nesting")
-            rt.make_edata(self.grid, self.grid_child, out_path_nesting, **(self.metadata_child or {}))
+            if self._should_reuse_existing_output(out_path_nesting):
+                print(f"   ↪ Reusing existing file: {out_path_nesting}")
+            else:
+                rt.make_edata(self.grid, self.grid_child, out_path_nesting, **(self.metadata_child or {}))
             self.blueprint_elements.nesting_info = cstar_models.Dataset(
                 data=[cstar_models.Resource(location=str(out_path_nesting), partitioned=False)]
             )
@@ -472,24 +613,31 @@ class RomsMarblInputData(InputData):
     def _generate_initial_conditions(self, key: str = "initial_conditions", **kwargs):
         """Generate initial conditions input file."""
         yaml_path = self._yaml_filename(key)
+        output_path = self._forcing_filename(input_name="initial_conditions")
         extra = dict(
             ini_time=self.start_date,
             use_dask=self.use_dask,
         )
         input_args = self._build_input_args(key, extra=extra, base_kwargs=kwargs)
         
-        ic = rt.InitialConditions(grid=self.grid, **input_args)
-        paths = ic.save(self._forcing_filename(input_name="initial_conditions"))
+        if self._should_reuse_existing_output(output_path):
+            print(f"   ↪ Reusing existing file: {output_path}")
+            paths = [str(output_path)]
+            ic = None
+        else:
+            ic = rt.InitialConditions(grid=self.grid, **input_args)
+            paths = ic.save(output_path)
 
         # See here: https://github.com/CWorthy-ocean/roms-tools/issues/553
-        try:
-            ic.to_yaml(yaml_path)
-        except Exception as e:
-            warnings.warn(
-                f"Failed to save initial conditions YAML to {yaml_path}: {e}",
-                UserWarning,
-                stacklevel=2,
-            )
+        if ic is not None:
+            try:
+                ic.to_yaml(yaml_path)
+            except Exception as e:
+                warnings.warn(
+                    f"Failed to save initial conditions YAML to {yaml_path}: {e}",
+                    UserWarning,
+                    stacklevel=2,
+                )
 
         # Append Resources directly to blueprint_elements.initial_conditions
         if isinstance(paths, (list, tuple)):
@@ -530,19 +678,61 @@ class RomsMarblInputData(InputData):
             )
 
         yaml_path = self._yaml_filename(f"{key}-{type}")
+        output_path = self._forcing_filename(input_name=f"surface-{type}")
 
-        frc = rt.SurfaceForcing(grid=self.grid, **input_args)
-        paths = frc.save(self._forcing_filename(input_name=f"surface-{type}"))
-        
-        try:
-            frc.to_yaml(yaml_path)
-        except Exception as e:
-            warnings.warn(
-                f"Failed to save surface forcing YAML to {yaml_path}: {e}",
-                UserWarning,
-                stacklevel=2,
-            )            
-        
+        existing_paths = self._existing_output_paths(output_path)
+        frc = None
+        if existing_paths:
+            print(f"   ↪ Reusing existing file(s): {', '.join(existing_paths)}")
+            paths = existing_paths
+            # Do not construct SurfaceForcing from grid/source (slow). Regenerate YAML from
+            # the existing sidecar when present (roms_tools: from_yaml -> to_yaml).
+            if yaml_path.exists():
+                try:
+                    frc = rt.SurfaceForcing.from_yaml(yaml_path, use_dask=self.use_dask)
+                except Exception as e:
+                    warnings.warn(
+                        f"Could not load surface forcing from YAML for regeneration ({yaml_path}): {e}",
+                        UserWarning,
+                        stacklevel=2,
+                    )
+                if frc is not None:
+                    try:
+                        frc.to_yaml(yaml_path)
+                    except Exception as e:
+                        warnings.warn(
+                            f"Failed to save surface forcing YAML to {yaml_path}: {e}",
+                            UserWarning,
+                            stacklevel=2,
+                        )
+            else:
+                warnings.warn(
+                    f"Surface forcing NetCDF exists but YAML sidecar is missing ({yaml_path}); "
+                    "constructing SurfaceForcing once to write YAML (this may be slow).",
+                    UserWarning,
+                    stacklevel=2,
+                )
+                frc = rt.SurfaceForcing(grid=self.grid, **input_args)
+                try:
+                    frc.to_yaml(yaml_path)
+                except Exception as e:
+                    warnings.warn(
+                        f"Failed to save surface forcing YAML to {yaml_path}: {e}",
+                        UserWarning,
+                        stacklevel=2,
+                    )
+        else:
+            frc = rt.SurfaceForcing(grid=self.grid, **input_args)
+            paths = frc.save(output_path)
+            try:
+                frc.to_yaml(yaml_path)
+            except Exception as e:
+                warnings.warn(
+                    f"Failed to save surface forcing YAML to {yaml_path}: {e}",
+                    UserWarning,
+                    stacklevel=2,
+                )
+
         # Append Resources directly to blueprint_elements.forcing[subkey]
         if isinstance(paths, (list, tuple)):
             for path in paths:
@@ -553,7 +743,10 @@ class RomsMarblInputData(InputData):
             getattr(self.blueprint_elements.forcing, subkey).data.append(resource)
 
         # TODO: Update self._settings_compile_time with related forcing parameter sets and cppdefs for surface forcing
-        interp_frc = 1 if frc.use_coarse_grid else 0
+        if frc is not None and hasattr(frc, "use_coarse_grid"):
+            interp_frc = 1 if frc.use_coarse_grid else 0
+        else:
+            interp_frc = self._interp_frc_surface_reuse(input_args, Path(paths[0]))
         
         # Only touch 'bgc' if the model has MARBL/BGC (from PropertiesSpec).
         has_bgc_compile = (
@@ -622,9 +815,15 @@ class RomsMarblInputData(InputData):
             )
         
         yaml_path = self._yaml_filename(f"{key}-{type}")
+        output_path = self._forcing_filename(input_name=f"boundary-{type}")
        
-        bry = rt.BoundaryForcing(grid=self.grid, **input_args)
-        paths = bry.save(self._forcing_filename(input_name=f"boundary-{type}"))
+        if self._should_reuse_existing_output(output_path):
+            print(f"   ↪ Reusing existing file: {output_path}")
+            paths = [str(output_path)]
+            bry = rt.BoundaryForcing(grid=self.grid, **input_args)
+        else:
+            bry = rt.BoundaryForcing(grid=self.grid, **input_args)
+            paths = bry.save(output_path)
         try:
             bry.to_yaml(yaml_path)
         except Exception as e:
@@ -657,13 +856,18 @@ class RomsMarblInputData(InputData):
         """Generate tidal forcing input files."""
         subkey = key.split(".", 1)[1] if "." in key else key
         yaml_path = self._yaml_filename(key)
+        output_path = self._forcing_filename(subkey)
         extra = dict(
             model_reference_date=self.start_date,
             use_dask=self.use_dask,
         )
         input_args = self._build_input_args(key, extra=extra, base_kwargs=kwargs)
         tidal = rt.TidalForcing(grid=self.grid, **input_args)
-        paths = tidal.save(self._forcing_filename(subkey))
+        if self._should_reuse_existing_output(output_path):
+            print(f"   ↪ Reusing existing file: {output_path}")
+            paths = [str(output_path)]
+        else:
+            paths = tidal.save(output_path)
         
         try:
             tidal.to_yaml(yaml_path)
@@ -699,6 +903,7 @@ class RomsMarblInputData(InputData):
         # Extract subkey from "forcing.river" -> "river"
         subkey = key.split(".", 1)[1] if "." in key else key
         yaml_path = self._yaml_filename(key)
+        output_path = self._forcing_filename(subkey)
         extra = dict(
             start_time=self.start_date,
             end_time=self.end_date,
@@ -717,7 +922,11 @@ class RomsMarblInputData(InputData):
                 self.blueprint_elements.forcing.river = None
             river = rt.RiverForcing.__new__(rt.RiverForcing)
             return river
-        paths = river.save(self._forcing_filename(subkey))
+        if self._should_reuse_existing_output(output_path):
+            print(f"   ↪ Reusing existing file: {output_path}")
+            paths = [str(output_path)]
+        else:
+            paths = river.save(output_path)
         if isinstance(paths, (list, tuple)) and len(paths) == 0:
             if self.blueprint_elements.forcing is not None:
                 self.blueprint_elements.forcing.river = None
@@ -778,7 +987,12 @@ class RomsMarblInputData(InputData):
         input_args = self._build_input_args(key, extra=extra, base_kwargs=kwargs)
         
         cdr = rt.CDRForcing(grid=self.grid, **input_args)
-        paths = cdr.save(self._forcing_filename(key))
+        output_path = self._forcing_filename(key)
+        if self._should_reuse_existing_output(output_path):
+            print(f"   ↪ Reusing existing file: {output_path}")
+            paths = [str(output_path)]
+        else:
+            paths = cdr.save(output_path)
         cdr.to_yaml(yaml_path)
         # Append Resources directly to blueprint_elements.cdr_forcing
         if isinstance(paths, (list, tuple)):

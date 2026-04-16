@@ -286,7 +286,85 @@ class CstarSpecBuilder(BaseModel):
         # Initialize blueprint with basic structure
         self._initialize_blueprint()
 
+        self._print_planned_netcdf_outputs()
         self._print_output_paths()
+
+    def _planned_netcdf_outputs(self) -> List[Path]:
+        """Return the list of NetCDF files expected from input generation."""
+        if self._model_spec is None:
+            self._load_model_spec()
+
+        input_data_dir = config.paths.input_data / self.name
+        planned_paths: List[Path] = []
+
+        def _add_nc(stem: str) -> None:
+            path = (input_data_dir / f"{self.name}_{stem}.nc").resolve()
+            if path not in planned_paths:
+                planned_paths.append(path)
+
+        model_inputs = getattr(self._model_spec, "inputs", None)
+        if model_inputs is None:
+            return planned_paths
+
+        inputs_cfg: Dict[str, Any] = {}
+        if hasattr(model_inputs, "model_dump"):
+            dumped_inputs = model_inputs.model_dump(exclude_none=True)
+            if isinstance(dumped_inputs, dict):
+                inputs_cfg = dumped_inputs
+        elif isinstance(model_inputs, dict):
+            inputs_cfg = model_inputs
+
+        if inputs_cfg.get("grid"):
+            _add_nc("grid")
+            if self.grid_child is not None:
+                _add_nc("grid_child")
+                _add_nc("nesting")
+
+        if inputs_cfg.get("initial_conditions"):
+            _add_nc("initial_conditions")
+
+        forcing_cfg = inputs_cfg.get("forcing") or {}
+        if isinstance(forcing_cfg, dict):
+            for category, entries in forcing_cfg.items():
+                if not entries:
+                    continue
+
+                if category == "boundary":
+                    boundaries = self.open_boundaries.model_dump()
+                    if not any(boundaries.values()):
+                        continue
+
+                if category in {"surface", "boundary"} and isinstance(entries, list):
+                    for entry in entries:
+                        forcing_type = None
+                        if isinstance(entry, dict):
+                            forcing_type = entry.get("type")
+                        elif hasattr(entry, "model_dump"):
+                            forcing_type = entry.model_dump().get("type")
+                        elif hasattr(entry, "type"):
+                            forcing_type = entry.type
+
+                        stem = f"{category}-{forcing_type}" if forcing_type else category
+                        _add_nc(stem)
+                    continue
+
+                _add_nc(category)
+
+        if inputs_cfg.get("cdr_forcing"):
+            _add_nc("cdr_forcing")
+
+        return planned_paths
+
+    def _print_planned_netcdf_outputs(self) -> None:
+        """Print the list of expected NetCDF files to stdout."""
+        planned_paths = self._planned_netcdf_outputs()
+        print("CstarSpecBuilder: planned NetCDF outputs")
+        if not planned_paths:
+            print("  (none)")
+        else:
+            for path in planned_paths:
+                print(f"  - {path}")
+        print()
 
     def _print_output_paths(self) -> None:
         """Print absolute paths where generated NetCDF and YAML files are stored."""
@@ -783,6 +861,64 @@ class CstarSpecBuilder(BaseModel):
             config.paths.models_yaml,
             self.model_name
         )
+
+    def _prompt_yes_no(self, message: str) -> bool:
+        """Prompt user for a yes/no answer in interactive runs."""
+        while True:
+            try:
+                response = input(f"{message} [yes/no]: ").strip().lower()
+            except EOFError:
+                # Non-interactive environment: default to "no" (reuse existing blueprint).
+                print(f"{message} [yes/no]: no")
+                return False
+            if response in {"yes", "y"}:
+                return True
+            if response in {"no", "n"}:
+                return False
+            print("Please answer 'yes' or 'no'.")
+
+    def _delete_blueprint_and_settings(self, blueprint_path: Path) -> None:
+        """Delete a blueprint file and its settings sidecar if present."""
+        settings_path = self._path_settings_file(blueprint_path)
+        for path in (blueprint_path, settings_path):
+            if path.exists():
+                path.unlink()
+                print(f"🗑️  Deleted existing file: {path}")
+
+    def _required_netcdf_paths_from_blueprint(
+        self, blueprint: cstar_models.RomsMarblBlueprint
+    ) -> List[Path]:
+        """Extract local required NetCDF paths referenced by a blueprint."""
+        bp_dict = blueprint.model_dump(mode="json", exclude_none=True)
+        required_paths: List[Path] = []
+
+        def _append_dataset_locations(dataset_dict: Any) -> None:
+            if not isinstance(dataset_dict, dict):
+                return
+            resources = dataset_dict.get("data")
+            if not isinstance(resources, list):
+                return
+            for resource in resources:
+                if not isinstance(resource, dict):
+                    continue
+                location = resource.get("location")
+                if not isinstance(location, str):
+                    continue
+                if location.startswith("http://") or location.startswith("https://"):
+                    continue
+                path = Path(location)
+                if path.suffix == ".nc" and path not in required_paths:
+                    required_paths.append(path)
+
+        for field_name in ("grid", "initial_conditions", "cdr_forcing", "nesting_info"):
+            _append_dataset_locations(bp_dict.get(field_name))
+
+        forcing = bp_dict.get("forcing")
+        if isinstance(forcing, dict):
+            for forcing_dataset in forcing.values():
+                _append_dataset_locations(forcing_dataset)
+
+        return required_paths
 
     def _initialize_blueprint(self) -> None:
         """
@@ -1466,7 +1602,35 @@ class CstarSpecBuilder(BaseModel):
         if self.blueprint is None:
             raise RuntimeError("Blueprint must be initialized before generating inputs")
 
-        if not self._file_blueprint_data_match(partition_files=partition_files) or clobber:
+        postconfig_path = self.path_blueprint(stage=BlueprintStage.POSTCONFIG)
+        force_regenerate = False
+        if postconfig_path.exists() and not clobber:
+            make_new_blueprint = self._prompt_yes_no(
+                f"POSTCONFIG blueprint already exists at {postconfig_path}. Create a new blueprint?"
+            )
+            if make_new_blueprint:
+                self._delete_blueprint_and_settings(postconfig_path)
+                force_regenerate = True
+            else:
+                existing_postconfig_blueprint = self._load_blueprint_file(
+                    stage=BlueprintStage.POSTCONFIG,
+                    load_settings=False,
+                )
+                if existing_postconfig_blueprint is not None:
+                    missing_required = [
+                        p for p in self._required_netcdf_paths_from_blueprint(existing_postconfig_blueprint)
+                        if not p.exists()
+                    ]
+                    if missing_required:
+                        print(
+                            "ℹ️  Existing POSTCONFIG blueprint references missing NetCDF files. "
+                            "Missing files will be generated:"
+                        )
+                        for missing_path in missing_required:
+                            print(f"  - {missing_path}")
+                        force_regenerate = True
+
+        if force_regenerate or not self._file_blueprint_data_match(partition_files=partition_files) or clobber:
             # Ensure settings are initialized before generating inputs
             # If settings are not present or empty, something has gone wrong
             if not hasattr(self, '_settings_compile_time') or not self._settings_compile_time:

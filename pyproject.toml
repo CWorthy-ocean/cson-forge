@@ -30,6 +30,10 @@ dependencies = [
     "cstar-ocean>=0.1.0",
 ]
 
+[project.optional-dependencies]
+# netCDF4 lets xarray open real .nc files when tests or roms_tools are not fully mocked.
+test = ["pytest", "netCDF4"]
+
 [tool.setuptools]
 # Only include the cson_forge package
 # tests and workflows directories are at root level and automatically excluded
