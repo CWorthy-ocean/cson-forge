@@ -286,6 +286,19 @@ class CstarSpecBuilder(BaseModel):
         # Initialize blueprint with basic structure
         self._initialize_blueprint()
 
+        self._print_output_paths()
+
+    def _print_output_paths(self) -> None:
+        """Print absolute paths where generated NetCDF and YAML files are stored."""
+        netcdf_dir = (config.paths.input_data / self.name).resolve()
+        yaml_dir = self.blueprint_dir.resolve()
+        print(
+            "CstarSpecBuilder: output locations\n"
+            f"  NetCDF files: {netcdf_dir}\n"
+            f"  YAML files: {yaml_dir}"
+        )
+        print()
+
     @property
     def name(self) -> str:
         """
