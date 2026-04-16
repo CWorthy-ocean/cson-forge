@@ -13,6 +13,7 @@ from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Union
 
 from pydantic import BaseModel, ConfigDict, Field
+import xarray as xr
 
 import cstar.orchestration.models as cstar_models
 from . import config
@@ -437,8 +438,6 @@ class RomsMarblInputData(InputData):
         if mode == "always":
             return 1
         try:
-            import xarray as xr
-
             with xr.open_dataset(nc_path, decode_times=False) as ds:
                 sizes = getattr(ds, "sizes", ds.dims)
                 for dim in ("xi_coarse", "eta_coarse"):
