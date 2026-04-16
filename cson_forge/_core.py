@@ -172,7 +172,11 @@ class CstarSpecBuilder(BaseModel):
     partitioning: cstar_models.PartitioningParameterSet
     start_date: datetime = Field(alias="start_time")
     end_date: datetime = Field(alias="end_time")
-    cdr_forcing: Optional[cstar_models.Dataset] = Field(default=None, validate_default=False)
+    cdr_forcing: Optional[List[Union[rt.TracerPerturbation, rt.VolumeRelease]]] = Field(
+        default=None,
+        alias="CDR_forcing",
+        validate_default=False,
+    )
     ensemble_id: Optional[int] = Field(default=None, validate_default=False)
     # Internal attributes (computed/loaded)
     blueprint: Optional[cstar_models.RomsMarblBlueprint] = Field(
@@ -1659,6 +1663,7 @@ class CstarSpecBuilder(BaseModel):
                 source_data=self.src_data,
                 blueprint_dir=self.blueprint_dir,
                 partitioning=self.partitioning,
+                cdr_forcing=self.cdr_forcing,
                 use_dask=use_dask,
             ).generate_all(partition_files=partition_files, clobber=clobber, test=test)
             
@@ -2019,6 +2024,32 @@ class CstarSpecBuilder(BaseModel):
         # Update settings with user-provided overrides (deep merge to preserve existing settings)
         self._update_settings_compile_time(compile_time_settings)
         self._update_settings_run_time(run_time_settings)
+
+        # cppdefs.opt: #define CDR_FORCING only when builder has CDR_forcing releases.
+        self._settings_compile_time.setdefault("cppdefs", {})
+        self._settings_compile_time["cppdefs"]["cdr_forcing"] = bool(self.cdr_forcing)
+        
+        # If user supplied any CDR releases, force compile-time CDR options on.
+        # This ensures cdr_frc.opt renders cdr_source = .true., ncdr_parm matches the
+        # number of releases, and cdr_file points to the generated forcing file.
+        if self.cdr_forcing:
+            self._settings_compile_time.setdefault("cdr_frc", {})
+            self._settings_compile_time["cdr_frc"]["cdr_source"] = True
+            self._settings_compile_time["cdr_frc"]["ncdr_parm"] = len(self.cdr_forcing)
+            self._settings_compile_time["cdr_frc"]["forcing_parameterized"] = True
+            self._settings_compile_time["cdr_frc"]["cdr_volume"] = all(
+                isinstance(release, rt.VolumeRelease) for release in self.cdr_forcing
+            )
+            cdr_file_path = config.paths.input_data / self.name / f"{self.name}_cdr_forcing.nc"
+            cdr_dataset = getattr(self.blueprint, "cdr_forcing", None) if self.blueprint else None
+            cdr_resources = getattr(cdr_dataset, "data", None) if cdr_dataset else None
+            if cdr_resources:
+                cdr_location = getattr(cdr_resources[0], "location", None)
+                if cdr_location:
+                    cdr_file_path = Path(cdr_location)
+                    if not cdr_file_path.is_absolute():
+                        cdr_file_path = (config.paths.input_data / self.name / cdr_file_path).resolve()
+            self._settings_compile_time["cdr_frc"]["cdr_file"] = str(cdr_file_path)
 
         # Ensure ntimes is an integer (don't recalculate, just ensure type is correct)
         if "roms.in" in self._settings_run_time and "time_stepping" in self._settings_run_time["roms.in"]:

@@ -177,6 +177,7 @@ class RomsMarblInputData(InputData):
     source_data: source_data.SourceData
     blueprint_dir: Path
     partitioning: cstar_models.PartitioningParameterSet
+    cdr_forcing: Optional[List[Union[rt.TracerPerturbation, rt.VolumeRelease]]] = None
     grid_child: Optional[rt.Grid] = None
     metadata_child: Optional[dict[str, Any]] = None
     use_dask: bool = True
@@ -222,6 +223,19 @@ class RomsMarblInputData(InputData):
                     for item in items:
                         kwargs = item.model_dump() if hasattr(item, 'model_dump') else dict(item)
                         input_list.append((f"forcing.{category}", kwargs))
+
+        # Optional user-provided CDR forcing via builder kwarg.
+        # Merge with model-specified cdr_list if that input already exists.
+        if self.cdr_forcing:
+            cdr_step_idx = next((i for i, (k, _) in enumerate(input_list) if k == "cdr_forcing"), None)
+            if cdr_step_idx is not None:
+                step_key, step_kwargs = input_list[cdr_step_idx]
+                cdr_list = list(step_kwargs.get("cdr_list") or [])
+                cdr_list.extend(self.cdr_forcing)
+                step_kwargs["cdr_list"] = cdr_list
+                input_list[cdr_step_idx] = (step_key, step_kwargs)
+            else:
+                input_list.append(("cdr_forcing", {"cdr_list": list(self.cdr_forcing)}))
         
         self.input_list = input_list
         
@@ -993,14 +1007,25 @@ class RomsMarblInputData(InputData):
             paths = [str(output_path)]
         else:
             paths = cdr.save(output_path)
+
+        # Normalize output paths to absolute strings so downstream template
+        # settings can reliably embed full file locations.
+        normalized_paths: List[str] = []
+        if isinstance(paths, (list, tuple)):
+            raw_paths = list(paths)
+        else:
+            raw_paths = [paths]
+        for raw_path in raw_paths:
+            path_obj = Path(str(raw_path))
+            if not path_obj.is_absolute():
+                path_obj = output_path.parent / path_obj
+            normalized_paths.append(str(path_obj.resolve()))
+        paths = normalized_paths
+
         cdr.to_yaml(yaml_path)
         # Append Resources directly to blueprint_elements.cdr_forcing
-        if isinstance(paths, (list, tuple)):
-            for path in paths:
-                resource = cstar_models.Resource(location=path, partitioned=False)
-                self.blueprint_elements.cdr_forcing.data.append(resource)
-        else:
-            resource = cstar_models.Resource(location=paths, partitioned=False)
+        for path in paths:
+            resource = cstar_models.Resource(location=path, partitioned=False)
             self.blueprint_elements.cdr_forcing.data.append(resource)
     
     @register_input(name="forcing.corrections", order=90, label="Generating corrections forcing")
