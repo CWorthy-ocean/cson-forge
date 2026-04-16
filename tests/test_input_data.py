@@ -723,6 +723,36 @@ class TestRomsMarblInputDataGeneration:
                 # Missing type
             )
         assert "type" in str(exc_info.value).lower()
+
+    @patch('cson_forge.input_data.rt.SurfaceForcing')
+    def test_generate_surface_forcing_reuse_skips_init_uses_from_yaml(
+        self, mock_sf_class, sample_roms_marbl_input_data, tmp_path
+    ):
+        """When NetCDF exists, do not call SurfaceForcing(grid=...); YAML via from_yaml -> to_yaml."""
+        mock_from_yaml = MagicMock()
+        mock_from_yaml.use_coarse_grid = False
+        mock_sf_class.from_yaml.return_value = mock_from_yaml
+
+        with patch('cson_forge.input_data.config.paths', _create_mock_paths(tmp_path)):
+            sample_roms_marbl_input_data.input_data_dir = (
+                tmp_path / f"{sample_roms_marbl_input_data.domain_name}"
+            )
+            sample_roms_marbl_input_data.input_data_dir.mkdir(parents=True, exist_ok=True)
+            nc_path = sample_roms_marbl_input_data._forcing_filename(input_name="surface-physics")
+            nc_path.touch()
+            yaml_path = sample_roms_marbl_input_data._yaml_filename("forcing.surface-physics")
+            yaml_path.write_text("---\nSurfaceForcing:\n  type: physics\n")
+
+            sample_roms_marbl_input_data._generate_surface_forcing(
+                key="forcing.surface",
+                source={"name": "ERA5"},
+                type="physics",
+            )
+
+        mock_sf_class.assert_not_called()
+        mock_sf_class.from_yaml.assert_called_once()
+        mock_from_yaml.to_yaml.assert_called_once()
+        assert len(sample_roms_marbl_input_data.blueprint_elements.forcing.surface.data) > 0
     
     @patch('cson_forge.input_data.rt.BoundaryForcing')
     def test_generate_boundary_forcing(self, mock_bf_class, sample_roms_marbl_input_data, tmp_path):
