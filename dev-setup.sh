@@ -7,11 +7,19 @@
 #   ./dev-setup.sh --batch      # Run without user prompts (for CI/automation)
 #   ./dev-setup.sh --clean --batch  # Clean rebuild without prompts
 #
+# If micromamba is installed under this repo's ./bin, it is not on your PATH unless
+# you source bin/micromamba-path.sh (written by this script) or use: source ./dev-setup.sh
+#
 # Package Manager:
-#   Uses micromamba if available (fastest), falls back to conda if not.
+#   Uses micromamba only.
 #   If micromamba is not found, the script will automatically download and
 #   install it locally to ./bin (no root privileges required).
 #   Supports macOS (ARM64 and Intel) and Linux automatically.
+#
+# Named activation (e.g. micromamba activate cson-forge-v0) requires a stable
+# MAMBA_ROOT_PREFIX. This script exports MAMBA_ROOT_PREFIX if unset (default
+# ~/micromamba). Add the same export plus "micromamba shell hook" to your shell
+# rc file so new terminals can activate by name.
 
 set -e  # Exit on error
 
@@ -33,11 +41,8 @@ done
 # Conda environment setup
 #--------------------------------------------------------
 env_file="environment.yml"
-KERNEL_NAME="$(awk -F': *' '$1=="name"{print $2; exit}' "$env_file" 2>/dev/null)"
-if [[ -z ${KERNEL_NAME:-} ]]; then
-  echo "Error: Could not determine environment name from ${env_file}."
-  exit 1
-fi
+# Always use this name so activation is consistently: micromamba activate cson-forge-v0
+KERNEL_NAME="cson-forge-v0"
 
 # Get the directory where this script is located
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -75,8 +80,7 @@ case "$(uname -s)" in
     ;;
 esac
 
-# Determine which package manager to use (micromamba > conda)
-PACKAGE_MANAGER=""
+# Determine micromamba command (system or local)
 MICROMAMBA_CMD=""
 MICROMAMBA_URL="https://micro.mamba.pm/api/micromamba/${OS_TYPE}-${ARCH_TYPE}/latest"
 
@@ -129,11 +133,9 @@ fi
 
 # Check for system micromamba first
 if command -v micromamba >/dev/null 2>&1; then
-  PACKAGE_MANAGER="micromamba"
   MICROMAMBA_CMD="micromamba"
 # Check for local micromamba
 elif [[ -f "$LOCAL_MICROMAMBA" ]] && [[ -x "$LOCAL_MICROMAMBA" ]]; then
-  PACKAGE_MANAGER="micromamba"
   MICROMAMBA_CMD="$LOCAL_MICROMAMBA"
 # Try to install micromamba locally
 elif [[ -n "$OS_TYPE" ]] && [[ -n "$ARCH_TYPE" ]]; then
@@ -150,113 +152,95 @@ elif [[ -n "$OS_TYPE" ]] && [[ -n "$ARCH_TYPE" ]]; then
     mv "$TEMP_DIR/bin/micromamba" "$LOCAL_MICROMAMBA"
     rm -rf "$TEMP_DIR"
     chmod +x "$LOCAL_MICROMAMBA"
-    PACKAGE_MANAGER="micromamba"
     MICROMAMBA_CMD="$LOCAL_MICROMAMBA"
     echo "✓ micromamba installed successfully to $LOCAL_BIN_DIR"
   else
     rm -rf "$TEMP_DIR"
-    echo "Warning: Failed to download micromamba. Falling back to conda if available."
+    echo "Warning: Failed to download micromamba."
   fi
 fi
 
-# Fall back to conda if micromamba is not available
-if [[ -z "$PACKAGE_MANAGER" ]]; then
-  if command -v conda >/dev/null 2>&1; then
-    PACKAGE_MANAGER="conda"
-  elif command -v module >/dev/null 2>&1; then
-    module load conda 2>/dev/null || true
-    if command -v conda >/dev/null 2>&1; then
-      PACKAGE_MANAGER="conda"
-    fi
-  fi
-fi
-
-if [[ -z "$PACKAGE_MANAGER" ]]; then
-  echo "Error: Neither micromamba nor conda is available."
+if [[ -z "$MICROMAMBA_CMD" ]]; then
+  echo "Error: micromamba is not available."
   echo ""
   echo "The script attempted to install micromamba locally but failed."
-  echo "Please install miniconda/anaconda for conda support, or install micromamba manually."
+  echo "Please install micromamba manually and rerun this script."
   exit 1
 fi
 
-echo "Using $PACKAGE_MANAGER as package manager"
+echo "Using micromamba as package manager"
+
+# Repo-local micromamba is not on PATH by default. Prepend ./bin so this script and
+# any shell that *sources* this script can run `micromamba` by name.
+if [[ "$MICROMAMBA_CMD" != "micromamba" ]]; then
+  export PATH="$LOCAL_BIN_DIR:$PATH"
+fi
+
+# Micromamba prints a boilerplate footer after env create / some installs; strip it from logs.
+_micromamba_strip_activation_footer() {
+  awk '
+    /To activate this environment/ { skip = 1; next }
+    skip && /micromamba run -n/ && /mycommand/ { skip = 0; next }
+    skip { next }
+    { print }
+  '
+}
+
+micromamba_filtered() {
+  (
+    set -o pipefail
+    "$@" 2>&1 | _micromamba_strip_activation_footer
+  )
+}
 
 # Initialize and activate environment
 set +u
-if [[ "$PACKAGE_MANAGER" == "micromamba" ]]; then
-  # For micromamba, we need to initialize the shell hook
-  # If using local micromamba, we need to make sure the shell hook uses the correct path
-  if [[ "$MICROMAMBA_CMD" != "micromamba" ]]; then
-    # For local micromamba, set up an alias so shell hook works
-    alias micromamba="$MICROMAMBA_CMD"
-  fi
-  
-  # Initialize micromamba shell hook first (required before any activate/deactivate)
-  eval "$("$MICROMAMBA_CMD" shell hook --shell bash)"
-  
-  # Check if environment exists
-  if "$MICROMAMBA_CMD" env list | awk '{print $1}' | grep -q "^$KERNEL_NAME$"; then
-    ENV_EXISTS="true"
-  else
-    ENV_EXISTS="false"
-  fi
-  
-  # Remove environment if --clean is specified and it exists
-  if [[ "$CLEAN_MODE" == "true" && "$ENV_EXISTS" == "true" ]]; then
-    echo "Removing existing $PACKAGE_MANAGER environment: $KERNEL_NAME"
-    # Suppress harmless error about mamba_trash.txt (directory may be removed before file write)
-    # This error occurs when the conda-meta directory is removed before micromamba can write the trash file
-    # Capture stderr, filter out the harmless error, and allow the command to complete
-    { "$MICROMAMBA_CMD" env remove -n "$KERNEL_NAME" -y 2>&1; } | grep -v "mamba_trash.txt" || true
-    # Small delay to ensure cleanup completes
-    sleep 0.5
-    ENV_EXISTS="false"
-  fi
-  
-  # Create environment if it doesn't exist
-  if [[ "$ENV_EXISTS" == "false" ]]; then
-    echo "Creating $PACKAGE_MANAGER environment: $KERNEL_NAME"
-    "$MICROMAMBA_CMD" env create -f "$env_file" -y
-  fi
-  
-  # Activate environment (now that shell is initialized)
-  echo "Activating $PACKAGE_MANAGER environment: $KERNEL_NAME"
-  # After shell hook initialization, we can use 'micromamba' directly (via the hook functions)
-  micromamba activate "$KERNEL_NAME"
-  
-else
-  # Initialize conda for this shell session by sourcing conda.sh
-  # This makes conda commands (like 'conda activate') available in the script
-  source "$(conda info --base)/etc/profile.d/conda.sh"
-  
-  # Check if environment exists
-  if conda env list | awk '{print $1}' | grep -q "^$KERNEL_NAME$"; then
-    ENV_EXISTS="true"
-  else
-    ENV_EXISTS="false"
-  fi
-  
-  # Remove environment if --clean is specified and it exists
-  if [[ "$CLEAN_MODE" == "true" && "$ENV_EXISTS" == "true" ]]; then
-    echo "Removing existing $PACKAGE_MANAGER environment: $KERNEL_NAME"
-    # Suppress harmless error about mamba_trash.txt (directory may be removed before file write)
-    # The environment removal still succeeds despite this error
-    conda env remove -n "$KERNEL_NAME" -y 2>&1 | grep -v "mamba_trash.txt" || true
-    # Small delay to ensure cleanup completes
-    sleep 0.5
-    ENV_EXISTS="false"
-  fi
-  
-  # Create environment if it doesn't exist
-  if [[ "$ENV_EXISTS" == "false" ]]; then
-    echo "Creating $PACKAGE_MANAGER environment: $KERNEL_NAME"
-    conda env create -f "$env_file"
-  fi
-  
-  # Activate environment
-  echo "Activating $PACKAGE_MANAGER environment: $KERNEL_NAME"
-  conda activate "$KERNEL_NAME"
+# Single root for all micromamba envs so short names resolve in every shell.
+export MAMBA_ROOT_PREFIX="${MAMBA_ROOT_PREFIX:-$HOME/micromamba}"
+
+# For local micromamba, set up an alias so shell hook works
+if [[ "$MICROMAMBA_CMD" != "micromamba" ]]; then
+  alias micromamba="$MICROMAMBA_CMD"
 fi
+
+# Initialize micromamba shell hook first (required before any activate/deactivate)
+eval "$("$MICROMAMBA_CMD" shell hook --shell bash)"
+
+# Prefer filesystem check: "env list" output can omit the name column for some installs.
+if [[ -d "$MAMBA_ROOT_PREFIX/envs/$KERNEL_NAME" ]]; then
+  ENV_EXISTS="true"
+else
+  ENV_EXISTS="false"
+fi
+
+# Remove environment if --clean is specified and it exists
+if [[ "$CLEAN_MODE" == "true" && "$ENV_EXISTS" == "true" ]]; then
+  echo "Removing existing micromamba environment: $KERNEL_NAME"
+  # Suppress harmless error about mamba_trash.txt (directory may be removed before file write)
+  # This error occurs when the conda-meta directory is removed before micromamba can write the trash file
+  # Capture stderr, filter out the harmless error, and allow the command to complete
+  { "$MICROMAMBA_CMD" env remove -n "$KERNEL_NAME" -y 2>&1; } | grep -v "mamba_trash.txt" || true
+  # Small delay to ensure cleanup completes
+  sleep 0.5
+  ENV_EXISTS="false"
+fi
+
+# Create environment if it doesn't exist
+if [[ "$ENV_EXISTS" == "false" ]]; then
+  echo "Creating micromamba environment: $KERNEL_NAME"
+  # Drop top-level name:/prefix: so -n is the only install target (avoids unnamed / path-only envs).
+  tmp_env_file="$(mktemp "${TMPDIR:-/tmp}/cson-forge-env.XXXXXX.yml")"
+  trap 'rm -f "$tmp_env_file"' EXIT
+  awk '!/^(name|prefix)[[:space:]]*:/' "$env_file" > "$tmp_env_file"
+  micromamba_filtered "$MICROMAMBA_CMD" env create -n "$KERNEL_NAME" -f "$tmp_env_file" -y
+  rm -f "$tmp_env_file"
+  trap - EXIT
+fi
+
+# Activate environment (now that shell is initialized)
+echo "Activating micromamba environment: $KERNEL_NAME"
+# After shell hook initialization, we can use 'micromamba' directly (via the hook functions)
+micromamba activate "$KERNEL_NAME"
 # Keep set +u for package manager operations (scripts may reference unset variables)
 # We'll restore set -u at the very end of the script
 
@@ -265,30 +249,19 @@ fi
 #--------------------------------------------------------
 if [[ "$(uname)" == "Darwin" ]]; then
   # Ensure environment is active
-  if [[ "$PACKAGE_MANAGER" == "micromamba" ]]; then
-    if [[ -z "${CONDA_DEFAULT_ENV:-}" ]] || [[ "$CONDA_DEFAULT_ENV" != "$KERNEL_NAME" ]]; then
-      # Shell hook should already be initialized, but ensure alias is set
-      if [[ "$MICROMAMBA_CMD" != "micromamba" ]]; then
-        alias micromamba="$MICROMAMBA_CMD"
-      fi
-      micromamba activate "$KERNEL_NAME"
+  if [[ -z "${CONDA_DEFAULT_ENV:-}" ]] || [[ "$CONDA_DEFAULT_ENV" != "$KERNEL_NAME" ]]; then
+    # Shell hook should already be initialized, but ensure alias is set
+    if [[ "$MICROMAMBA_CMD" != "micromamba" ]]; then
+      alias micromamba="$MICROMAMBA_CMD"
     fi
-  else
-    if [[ -z "${CONDA_DEFAULT_ENV:-}" ]] || [[ "$CONDA_DEFAULT_ENV" != "$KERNEL_NAME" ]]; then
-      source "$(conda info --base)/etc/profile.d/conda.sh"
-      conda activate "$KERNEL_NAME"
-    fi
+    micromamba activate "$KERNEL_NAME"
   fi
   
   echo "Detected macOS - installing compilers and ESMF packages from conda-forge..."
   # Package manager install may run deactivation scripts that reference unset variables
   # set +u is already active from the initialization section above
   # These packages are only installed on macOS; on HPC systems, we rely on system modules
-  if [[ "$PACKAGE_MANAGER" == "micromamba" ]]; then
-    micromamba install -y -c conda-forge compilers mpich netcdf-fortran esmpy xesmf
-  else
-    conda install -y -c conda-forge compilers mpich netcdf-fortran esmpy xesmf
-  fi
+  micromamba_filtered micromamba install -y -c conda-forge compilers mpich netcdf-fortran esmpy xesmf
   echo "✓ Compiler installation completed successfully!"
 else
   echo "Not macOS - skipping compiler installation"
@@ -300,19 +273,12 @@ fi
 #--------------------------------------------------------
 # Ensure environment is active
 # set +u is already active from initialization section
-if [[ "$PACKAGE_MANAGER" == "micromamba" ]]; then
-  if [[ -z "${CONDA_DEFAULT_ENV:-}" ]] || [[ "$CONDA_DEFAULT_ENV" != "$KERNEL_NAME" ]]; then
-    # Shell hook should already be initialized, but ensure alias is set
-    if [[ "$MICROMAMBA_CMD" != "micromamba" ]]; then
-      alias micromamba="$MICROMAMBA_CMD"
-    fi
-    micromamba activate "$KERNEL_NAME"
+if [[ -z "${CONDA_DEFAULT_ENV:-}" ]] || [[ "$CONDA_DEFAULT_ENV" != "$KERNEL_NAME" ]]; then
+  # Shell hook should already be initialized, but ensure alias is set
+  if [[ "$MICROMAMBA_CMD" != "micromamba" ]]; then
+    alias micromamba="$MICROMAMBA_CMD"
   fi
-else
-  if [[ -z "${CONDA_DEFAULT_ENV:-}" ]] || [[ "$CONDA_DEFAULT_ENV" != "$KERNEL_NAME" ]]; then
-    source "$(conda info --base)/etc/profile.d/conda.sh"
-    conda activate "$KERNEL_NAME"
-  fi
+  micromamba activate "$KERNEL_NAME"
 fi
 
 # Install local Python packages in editable mode
@@ -356,20 +322,16 @@ echo "✓ Local package installation completed!"
 #--------------------------------------------------------
 # Ensure environment is active
 # set +u is already active from initialization section
-if [[ "$PACKAGE_MANAGER" == "micromamba" ]]; then
-  if [[ -z "${CONDA_DEFAULT_ENV:-}" ]] || [[ "$CONDA_DEFAULT_ENV" != "$KERNEL_NAME" ]]; then
-    # Shell hook should already be initialized, but ensure alias is set
-    if [[ "$MICROMAMBA_CMD" != "micromamba" ]]; then
-      alias micromamba="$MICROMAMBA_CMD"
-    fi
-    micromamba activate "$KERNEL_NAME"
+if [[ -z "${CONDA_DEFAULT_ENV:-}" ]] || [[ "$CONDA_DEFAULT_ENV" != "$KERNEL_NAME" ]]; then
+  # Shell hook should already be initialized, but ensure alias is set
+  if [[ "$MICROMAMBA_CMD" != "micromamba" ]]; then
+    alias micromamba="$MICROMAMBA_CMD"
   fi
-else
-  if [[ -z "${CONDA_DEFAULT_ENV:-}" ]] || [[ "$CONDA_DEFAULT_ENV" != "$KERNEL_NAME" ]]; then
-    source "$(conda info --base)/etc/profile.d/conda.sh"
-    conda activate "$KERNEL_NAME"
-  fi
+  micromamba activate "$KERNEL_NAME"
 fi
+
+# Kernel discovery uses jupyter_client; keep it explicit so older envs still work.
+micromamba_filtered micromamba install -y jupyter_client
 
 # Check if kernel exists
 if python - "$KERNEL_NAME" <<'PY'
@@ -402,8 +364,57 @@ fi
 
 echo ""
 echo "✓ Environment setup completed successfully!"
-echo "  Package manager: $PACKAGE_MANAGER"
+echo "  Package manager: micromamba"
 echo "  Environment: $KERNEL_NAME"
+echo "  MAMBA_ROOT_PREFIX: $MAMBA_ROOT_PREFIX"
+echo ""
 
-# Restore strict variable checking now that all conda operations are complete
+# Persist PATH + MAMBA_ROOT_PREFIX for shells that source ./bin/micromamba-path.sh
+MICROMAMBA_PATH_SH="$LOCAL_BIN_DIR/micromamba-path.sh"
+if [[ -x "$LOCAL_MICROMAMBA" ]]; then
+  cat > "$MICROMAMBA_PATH_SH" <<EOF
+# Generated by dev-setup.sh — do not edit by hand (regenerated on each setup).
+export PATH="${LOCAL_BIN_DIR}:\${PATH}"
+export MAMBA_ROOT_PREFIX="${MAMBA_ROOT_PREFIX}"
+EOF
+  chmod a+r "$MICROMAMBA_PATH_SH"
+fi
+
+# Optional: put micromamba on default PATH for new terminals if ~/.local/bin exists or is creatable.
+USER_LOCAL_BIN="${HOME}/.local/bin"
+if [[ "$MICROMAMBA_CMD" != "micromamba" ]] && [[ -x "$LOCAL_MICROMAMBA" ]]; then
+  if mkdir -p "$USER_LOCAL_BIN" 2>/dev/null && ln -sf "$LOCAL_MICROMAMBA" "$USER_LOCAL_BIN/micromamba" 2>/dev/null; then
+    echo "micromamba symlink: $USER_LOCAL_BIN/micromamba"
+    echo "  (Works in new terminals if $USER_LOCAL_BIN is on your PATH; many distros add it by default.)"
+    echo ""
+  fi
+fi
+
+if [[ -x "$LOCAL_MICROMAMBA" ]]; then
+  echo "micromamba is installed at: $LOCAL_MICROMAMBA"
+  if [[ "${BASH_SOURCE[0]}" != "${0}" ]]; then
+    echo "This script was sourced: ./bin is already on PATH for this shell; run: micromamba --help"
+  else
+    echo "This script was run as a subprocess; your current shell PATH was not changed."
+    echo "  In this terminal, run once:"
+    echo "    source \"$MICROMAMBA_PATH_SH\""
+    echo "  Then you can run: micromamba --help"
+  fi
+  echo ""
+fi
+
+echo "In a new terminal, activate by name with:"
+if [[ -f "$MICROMAMBA_PATH_SH" ]]; then
+  echo "  source \"$MICROMAMBA_PATH_SH\""
+else
+  echo "  export MAMBA_ROOT_PREFIX=\"$MAMBA_ROOT_PREFIX\""
+fi
+if [[ "$MICROMAMBA_CMD" == "micromamba" ]]; then
+  echo "  eval \"\$(micromamba shell hook -s bash)\"   # or: -s zsh / -s fish"
+else
+  echo "  eval \"\$(\"$LOCAL_MICROMAMBA\" shell hook -s bash)\"   # or: -s zsh / -s fish"
+fi
+echo "  micromamba activate $KERNEL_NAME"
+
+# Restore strict variable checking now that package manager operations are complete
 set -u
