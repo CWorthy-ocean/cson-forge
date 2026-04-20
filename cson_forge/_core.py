@@ -178,6 +178,17 @@ class CstarSpecBuilder(BaseModel):
         validate_default=False,
     )
     ensemble_id: Optional[int] = Field(default=None, validate_default=False)
+    output_dir: Optional[str] = Field(
+        default=None,
+        validate_default=False,
+        description=(
+            "Root directory for generated artifacts: blueprint/settings YAML under "
+            "``blueprints/<system_id>/<name>/``, ``compile-time/`` and ``run-time/`` "
+            "at this root, input NetCDF under ``input_data/<name>/``, and simulation "
+            "output under ``scratch/<casename>/``. If unset, uses package paths from "
+            "``cson_forge.config`` (compile/run-time still under ``builds/<name>/`` there)."
+        ),
+    )
     # Internal attributes (computed/loaded)
     blueprint: Optional[cstar_models.RomsMarblBlueprint] = Field(
         default=None,
@@ -221,12 +232,36 @@ class CstarSpecBuilder(BaseModel):
     _settings_compile_time: Dict[str, Any] = PrivateAttr(default_factory=dict)
     _settings_run_time: Dict[str, Any] = PrivateAttr(default_factory=dict)
     
+    @field_validator("output_dir", mode="before")
+    @classmethod
+    def _normalize_output_dir(cls, v: Any) -> Optional[str]:
+        if v is None:
+            return None
+        if isinstance(v, Path):
+            v = str(v)
+        if isinstance(v, str) and not v.strip():
+            return None
+        return v
+    
     @model_validator(mode="after")
     def _validate_dates(self) -> "CstarSpecBuilder":
         """Validate that start_date precedes end_date."""
         if self.end_date <= self.start_date:
             raise ValueError("end_date must be after start_date")
         return self
+    
+    @property
+    def _resolved_output_dir(self) -> Optional[Path]:
+        if self.output_dir is None:
+            return None
+        return Path(self.output_dir).expanduser().resolve()
+    
+    @property
+    def input_data_dir(self) -> Path:
+        """Directory for generated input NetCDF files (grid, forcing, etc.)."""
+        if self._resolved_output_dir is not None:
+            return self._resolved_output_dir / "input_data" / self.name
+        return config.paths.input_data / self.name
     
     def model_post_init(self, __context: Any) -> None:
         """
@@ -298,7 +333,7 @@ class CstarSpecBuilder(BaseModel):
         if self._model_spec is None:
             self._load_model_spec()
 
-        input_data_dir = config.paths.input_data / self.name
+        input_data_dir = self.input_data_dir
         planned_paths: List[Path] = []
 
         def _add_nc(stem: str) -> None:
@@ -372,13 +407,22 @@ class CstarSpecBuilder(BaseModel):
 
     def _print_output_paths(self) -> None:
         """Print absolute paths where generated NetCDF and YAML files are stored."""
-        netcdf_dir = (config.paths.input_data / self.name).resolve()
+        netcdf_dir = self.input_data_dir.resolve()
         yaml_dir = self.blueprint_dir.resolve()
-        print(
-            "CstarSpecBuilder: output locations\n"
-            f"  NetCDF files: {netcdf_dir}\n"
-            f"  YAML files: {yaml_dir}"
-        )
+        lines = [
+            "CstarSpecBuilder: output locations",
+            f"  NetCDF files: {netcdf_dir}",
+            f"  YAML files: {yaml_dir}",
+        ]
+        if self._resolved_output_dir is not None:
+            lines.extend(
+                [
+                    f"  Compile-time code: {self.compile_time_code_dir.resolve()}",
+                    f"  Run-time code: {self.run_time_code_dir.resolve()}",
+                    f"  Simulation output (scratch): {self.run_output_dir.resolve()}",
+                ]
+            )
+        print("\n".join(lines))
         print()
 
     @property
@@ -409,6 +453,8 @@ class CstarSpecBuilder(BaseModel):
     @property
     def run_output_dir(self) -> Path:
         """Return the output directory path."""
+        if self._resolved_output_dir is not None:
+            return self._resolved_output_dir / "scratch" / self.casename
         return config.paths.scratch / self.casename
     
     @property
@@ -428,16 +474,22 @@ class CstarSpecBuilder(BaseModel):
     @property
     def blueprint_dir(self) -> Path:
         """Return the blueprint directory path."""
-        return config.paths.blueprints / config.system_id / self.name 
-
+        if self._resolved_output_dir is not None:
+            return self._resolved_output_dir / "blueprints" / config.system_id / self.name
+        return config.paths.blueprints / config.system_id / self.name
+    
     @property
     def compile_time_code_dir(self) -> Path:
         """Return the compile-time code output directory path."""
+        if self._resolved_output_dir is not None:
+            return self._resolved_output_dir / "compile-time"
         return config.paths.here / "builds" / self.name / "compile-time"
     
     @property
     def run_time_code_dir(self) -> Path:
         """Return the run-time code output directory path."""
+        if self._resolved_output_dir is not None:
+            return self._resolved_output_dir / "run-time"
         return config.paths.here / "builds" / self.name / "run-time"
 
     def persist(self) -> None:
@@ -1655,6 +1707,7 @@ class CstarSpecBuilder(BaseModel):
                 domain_name=self.name,
                 start_date=self.start_date,
                 end_date=self.end_date,
+                input_data_dir_override=self.input_data_dir,
                 model_spec=self._model_spec,
                 grid=self.grid,
                 grid_child=self.grid_child,
@@ -2040,7 +2093,7 @@ class CstarSpecBuilder(BaseModel):
             self._settings_compile_time["cdr_frc"]["cdr_volume"] = all(
                 isinstance(release, rt.VolumeRelease) for release in self.cdr_forcing
             )
-            cdr_file_path = config.paths.input_data / self.name / f"{self.name}_cdr_forcing.nc"
+            cdr_file_path = self.input_data_dir / f"{self.name}_cdr_forcing.nc"
             cdr_dataset = getattr(self.blueprint, "cdr_forcing", None) if self.blueprint else None
             cdr_resources = getattr(cdr_dataset, "data", None) if cdr_dataset else None
             if cdr_resources:
@@ -2048,7 +2101,7 @@ class CstarSpecBuilder(BaseModel):
                 if cdr_location:
                     cdr_file_path = Path(cdr_location)
                     if not cdr_file_path.is_absolute():
-                        cdr_file_path = (config.paths.input_data / self.name / cdr_file_path).resolve()
+                        cdr_file_path = (self.input_data_dir / cdr_file_path).resolve()
             self._settings_compile_time["cdr_frc"]["cdr_file"] = str(cdr_file_path)
 
         # Ensure ntimes is an integer (don't recalculate, just ensure type is correct)

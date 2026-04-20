@@ -64,14 +64,20 @@ class InputData:
     domain_name: str
     start_date: Any
     end_date: Any
-    
+
     # Derived paths
     input_data_dir: Path = field(init=False)
     
     def __post_init__(self):
         """Initialize paths and storage."""
-        self.input_data_dir = config.paths.input_data / f"{self.domain_name}"
-        self.input_data_dir.mkdir(exist_ok=True)
+        # Subclasses (e.g. RomsMarblInputData) may define input_data_dir_override as a
+        # trailing optional field; base InputData does not declare it (dataclass ordering).
+        override = getattr(self, "input_data_dir_override", None)
+        if override is not None:
+            self.input_data_dir = Path(override)
+        else:
+            self.input_data_dir = config.paths.input_data / f"{self.domain_name}"
+        self.input_data_dir.mkdir(parents=True, exist_ok=True)
     
     def generate_all(self):
         """
@@ -181,7 +187,9 @@ class RomsMarblInputData(InputData):
     grid_child: Optional[rt.Grid] = None
     metadata_child: Optional[dict[str, Any]] = None
     use_dask: bool = True
-   
+    input_data_dir_override: Optional[Path] = None
+    """If set, NetCDF inputs are written here; otherwise ``config.paths.input_data / domain_name``."""
+
     # Blueprint elements containing input data
     blueprint_elements: RomsMarblBlueprintInputData = field(init=False)
     
