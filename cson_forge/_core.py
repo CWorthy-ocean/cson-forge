@@ -282,7 +282,7 @@ class CstarSpecBuilder(BaseModel):
 
         # I am a parent but not a child
         if self.grid_kwargs_child is not None and self.grid_kwargs_parent is None:
-            # Make both parent and child, to make the nesting edata. 
+            # Make both parent and child, to make the nesting data. 
             grid_kwargs_child = {k: v for k, v in self.grid_kwargs_child.items() if k != "metadata"}
 
             self.grid_child = rt.Grid(**grid_kwargs_child)
@@ -1781,7 +1781,7 @@ class CstarSpecBuilder(BaseModel):
         # Initialize from defaults (deep copy to avoid modifying the original)
         self._settings_compile_time = copy.deepcopy(self._model_spec.settings.compile_time.settings_dict)
         if self.grid_child is not None:
-            period_default = inspect.signature(rt.make_edata).parameters['period'].default
+            period_default = inspect.signature(rt.make_nesting_info).parameters['period'].default
             if "metadata" in self.grid_kwargs_child:
                if "period" in self.grid_kwargs_child["metadata"]:
                   self._settings_compile_time["extract_data"]["extract_period"] = self.grid_kwargs_child["metadata"]["period"]

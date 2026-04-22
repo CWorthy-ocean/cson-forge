@@ -585,7 +585,7 @@ class RomsMarblInputData(InputData):
             if self._should_reuse_existing_output(out_path_nesting):
                 print(f"   ↪ Reusing existing file: {out_path_nesting}")
             else:
-                rt.make_edata(self.grid, self.grid_child, out_path_nesting, **(self.metadata_child or {}))
+                rt.make_nesting_info(self.grid, self.grid_child, out_path_nesting, **(self.metadata_child or {}))
             self.blueprint_elements.nesting_info = cstar_models.Dataset(
                 data=[cstar_models.Resource(location=str(out_path_nesting), partitioned=False)]
             )
