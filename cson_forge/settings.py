@@ -25,7 +25,9 @@ def _fortran_cdr_file_decl(path: Any, max_line_len: int = 72) -> str:
     """
     raw = str(path)
     esc = raw.replace("'", "''")
-    n = len(raw)
+    # Keep a one-character safety buffer to preserve historical behavior and
+    # avoid edge-case truncation in downstream Fortran usage.
+    n = len(raw) + 1
     prefix = f"      character(len={n}) :: cdr_file = '"
     single = prefix + esc + "'"
     if len(single) <= max_line_len:
