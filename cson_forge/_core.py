@@ -504,6 +504,8 @@ class CstarSpecBuilder(BaseModel):
     @property
     def run_output_dir(self) -> Path:
         """Return the output directory path."""
+        if self._resolved_output_dir is not None:
+            return self._resolved_output_dir / "scratch" / self.casename
         return config.paths.scratch / self.casename
     
     @property
@@ -528,11 +530,15 @@ class CstarSpecBuilder(BaseModel):
     @property
     def compile_time_code_dir(self) -> Path:
         """Return the compile-time code output directory path."""
+        if self._resolved_output_dir is not None:
+            return self._resolved_output_dir / "compile-time"
         return config.paths.here / "builds" / self.name / "compile-time"
     
     @property
     def run_time_code_dir(self) -> Path:
         """Return the run-time code output directory path."""
+        if self._resolved_output_dir is not None:
+            return self._resolved_output_dir / "run-time"
         return config.paths.here / "builds" / self.name / "run-time"
 
     def persist(self) -> None:
