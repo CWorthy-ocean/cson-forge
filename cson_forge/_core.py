@@ -258,6 +258,11 @@ class CstarSpecBuilder(BaseModel):
         return Path(self.additional_path).expanduser().resolve()
 
     @property
+    def _resolved_output_dir(self) -> Optional[Path]:
+        """Backward-compatible alias for ``_resolved_additional_path``."""
+        return self._resolved_additional_path
+
+    @property
     def output_dir(self) -> Optional[str]:
         """Backward-compatible alias for ``additional_path``."""
         return self.additional_path
