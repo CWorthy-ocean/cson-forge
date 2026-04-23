@@ -11,9 +11,14 @@ grid:  filename
       {{ grid.grid_file }}
 
 forcing: filename
-      {{ forcing.surface_forcing_path }}
-      {{ forcing.boundary_forcing_path }}
-      {{ forcing.river_path }}
+{% for path in [
+    forcing.surface_forcing_path,
+    forcing.boundary_forcing_path,
+    forcing.tidal_forcing_path,
+    forcing.river_path,
+] if path %}
+      {{ path }}
+{% endfor %}
 
 initial: NRREC  filename
       {{ initial.nrrec }}

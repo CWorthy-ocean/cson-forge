@@ -28,7 +28,7 @@ dependencies:
   - numpy>2,<2.3
   - pandas
   - papermill
-  - pip    
+  - pip
   - pop-tools
   - pre-commit==3.8.0
   - pytest>=7.0.0
@@ -44,8 +44,8 @@ dependencies:
   - pip:
     # roms-tools from GitHub: use branch (e.g. @main) or commit hash (e.g. @abc123f)
     - git+https://github.com/CWorthy-ocean/roms-tools.git@main
-    # cstar-ocean from GitHub: use branch (e.g. @main) or commit hash (e.g. @abc123f)    
-    - git+https://github.com/CWorthy-ocean/C-Star.git@e9e716dc0d38d2150ea1eeee7d009d000fed371f
+    # cstar-ocean from GitHub: use branch (e.g. @main) or commit hash (e.g. @abc123f)
+    - git+https://github.com/CWorthy-ocean/C-Star.git@main
   - xarray>=2022.6.0,<2025.8.0
   - pooch
   - packaging

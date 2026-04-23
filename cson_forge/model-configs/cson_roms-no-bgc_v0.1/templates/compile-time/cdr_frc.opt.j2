@@ -3,7 +3,7 @@
 
       logical,parameter,public :: cdr_source  = {{ cdr_frc.cdr_source|lower }}  ! Should be false if not using CDR forcing
 
-      character(len={{ (cdr_frc.cdr_file|string)|length }}) :: cdr_file = '{{ cdr_frc.cdr_file }}'
+{{ cdr_frc.cdr_file | fort_cdr_file_decl }}
 
       integer,parameter,public :: ncdr_parm={{ cdr_frc.ncdr_parm }}   !! number of discrete CDR releases; only used with PARAMETERIZED or 3D FORCING
 
