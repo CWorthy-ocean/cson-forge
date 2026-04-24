@@ -24,6 +24,7 @@ roms.in:
     surface_forcing_bgc_path: null  # Set dynamically
     boundary_forcing_path: null  # Set dynamically
     boundary_forcing_bgc_path: null  # Set dynamically
+    tidal_forcing_path: null  # Set dynamically
     river_path: null  # Set dynamically
 
   lateral_visc:

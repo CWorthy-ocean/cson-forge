@@ -131,7 +131,7 @@ cdr_frc:
   cdr_volume: false
   cdr_analytical: false
   ncdr_parm: 1
-  cdr_file: 'cdr_forcing.nc'
+  cdr_file: 'cdr.nc'
   cdrvol_vname: 'cdr_volume'
   cdrvol_tname: 'cdr_time'
   cdrtrc_vname: 'cdr_tracer'

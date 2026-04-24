@@ -3,7 +3,7 @@
 
       logical,parameter,public :: cdr_source  = {{ cdr_frc.cdr_source|lower }}  ! Should be false if not using CDR forcing
 
-      character(len={{ (cdr_frc.cdr_file|string)|length }}) :: cdr_file = '{{ cdr_frc.cdr_file }}'
+{{ cdr_frc.cdr_file | fort_cdr_file_decl }}
 
       integer,parameter,public :: ncdr_parm={{ cdr_frc.ncdr_parm }}   !! number of discrete CDR releases; only used with PARAMETERIZED or 3D FORCING
 
@@ -17,6 +17,11 @@
                                                                            ! interpolated in time between consecutive records; otherwise,
                                                                            ! forcing is held constant until the next record is reached
 
+      ! RELOCATE CDR FORCING TO NEAREST WET POINT?
+      logical                            :: relocate_to_wet_pts = {{ cdr_frc.relocate_to_wet_pts|lower }}  ! If false, any depth profile or single-point parameterized
+                                                                           ! forcing that is centered on land will cause the model to
+                                                                           ! error out.  If true, the forcing will be relocated or
+                                                                           ! recentered to the nearest wet point.
 
       ! PARAMETERIZED VERTICAL PROFILES ********************************
       logical,parameter,public :: cdr_volume  = {{ cdr_frc.cdr_volume|lower }}  ! Set to .false. if you want a tracer flux but no added water.

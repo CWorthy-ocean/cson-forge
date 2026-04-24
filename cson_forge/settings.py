@@ -12,6 +12,56 @@ from jinja2 import Environment, FileSystemLoader, select_autoescape, meta
 from typing import Dict, Any, Union, Set, Optional
 
 
+def _fortran_cdr_file_decl(path: Any, max_line_len: int = 72) -> str:
+    """
+    Emit ``character(len=...) :: cdr_file = '...'`` for ROMS ``cdr_frc.opt``.
+
+    Long paths are split for Fortran 77 fixed form: lines that continue end with the
+    ``//`` concatenation operator; the next line is a continuation with a non-blank
+    character in column 6 (here ``&``). No end-of-line ``&`` is used—only column 6 on
+    the following line. No physical line exceeds *max_line_len* (default 72). The first
+    line opens the literal (``= '...``) before any ``//``; embedded ``'`` in paths are
+    doubled per Fortran rules.
+    """
+    raw = str(path)
+    esc = raw.replace("'", "''")
+    # Keep a one-character safety buffer to preserve historical behavior and
+    # avoid edge-case truncation in downstream Fortran usage.
+    n = len(raw) + 1
+    prefix = f"      character(len={n}) :: cdr_file = '"
+    single = prefix + esc + "'"
+    if len(single) <= max_line_len:
+        return single
+
+    # First line must open the string literal before any trailing & (not ``= &`` with no quote).
+    # F77: end with ``' //`` only; continuation is column 6 on the next line, not ``&`` here.
+    tail_first_cont = "' //"
+    max0 = max_line_len - len(prefix) - len(tail_first_cont)
+    max0 = max(max0, 1)
+
+    # Continuation lines: "     &         'CHUNK' //" (≤72 cols) or "... 'CHUNK'" (last).
+    cont = "     &         '"
+    tail_mid = "' //"
+    tail_end = "'"
+    max_chunk = max_line_len - len(cont) - len(tail_mid)
+    max_chunk = max(max_chunk, 8)
+
+    lines: list[str] = []
+    ch0 = esc[:max0]
+    i = len(ch0)
+    lines.append(f"{prefix}{ch0}{tail_first_cont}")
+
+    while i < len(esc):
+        take = min(max_chunk, len(esc) - i)
+        ch = esc[i : i + take]
+        i += take
+        if i >= len(esc):
+            lines.append(f"{cont}{ch}{tail_end}")
+        else:
+            lines.append(f"{cont}{ch}{tail_mid}")
+    return "\n".join(lines)
+
+
 def render_roms_settings(
     template_files: list[str],
     template_dir: Union[str, Path],
@@ -99,8 +149,10 @@ def render_roms_settings(
         )
     
     # Validate nested structure: check that template variables match settings_dict structure
-    # Create a temporary environment for parsing templates
+    # Create a temporary environment for parsing templates (must register the same filters as
+    # ROMSTemplateRenderer or parse() raises TemplateAssertionError for custom filters).
     temp_env = Environment(loader=FileSystemLoader(str(template_dir)))
+    _attach_roms_jinja_filters(temp_env)
     
     for template_file in template_files:
         if not template_file.endswith('.j2'):
@@ -263,9 +315,7 @@ class ROMSTemplateRenderer:
             trim_blocks=True,
             lstrip_blocks=True
         )
-        
-        # Add custom filter for Fortran boolean conversion
-        self.env.filters['lower'] = self._fortran_bool
+        _attach_roms_jinja_filters(self.env)
     
     @staticmethod
     def _fortran_bool(value: bool) -> str:
@@ -293,4 +343,10 @@ class ROMSTemplateRenderer:
         """
         template = self.env.get_template(template_name)
         return template.render(**context)
+
+
+def _attach_roms_jinja_filters(env: Environment) -> None:
+    """Register ROMS Fortran Jinja filters on *env* (renderer and parse-time temp env)."""
+    env.filters["lower"] = ROMSTemplateRenderer._fortran_bool
+    env.filters["fort_cdr_file_decl"] = _fortran_cdr_file_decl
 

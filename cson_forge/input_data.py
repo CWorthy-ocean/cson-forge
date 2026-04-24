@@ -21,6 +21,20 @@ from . import models as cson_models
 from . import source_data
 import roms_tools as rt
 
+# Basename stem for CDR NetCDF: ``{domain_name}_cdr.nc``. The full name must contain the
+# substring ``cdr.nc`` so C-Star's ROMS build check on ``cdr_frc.opt`` passes.
+CDR_FORCING_NETCDF_STEM = "cdr"
+
+
+def netcdf_filename_component(component: str) -> str:
+    """
+    Sanitize a domain or input-name segment for ``{a}_{b}.nc`` basenames.
+
+    Generated NetCDF files must not contain ``.`` except the ``.nc`` suffix (e.g. version
+    strings like ``v0.1`` become ``v0_1``).
+    """
+    return str(component).replace(".", "_")
+
 
 class RomsMarblBlueprintInputData(BaseModel):
     """
@@ -76,7 +90,9 @@ class InputData:
         if override is not None:
             self.input_data_dir = Path(override)
         else:
-            self.input_data_dir = config.paths.input_data / f"{self.domain_name}"
+            self.input_data_dir = (
+                config.paths.input_data / netcdf_filename_component(self.domain_name)
+            )
         self.input_data_dir.mkdir(parents=True, exist_ok=True)
     
     def generate_all(self):
@@ -89,7 +105,67 @@ class InputData:
     
     def _forcing_filename(self, input_name: str) -> Path:
         """Construct the NetCDF filename for a given input name."""
-        return self.input_data_dir / f"{self.domain_name}_{input_name}.nc"
+        d = netcdf_filename_component(self.domain_name)
+        stem = netcdf_filename_component(input_name)
+        return self.input_data_dir / f"{d}_{stem}.nc"
+
+    def _link_cdr_legacy_alias(self, canonical: Path) -> None:
+        """
+        Ensure ``{domain}_cdr_forcing.nc`` exists as a symlink to ``{domain}_cdr.nc``.
+
+        C-Star run setup and older POSTCONFIG blueprints may still use the legacy
+        basename; compile-time ``cdr_frc.opt`` expects a path containing ``cdr.nc``.
+        """
+        canonical = Path(canonical).resolve()
+        legacy = self._forcing_filename("cdr_forcing")
+        if not canonical.exists():
+            return
+        if legacy.resolve() == canonical:
+            return
+        try:
+            if legacy.is_symlink() or legacy.is_file():
+                if legacy.resolve() == canonical:
+                    return
+                legacy.unlink()
+            legacy.symlink_to(canonical.name)
+        except OSError:
+            pass
+
+    def _enforce_cdr_canonical_path(self, canonical: Path, paths: List[str]) -> List[str]:
+        """
+        If ``roms_tools.CDRForcing.save`` ignored the requested path and wrote e.g.
+        ``{domain}_cdr_forcing.nc``, rename the file on disk to *canonical*
+        (``{domain}_cdr.nc``) and fix ``paths[0]``.
+        """
+        if not paths:
+            return paths
+        canonical = Path(canonical).resolve()
+        first = Path(paths[0]).resolve()
+        if first == canonical:
+            return paths
+        if not first.exists():
+            return paths
+        if canonical.exists():
+            try:
+                if first.samefile(canonical):
+                    paths[0] = str(canonical)
+                    return paths
+            except OSError:
+                pass
+            try:
+                canonical.unlink()
+            except OSError:
+                pass
+        try:
+            first.rename(canonical)
+            paths[0] = str(canonical.resolve())
+        except OSError as e:
+            warnings.warn(
+                f"Could not rename CDR output {first} to {canonical}: {e}",
+                UserWarning,
+                stacklevel=2,
+            )
+        return paths
     
     def _ensure_empty_or_clobber(self, clobber: bool) -> bool:
         """
@@ -188,7 +264,8 @@ class RomsMarblInputData(InputData):
     metadata_child: Optional[dict[str, Any]] = None
     use_dask: bool = True
     input_data_dir_override: Optional[Path] = None
-    """If set, NetCDF inputs are written here; otherwise ``config.paths.input_data / domain_name``."""
+    """If set, NetCDF inputs are written here; otherwise under ``config.paths.input_data`` using a
+    sanitized ``domain_name`` (same rule as NetCDF basenames: no ``.`` in the dirname)."""
 
     # Blueprint elements containing input data
     blueprint_elements: RomsMarblBlueprintInputData = field(init=False)
@@ -395,7 +472,7 @@ class RomsMarblInputData(InputData):
                 continue
 
             if step.name == "cdr_forcing":
-                planned.append(self._forcing_filename("cdr_forcing"))
+                planned.append(self._forcing_filename(CDR_FORCING_NETCDF_STEM))
 
         # Preserve order while deduplicating
         deduped: List[Path] = []
@@ -916,8 +993,10 @@ class RomsMarblInputData(InputData):
             pot_tides = True,
             ana_tides = False
         )
-    
-        # TODO: update self._settings_run_time with tidal forcing parameters
+
+        if "forcing" not in self._settings_run_time["roms.in"]:
+            self._settings_run_time["roms.in"]["forcing"] = {}
+        self._settings_run_time["roms.in"]["forcing"]["tidal_forcing_path"] = paths[0] if isinstance(paths, (list, tuple)) else paths
 
     @register_input(name="forcing.river", order=60, label="Generating river forcing")
     def _generate_river_forcing(self, key: str = "forcing.river", **kwargs):
@@ -1009,7 +1088,7 @@ class RomsMarblInputData(InputData):
         input_args = self._build_input_args(key, extra=extra, base_kwargs=kwargs)
         
         cdr = rt.CDRForcing(grid=self.grid, **input_args)
-        output_path = self._forcing_filename(key)
+        output_path = self._forcing_filename(CDR_FORCING_NETCDF_STEM)
         if self._should_reuse_existing_output(output_path):
             print(f"   ↪ Reusing existing file: {output_path}")
             paths = [str(output_path)]
@@ -1029,6 +1108,10 @@ class RomsMarblInputData(InputData):
                 path_obj = output_path.parent / path_obj
             normalized_paths.append(str(path_obj.resolve()))
         paths = normalized_paths
+        paths = self._enforce_cdr_canonical_path(output_path, paths)
+
+        if paths:
+            self._link_cdr_legacy_alias(Path(paths[0]))
 
         cdr.to_yaml(yaml_path)
         # Append Resources directly to blueprint_elements.cdr_forcing

@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import copy
 import inspect
+import os
 import time
 import warnings
 from dataclasses import asdict as dataclass_asdict
@@ -17,7 +18,7 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 
 import xarray as xr
 import yaml
-from pydantic import BaseModel, ConfigDict, Field, PrivateAttr, field_validator, model_validator
+from pydantic import AliasChoices, BaseModel, ConfigDict, Field, PrivateAttr, field_validator, model_validator
 
 import cstar.orchestration.models as cstar_models
 from cstar.orchestration.serialization import deserialize
@@ -178,15 +179,15 @@ class CstarSpecBuilder(BaseModel):
         validate_default=False,
     )
     ensemble_id: Optional[int] = Field(default=None, validate_default=False)
-    output_dir: Optional[str] = Field(
+    additional_path: Optional[str] = Field(
         default=None,
         validate_default=False,
+        validation_alias=AliasChoices("additional_path", "output_dir", "output_path"),
         description=(
-            "Root directory for generated artifacts: blueprint/settings YAML under "
-            "``blueprints/<system_id>/<name>/``, ``compile-time/`` and ``run-time/`` "
-            "at this root, input NetCDF under ``input_data/<name>/``, and simulation "
-            "output under ``scratch/<casename>/``. If unset, uses package paths from "
-            "``cson_forge.config`` (compile/run-time still under ``builds/<name>/`` there)."
+            "Optional secondary root directory where generated artifacts are mirrored. "
+            "Primary writes always use default package paths from ``cson_forge.config``; "
+            "when set, files are also copied under this path using subfolders "
+            "``blueprints/``, ``input_data/``, ``builds/``, and ``scratch/``."
         ),
     )
     # Internal attributes (computed/loaded)
@@ -232,9 +233,9 @@ class CstarSpecBuilder(BaseModel):
     _settings_compile_time: Dict[str, Any] = PrivateAttr(default_factory=dict)
     _settings_run_time: Dict[str, Any] = PrivateAttr(default_factory=dict)
     
-    @field_validator("output_dir", mode="before")
+    @field_validator("additional_path", mode="before")
     @classmethod
-    def _normalize_output_dir(cls, v: Any) -> Optional[str]:
+    def _normalize_additional_path(cls, v: Any) -> Optional[str]:
         if v is None:
             return None
         if isinstance(v, Path):
@@ -251,17 +252,29 @@ class CstarSpecBuilder(BaseModel):
         return self
     
     @property
-    def _resolved_output_dir(self) -> Optional[Path]:
-        if self.output_dir is None:
+    def _resolved_additional_path(self) -> Optional[Path]:
+        if self.additional_path is None:
             return None
-        return Path(self.output_dir).expanduser().resolve()
+        return Path(self.additional_path).expanduser().resolve()
+
+    @property
+    def _resolved_output_dir(self) -> Optional[Path]:
+        """Backward-compatible alias for ``_resolved_additional_path``."""
+        return self._resolved_additional_path
+
+    @property
+    def output_dir(self) -> Optional[str]:
+        """Backward-compatible alias for ``additional_path``."""
+        return self.additional_path
     
     @property
     def input_data_dir(self) -> Path:
         """Directory for generated input NetCDF files (grid, forcing, etc.)."""
-        if self._resolved_output_dir is not None:
-            return self._resolved_output_dir / "input_data" / self.name
-        return config.paths.input_data / self.name
+        # Match ``InputData`` / ``_forcing_filename``: dirname uses the same sanitization
+        # as NetCDF basenames (no ``.`` except ``.nc``), so planned-output prints match
+        # paths on disk.
+        safe = input_data.netcdf_filename_component(self.name)
+        return config.paths.input_data / safe
     
     def model_post_init(self, __context: Any) -> None:
         """
@@ -337,7 +350,9 @@ class CstarSpecBuilder(BaseModel):
         planned_paths: List[Path] = []
 
         def _add_nc(stem: str) -> None:
-            path = (input_data_dir / f"{self.name}_{stem}.nc").resolve()
+            base = input_data.netcdf_filename_component(self.name)
+            part = input_data.netcdf_filename_component(stem)
+            path = (input_data_dir / f"{base}_{part}.nc").resolve()
             if path not in planned_paths:
                 planned_paths.append(path)
 
@@ -390,7 +405,7 @@ class CstarSpecBuilder(BaseModel):
                 _add_nc(category)
 
         if inputs_cfg.get("cdr_forcing"):
-            _add_nc("cdr_forcing")
+            _add_nc(input_data.CDR_FORCING_NETCDF_STEM)
 
         return planned_paths
 
@@ -414,16 +429,52 @@ class CstarSpecBuilder(BaseModel):
             f"  NetCDF files: {netcdf_dir}",
             f"  YAML files: {yaml_dir}",
         ]
-        if self._resolved_output_dir is not None:
-            lines.extend(
-                [
-                    f"  Compile-time code: {self.compile_time_code_dir.resolve()}",
-                    f"  Run-time code: {self.run_time_code_dir.resolve()}",
-                    f"  Simulation output (scratch): {self.run_output_dir.resolve()}",
-                ]
-            )
+        lines.extend(
+            [
+                f"  Compile-time code: {self.compile_time_code_dir.resolve()}",
+                f"  Run-time code: {self.run_time_code_dir.resolve()}",
+                f"  Simulation output (scratch): {self.run_output_dir.resolve()}",
+            ]
+        )
+        if self._resolved_additional_path is not None:
+            lines.append(f"  Additional copy root: {self._resolved_additional_path}")
         print("\n".join(lines))
         print()
+
+    def _copy_to_additional_path(self, source_path: Union[str, Path]) -> None:
+        """Mirror generated artifacts to ``additional_path`` when configured."""
+        additional_root = self._resolved_additional_path
+        if additional_root is None:
+            return
+
+        source = Path(source_path).expanduser().resolve()
+        if not source.exists():
+            return
+
+        root_mappings: List[Tuple[Path, Path]] = [
+            (config.paths.blueprints.resolve(), (additional_root / "blueprints").resolve()),
+            (config.paths.input_data.resolve(), (additional_root / "input_data").resolve()),
+            ((config.paths.here / "builds").resolve(), (additional_root / "builds").resolve()),
+            (config.paths.scratch.resolve(), (additional_root / "scratch").resolve()),
+        ]
+
+        destination: Optional[Path] = None
+        for source_root, destination_root in root_mappings:
+            try:
+                relative = source.relative_to(source_root)
+            except ValueError:
+                continue
+            destination = destination_root / relative
+            break
+
+        if destination is None:
+            destination = additional_root / source.name
+
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        if source.is_dir():
+            shutil.copytree(source, destination, dirs_exist_ok=True)
+        else:
+            shutil.copy2(source, destination)
 
     @property
     def name(self) -> str:
@@ -474,8 +525,6 @@ class CstarSpecBuilder(BaseModel):
     @property
     def blueprint_dir(self) -> Path:
         """Return the blueprint directory path."""
-        if self._resolved_output_dir is not None:
-            return self._resolved_output_dir / "blueprints" / config.system_id / self.name
         return config.paths.blueprints / config.system_id / self.name
     
     @property
@@ -567,6 +616,7 @@ class CstarSpecBuilder(BaseModel):
         
         # Write settings to sidecar file
         self._persist_settings(bp_path)
+        self._copy_to_additional_path(bp_path)
     
     def _ensure_empty_directory(self, directory: Union[str, Path]) -> None:
         """
@@ -638,16 +688,24 @@ class CstarSpecBuilder(BaseModel):
         before setup.
         """
         try:
-            # Get the simulation directory
-            if hasattr(self._cstar_simulation, 'directory') and self._cstar_simulation.directory:
-                sim_dir = Path(self._cstar_simulation.directory)
-            else:
-                # Fallback to blueprint's runtime_params.output_dir
-                sim_dir = Path(self.blueprint.runtime_params.output_dir)
-            
-            # Remove the entire simulation directory if it exists
-            if sim_dir.exists():
-                shutil.rmtree(sim_dir)
+            roots: list[Path] = [Path(self.run_output_dir)]
+            if getattr(self, "_cstar_simulation", None) is not None and getattr(
+                self._cstar_simulation, "directory", None
+            ):
+                roots.append(Path(self._cstar_simulation.directory))
+            if getattr(self, "blueprint", None) is not None and getattr(
+                self.blueprint, "runtime_params", None
+            ) is not None:
+                roots.append(Path(self.blueprint.runtime_params.output_dir))
+
+            cleared: set[Path] = set()
+            for raw in roots:
+                sim_dir = raw.expanduser().resolve()
+                if sim_dir in cleared:
+                    continue
+                cleared.add(sim_dir)
+                if sim_dir.exists():
+                    shutil.rmtree(sim_dir)
         except (AttributeError, TypeError) as e:
             # If we can't access the simulation or directory, just warn and continue
             warnings.warn(
@@ -657,6 +715,34 @@ class CstarSpecBuilder(BaseModel):
                 UserWarning,
                 stacklevel=2
             )
+
+    def _unlink_roms_work_symlinks(self) -> None:
+        """
+        Remove ROMS/C-Star convention symlinks under ``work/`` if they still exist.
+
+        C-Star's ``DatasetLinker`` recreates ``work/cdr.nc`` (and ``work/nesting.nc``)
+        during ``setup()``; a leftover link causes ``FileExistsError`` on some runs
+        (e.g. partial cleanup or path skew between blueprint and simulation).
+        """
+        roots: list[Path] = [Path(self.run_output_dir)]
+        if getattr(self, "_cstar_simulation", None) is not None and getattr(
+            self._cstar_simulation, "directory", None
+        ):
+            roots.append(Path(self._cstar_simulation.directory))
+
+        seen: set[Path] = set()
+        for raw in roots:
+            work = raw.expanduser().resolve() / "work"
+            if work in seen or not work.is_dir():
+                continue
+            seen.add(work)
+            for name in ("cdr.nc", "nesting.nc"):
+                p = work / name
+                try:
+                    if p.is_symlink() or p.is_file():
+                        p.unlink(missing_ok=True)
+                except OSError:
+                    pass
     
     def _path_settings_file(self, blueprint_path: Path) -> Path:
         """
@@ -741,6 +827,7 @@ class CstarSpecBuilder(BaseModel):
         # Write settings to YAML file
         with settings_path.open("w") as f:
             yaml.safe_dump(settings_dict, f, default_flow_style=False, sort_keys=False)
+        self._copy_to_additional_path(settings_path)
     
     def _load_settings_from_file(self, blueprint_path: Path) -> None:
         """
@@ -940,6 +1027,37 @@ class CstarSpecBuilder(BaseModel):
             if path.exists():
                 path.unlink()
                 print(f"🗑️  Deleted existing file: {path}")
+
+    def _canonicalize_stored_input_netcdf_path(self, path: Union[str, Path]) -> Path:
+        """
+        Map NetCDF paths as stored in older blueprints to paths matching current input
+        naming (``netcdf_filename_component(self.name)`` for dirname and file prefix).
+
+        Blueprints may still list directories or basenames containing ``.`` (e.g. ``v0.1``)
+        while generated files use underscores.
+        """
+        p = Path(path).expanduser()
+        if p.suffix.lower() != ".nc":
+            return p
+        safe = input_data.netcdf_filename_component(self.name)
+        raw = self.name
+        if not p.is_absolute():
+            if len(p.parts) == 1:
+                name = p.name
+                if name.startswith(raw + "_"):
+                    name = safe + name[len(raw) :]
+                return (self.input_data_dir / name).resolve()
+            p = (Path.cwd() / p).resolve()
+        else:
+            p = p.resolve()
+        parts = list(p.parts)
+        new_parts = [safe if part == raw else part for part in parts]
+        p2 = Path(*new_parts)
+        nm = p2.name
+        if nm.startswith(raw + "_"):
+            nm = safe + nm[len(raw) :]
+            p2 = p2.parent / nm
+        return p2
 
     def _required_netcdf_paths_from_blueprint(
         self, blueprint: cstar_models.RomsMarblBlueprint
@@ -1673,10 +1791,17 @@ class CstarSpecBuilder(BaseModel):
                     load_settings=False,
                 )
                 if existing_postconfig_blueprint is not None:
-                    missing_required = [
-                        p for p in self._required_netcdf_paths_from_blueprint(existing_postconfig_blueprint)
-                        if not p.exists()
-                    ]
+                    seen: set[Path] = set()
+                    missing_required: List[Path] = []
+                    for p in self._required_netcdf_paths_from_blueprint(
+                        existing_postconfig_blueprint
+                    ):
+                        canon = self._canonicalize_stored_input_netcdf_path(p).resolve()
+                        if canon in seen:
+                            continue
+                        seen.add(canon)
+                        if not canon.exists():
+                            missing_required.append(canon)
                     if missing_required:
                         print(
                             "ℹ️  Existing POSTCONFIG blueprint references missing NetCDF files. "
@@ -1756,6 +1881,7 @@ class CstarSpecBuilder(BaseModel):
             
             # Persist blueprint to YAML file (skip in test mode)
             self.persist()
+            self._copy_to_additional_path(self.input_data_dir)
         else:            
             # Use existing blueprint from file
             print(f"ℹ️  Using existing blueprint from file: {self.path_blueprint(stage=BlueprintStage.POSTCONFIG).name}")
@@ -2084,7 +2210,8 @@ class CstarSpecBuilder(BaseModel):
         
         # If user supplied any CDR releases, force compile-time CDR options on.
         # This ensures cdr_frc.opt renders cdr_source = .true., ncdr_parm matches the
-        # number of releases, and cdr_file points to the generated forcing file.
+        # number of releases, and cdr_file points to the generated ``{case}_cdr.nc`` file
+        # (basename must include the substring ``cdr.nc`` for C-Star's ROMS build check).
         if self.cdr_forcing:
             self._settings_compile_time.setdefault("cdr_frc", {})
             self._settings_compile_time["cdr_frc"]["cdr_source"] = True
@@ -2093,7 +2220,10 @@ class CstarSpecBuilder(BaseModel):
             self._settings_compile_time["cdr_frc"]["cdr_volume"] = all(
                 isinstance(release, rt.VolumeRelease) for release in self.cdr_forcing
             )
-            cdr_file_path = self.input_data_dir / f"{self.name}_cdr_forcing.nc"
+            cdr_file_path = self.input_data_dir / (
+                f"{input_data.netcdf_filename_component(self.name)}_"
+                f"{input_data.netcdf_filename_component(input_data.CDR_FORCING_NETCDF_STEM)}.nc"
+            )
             cdr_dataset = getattr(self.blueprint, "cdr_forcing", None) if self.blueprint else None
             cdr_resources = getattr(cdr_dataset, "data", None) if cdr_dataset else None
             if cdr_resources:
@@ -2161,6 +2291,8 @@ class CstarSpecBuilder(BaseModel):
             self.blueprint = cstar_models.RomsMarblBlueprint.model_construct(**blueprint_dict)
             self._stage = BlueprintStage.BUILD
             self.persist()
+            self._copy_to_additional_path(self.compile_time_code_dir)
+            self._copy_to_additional_path(self.run_time_code_dir)
         
         # Create and setup C-Star simulation from blueprint
         self._cstar_simulation = ROMSSimulation.from_blueprint(self.path_blueprint(stage=BlueprintStage.BUILD))
@@ -2222,6 +2354,13 @@ class CstarSpecBuilder(BaseModel):
         #
         # Clear simulation directory to avoid symlink FileExistsError
         self._clear_simulation_directory()
+        #
+        # C-Star refuses a non-empty ROMS input staging tree unless this is set (see error text).
+        # setdefault respects a user-provided value in the parent environment.
+        os.environ.setdefault("CSTAR_CLOBBER_WORKING_DIR", "1")
+        #
+        # Belt-and-suspenders: stale work/cdr.nc breaks DatasetLinker.symlink_to(...)
+        self._unlink_roms_work_symlinks()
         #
         # ------------------------------------------------------------
         self._cstar_simulation.setup()
