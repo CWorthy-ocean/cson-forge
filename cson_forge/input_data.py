@@ -699,27 +699,7 @@ class RomsMarblInputData(InputData):
         if existing_paths:
             print(f"   ↪ Reusing existing file(s): {', '.join(existing_paths)}")
             paths = existing_paths
-            # Do not construct SurfaceForcing from grid/source (slow). Regenerate YAML from
-            # the existing sidecar when present (roms_tools: from_yaml -> to_yaml).
-            if yaml_path.exists():
-                try:
-                    frc = rt.SurfaceForcing.from_yaml(yaml_path, use_dask=self.use_dask)
-                except Exception as e:
-                    warnings.warn(
-                        f"Could not load surface forcing from YAML for regeneration ({yaml_path}): {e}",
-                        UserWarning,
-                        stacklevel=2,
-                    )
-                if frc is not None:
-                    try:
-                        frc.to_yaml(yaml_path)
-                    except Exception as e:
-                        warnings.warn(
-                            f"Failed to save surface forcing YAML to {yaml_path}: {e}",
-                            UserWarning,
-                            stacklevel=2,
-                        )
-            else:
+            if not yaml_path.exists():
                 warnings.warn(
                     f"Surface forcing NetCDF exists but YAML sidecar is missing ({yaml_path}); "
                     "constructing SurfaceForcing once to write YAML (this may be slow).",
@@ -831,21 +811,37 @@ class RomsMarblInputData(InputData):
         yaml_path = self._yaml_filename(f"{key}-{type}")
         output_path = self._forcing_filename(input_name=f"boundary-{type}")
        
-        if self._should_reuse_existing_output(output_path):
-            print(f"   ↪ Reusing existing file: {output_path}")
-            paths = [str(output_path)]
-            bry = rt.BoundaryForcing(grid=self.grid, **input_args)
+        existing_paths = self._existing_output_paths(output_path)
+        if existing_paths:
+            print(f"   ↪ Reusing existing file(s): {', '.join(existing_paths)}")
+            paths = existing_paths
+            if not yaml_path.exists():
+                warnings.warn(
+                    f"Boundary forcing NetCDF exists but YAML sidecar is missing ({yaml_path}); "
+                    "constructing BoundaryForcing once to write YAML (this may be slow).",
+                    UserWarning,
+                    stacklevel=2,
+                )
+                bry = rt.BoundaryForcing(grid=self.grid, **input_args)
+                try:
+                    bry.to_yaml(yaml_path)
+                except Exception as e:
+                    warnings.warn(
+                        f"Failed to save boundary forcing YAML to {yaml_path}: {e}",
+                        UserWarning,
+                        stacklevel=2,
+                    )
         else:
             bry = rt.BoundaryForcing(grid=self.grid, **input_args)
             paths = bry.save(output_path)
-        try:
-            bry.to_yaml(yaml_path)
-        except Exception as e:
-            warnings.warn(
-                f"Failed to save boundary forcing YAML to {yaml_path}: {e}",
-                UserWarning,
-                stacklevel=2,
-            )
+            try:
+                bry.to_yaml(yaml_path)
+            except Exception as e:
+                warnings.warn(
+                    f"Failed to save boundary forcing YAML to {yaml_path}: {e}",
+                    UserWarning,
+                    stacklevel=2,
+                )
         # Append Resources directly to blueprint_elements.forcing[subkey]
         if isinstance(paths, (list, tuple)):
             for path in paths:
@@ -876,21 +872,40 @@ class RomsMarblInputData(InputData):
             use_dask=self.use_dask,
         )
         input_args = self._build_input_args(key, extra=extra, base_kwargs=kwargs)
-        tidal = rt.TidalForcing(grid=self.grid, **input_args)
-        if self._should_reuse_existing_output(output_path):
-            print(f"   ↪ Reusing existing file: {output_path}")
-            paths = [str(output_path)]
-        else:
-            paths = tidal.save(output_path)
-        
-        try:
-            tidal.to_yaml(yaml_path)
-        except Exception as e:
+        existing_paths = self._existing_output_paths(output_path)
+        tidal: Any = None
+        if existing_paths and yaml_path.exists():
+            print(f"   ↪ Reusing existing file(s): {', '.join(existing_paths)}")
+            paths = existing_paths
+        elif existing_paths:
+            print(f"   ↪ Reusing existing file(s): {', '.join(existing_paths)}")
+            paths = existing_paths
             warnings.warn(
-                f"Failed to save tidal forcing YAML to {yaml_path}: {e}",
+                f"Tidal forcing NetCDF exists but YAML sidecar is missing ({yaml_path}); "
+                "constructing TidalForcing once to write YAML (this may be slow).",
                 UserWarning,
                 stacklevel=2,
             )
+            tidal = rt.TidalForcing(grid=self.grid, **input_args)
+            try:
+                tidal.to_yaml(yaml_path)
+            except Exception as e:
+                warnings.warn(
+                    f"Failed to save tidal forcing YAML to {yaml_path}: {e}",
+                    UserWarning,
+                    stacklevel=2,
+                )
+        else:
+            tidal = rt.TidalForcing(grid=self.grid, **input_args)
+            paths = tidal.save(output_path)
+            try:
+                tidal.to_yaml(yaml_path)
+            except Exception as e:
+                warnings.warn(
+                    f"Failed to save tidal forcing YAML to {yaml_path}: {e}",
+                    UserWarning,
+                    stacklevel=2,
+                )
             
         # Append Resources directly to blueprint_elements.forcing[subkey]
         if isinstance(paths, (list, tuple)):
@@ -923,7 +938,38 @@ class RomsMarblInputData(InputData):
             end_time=self.end_date,
         )
         input_args = self._build_input_args(key, extra=extra, base_kwargs=kwargs)
-        
+        existing_paths = self._existing_output_paths(output_path)
+
+        if existing_paths and yaml_path.exists():
+            print(f"   ↪ Reusing existing file(s): {', '.join(existing_paths)}")
+            paths = list(existing_paths)
+            with warnings.catch_warnings():
+                warnings.filterwarnings("ignore", category=FutureWarning, module="xarray")
+                with xr.open_dataset(Path(paths[0]), decode_timedelta=False) as ds:
+                    if "river_volume" not in ds.variables:
+                        raise ValueError("river_volume is not in the dataset")
+                    if "river_tracer" not in ds.variables:
+                        raise ValueError("river_tracer is not in the dataset")
+                    nriv = int(ds.sizes["nriver"])
+            if "river_frc" not in self._settings_compile_time:
+                self._settings_compile_time["river_frc"] = {}
+            self._settings_compile_time["river_frc"]["river_source"] = True
+            self._settings_compile_time["river_frc"]["analytical"] = False
+            self._settings_compile_time["river_frc"]["nriv"] = nriv
+            self._settings_compile_time["river_frc"]["rvol_vname"] = "river_volume"
+            self._settings_compile_time["river_frc"]["rvol_tname"] = "river_time"
+            self._settings_compile_time["river_frc"]["rtrc_vname"] = "river_tracer"
+            self._settings_compile_time["river_frc"]["rtrc_tname"] = "river_time"
+            if "forcing" not in self._settings_run_time["roms.in"]:
+                self._settings_run_time["roms.in"]["forcing"] = {}
+            self._settings_run_time["roms.in"]["forcing"]["river_path"] = (
+                paths[0] if isinstance(paths, (list, tuple)) else paths
+            )
+            for path in paths:
+                resource = cstar_models.Resource(location=path, partitioned=False)
+                getattr(self.blueprint_elements.forcing, subkey).data.append(resource)
+            return
+
         try:
             river = rt.RiverForcing(grid=self.grid, **input_args)
         except ValueError as e:
@@ -936,9 +982,15 @@ class RomsMarblInputData(InputData):
                 self.blueprint_elements.forcing.river = None
             river = rt.RiverForcing.__new__(rt.RiverForcing)
             return river
-        if self._should_reuse_existing_output(output_path):
-            print(f"   ↪ Reusing existing file: {output_path}")
-            paths = [str(output_path)]
+        if existing_paths:
+            print(f"   ↪ Reusing existing file(s): {', '.join(existing_paths)}")
+            paths = list(existing_paths)
+            warnings.warn(
+                f"River forcing NetCDF exists but YAML sidecar is missing ({yaml_path}); "
+                "constructing RiverForcing once to write YAML (this may be slow).",
+                UserWarning,
+                stacklevel=2,
+            )
         else:
             paths = river.save(output_path)
         if isinstance(paths, (list, tuple)) and len(paths) == 0:
