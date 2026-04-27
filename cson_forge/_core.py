@@ -2210,8 +2210,14 @@ class CstarSpecBuilder(BaseModel):
         
         # If user supplied any CDR releases, force compile-time CDR options on.
         # This ensures cdr_frc.opt renders cdr_source = .true., ncdr_parm matches the
-        # number of releases, and cdr_file points to the generated ``{case}_cdr.nc`` file
-        # (basename must include the substring ``cdr.nc`` for C-Star's ROMS build check).
+        # number of releases, and cdr_file is the conventional run-directory name ``cdr.nc``.
+        #
+        # Use the basename ``cdr.nc`` (not an absolute path to ``{case}_cdr.nc``). C-Star
+        # creates ``work_dir/cdr.nc`` as a symlink to the staged dataset and validates that
+        # ``cdr_frc.opt`` contains the contiguous substring ``cdr.nc``. Emitting a long
+        # absolute path via ``_fortran_cdr_file_decl`` splits the string across Fortran
+        # continuation lines, so the check fails even when the logical path ends in
+        # ``..._cdr.nc``.
         if self.cdr_forcing:
             self._settings_compile_time.setdefault("cdr_frc", {})
             self._settings_compile_time["cdr_frc"]["cdr_source"] = True
@@ -2220,19 +2226,9 @@ class CstarSpecBuilder(BaseModel):
             self._settings_compile_time["cdr_frc"]["cdr_volume"] = all(
                 isinstance(release, rt.VolumeRelease) for release in self.cdr_forcing
             )
-            cdr_file_path = self.input_data_dir / (
-                f"{input_data.netcdf_filename_component(self.name)}_"
+            self._settings_compile_time["cdr_frc"]["cdr_file"] = (
                 f"{input_data.netcdf_filename_component(input_data.CDR_FORCING_NETCDF_STEM)}.nc"
             )
-            cdr_dataset = getattr(self.blueprint, "cdr_forcing", None) if self.blueprint else None
-            cdr_resources = getattr(cdr_dataset, "data", None) if cdr_dataset else None
-            if cdr_resources:
-                cdr_location = getattr(cdr_resources[0], "location", None)
-                if cdr_location:
-                    cdr_file_path = Path(cdr_location)
-                    if not cdr_file_path.is_absolute():
-                        cdr_file_path = (self.input_data_dir / cdr_file_path).resolve()
-            self._settings_compile_time["cdr_frc"]["cdr_file"] = str(cdr_file_path)
 
         # Ensure ntimes is an integer (don't recalculate, just ensure type is correct)
         if "roms.in" in self._settings_run_time and "time_stepping" in self._settings_run_time["roms.in"]:
