@@ -2437,7 +2437,8 @@ class CstarSpecBuilder(BaseModel):
         # ``DatasetLinker`` still creates ``work/cdr.nc`` / ``work/nesting.nc``, which
         # raises ``FileNotFoundError`` if the parent directory is missing. ``run()``
         # creates ``work/``; create it here so ``setup()`` can link.
-        self._cstar_simulation.fs_manager.work_dir.mkdir(parents=True, exist_ok=True)
+        if self._cstar_simulation is not None:
+            self._cstar_simulation.fs_manager.work_dir.mkdir(parents=True, exist_ok=True)
         # ------------------------------------------------------------
         self._cstar_simulation.setup()
         self._cstar_simulation.build(rebuild=rebuild)
