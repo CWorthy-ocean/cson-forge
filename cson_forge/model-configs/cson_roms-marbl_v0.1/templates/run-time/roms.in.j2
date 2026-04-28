@@ -40,7 +40,7 @@ rho0:
       {{ lateral_visc.rho0 }}
   
 vertical_mixing:  Akv  Akt(1:NT)     [m^2/sec for all]
-      {% for i in range(nt) %}{{ vertical_mixing.akt_default }} {% endfor %}                  
+      {% for i in range(nt+1) %}{{ vertical_mixing.akt_default }} {% endfor %}                  
 tracer_diff2: TNU2(1:NT)           [m^2/sec for all]
       {% for i in range(nt) %}{{ tracer_diff2.tnu2_default }} {% endfor %}
 

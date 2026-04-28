@@ -28,7 +28,7 @@ from . import config
 from . import source_data
 from . import models as cson_models
 from . import input_data
-from .settings import render_roms_settings
+from .settings import ROMSTemplateRenderer, render_roms_settings
 from .util import compute_timestep_from_cfl
 import roms_tools as rt
 
@@ -471,6 +471,32 @@ class CstarSpecBuilder(BaseModel):
             destination = additional_root / source.name
 
         destination.parent.mkdir(parents=True, exist_ok=True)
+
+        src_r = source.resolve()
+        try:
+            dst_r = destination.resolve(strict=False)
+        except TypeError:
+            dst_r = destination.resolve()
+
+        # shutil.copytree fails or recurses if src and dst are the same inode/path
+        # (e.g. additional_path mirrors config.paths via symlinks) or if dst is
+        # inside src.
+        if src_r == dst_r:
+            return
+        try:
+            if destination.exists() and os.path.samefile(source, destination):
+                return
+        except OSError:
+            pass
+        if source.is_dir():
+            try:
+                dst_r.relative_to(src_r)
+                return
+            except ValueError:
+                pass
+            if destination.exists() and destination.is_file():
+                destination.unlink()
+
         if source.is_dir():
             shutil.copytree(source, destination, dirs_exist_ok=True)
         else:
@@ -797,6 +823,52 @@ class CstarSpecBuilder(BaseModel):
             return "<xarray.DataArray>"
         else:
             return obj
+
+    def _normalize_cdr_frc_cdr_file_setting(self) -> None:
+        """
+        Force ``cdr_frc.cdr_file`` to the short basename (``cdr.nc``) whenever CDR is on.
+
+        If ``cdr_file`` is an absolute path to the generated NetCDF, C-Star can still
+        create ``work/cdr.nc`` pointing at ``input/input_datasets/<case>_cdr.nc`` without
+        staging that file, which raises ``FileNotFoundError`` at symlink time. ROMS still
+        reads the logical name via ``cdr_frc.opt``; the real path lives in the blueprint
+        ``cdr_forcing`` resource list.
+        """
+        ct = getattr(self, "_settings_compile_time", None)
+        if not isinstance(ct, dict):
+            return
+        cpp = ct.get("cppdefs")
+        if not isinstance(cpp, dict) or not cpp.get("cdr_forcing"):
+            return
+        cdr_frc = ct.setdefault("cdr_frc", {})
+        if not isinstance(cdr_frc, dict):
+            ct["cdr_frc"] = {}
+            cdr_frc = ct["cdr_frc"]
+        short = f"{input_data.netcdf_filename_component(input_data.CDR_FORCING_NETCDF_STEM)}.nc"
+        cdr_frc["cdr_file"] = short
+
+    def _rewrite_cdr_frc_opt_from_settings(self) -> None:
+        """Re-render ``cdr_frc.opt`` from current settings when CDR is enabled."""
+        ct = getattr(self, "_settings_compile_time", None)
+        if not isinstance(ct, dict):
+            return
+        cpp = ct.get("cppdefs")
+        if not isinstance(cpp, dict) or not cpp.get("cdr_forcing"):
+            return
+        cfr = ct.get("cdr_frc")
+        if not isinstance(cfr, dict):
+            return
+        tpl_meta = self._model_spec.templates.compile_time
+        if tpl_meta is None:
+            return
+        tpl_root = Path(tpl_meta.location)
+        if not (tpl_root / "cdr_frc.opt.j2").is_file():
+            return
+        renderer = ROMSTemplateRenderer(template_dir=str(tpl_root))
+        text = renderer.render_template("cdr_frc.opt.j2", {"cdr_frc": cfr})
+        out = self.compile_time_code_dir / "cdr_frc.opt"
+        out.parent.mkdir(parents=True, exist_ok=True)
+        out.write_text(text)
     
     def _persist_settings(self, blueprint_path: Path) -> None:
         """
@@ -810,6 +882,7 @@ class CstarSpecBuilder(BaseModel):
         blueprint_path : Path
             Path to the blueprint file (used to determine settings file path).
         """
+        self._normalize_cdr_frc_cdr_file_setting()
         settings_path = self._path_settings_file(blueprint_path)
         
         # Prepare settings dictionary
@@ -859,6 +932,7 @@ class CstarSpecBuilder(BaseModel):
                     self._settings_compile_time = settings_dict["compile_time"]
                 if "run_time" in settings_dict:
                     self._settings_run_time = settings_dict["run_time"]
+                self._normalize_cdr_frc_cdr_file_setting()
         except Exception as e:
             # If loading fails, issue a warning but don't fail
             warnings.warn(
@@ -2226,9 +2300,7 @@ class CstarSpecBuilder(BaseModel):
             self._settings_compile_time["cdr_frc"]["cdr_volume"] = all(
                 isinstance(release, rt.VolumeRelease) for release in self.cdr_forcing
             )
-            self._settings_compile_time["cdr_frc"]["cdr_file"] = (
-                f"{input_data.netcdf_filename_component(input_data.CDR_FORCING_NETCDF_STEM)}.nc"
-            )
+        self._normalize_cdr_frc_cdr_file_setting()
 
         # Ensure ntimes is an integer (don't recalculate, just ensure type is correct)
         if "roms.in" in self._settings_run_time and "time_stepping" in self._settings_run_time["roms.in"]:
@@ -2358,6 +2430,14 @@ class CstarSpecBuilder(BaseModel):
         # Belt-and-suspenders: stale work/cdr.nc breaks DatasetLinker.symlink_to(...)
         self._unlink_roms_work_symlinks()
         #
+        self._normalize_cdr_frc_cdr_file_setting()
+        self._rewrite_cdr_frc_opt_from_settings()
+        #
+        # C-Star's ``ROMSSimulation.setup()`` never mkdirs ``work/`` (only ``input/...``);
+        # ``DatasetLinker`` still creates ``work/cdr.nc`` / ``work/nesting.nc``, which
+        # raises ``FileNotFoundError`` if the parent directory is missing. ``run()``
+        # creates ``work/``; create it here so ``setup()`` can link.
+        self._cstar_simulation.fs_manager.work_dir.mkdir(parents=True, exist_ok=True)
         # ------------------------------------------------------------
         self._cstar_simulation.setup()
         self._cstar_simulation.build(rebuild=rebuild)
