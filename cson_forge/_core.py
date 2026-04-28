@@ -110,12 +110,6 @@ def _deep_merge_settings_dict(target: Dict[str, Any], update: Dict[str, Any]) ->
             target[k] = copy.deepcopy(v)
 
 
-# Working-directory settings overrides (merged after model defaults; see ``CstarSpecBuilder`` docs).
-_CWD_SETTINGS_OVERRIDE_DIR = "OVERRIDE"
-_CWD_SETTINGS_OVERRIDE_COMPILE = "compile-time-overrides.yml"
-_CWD_SETTINGS_OVERRIDE_RUN = "run-time-overrides.yml"
-
-
 class CstarSpecBuilder(BaseModel):
     """
     Builder for C-Star RomsMarblBlueprint specifications.
@@ -153,18 +147,19 @@ class CstarSpecBuilder(BaseModel):
        - Blueprint persisted with runtime parameters
        - Model executable runs
 
-    **Working-directory settings overrides:**
+    **Settings overrides via files:**
 
-    If the process current working directory contains a subdirectory named
-    ``OVERRIDE`` with optional YAML files ``compile-time-overrides.yml`` and/or
-    ``run-time-overrides.yml``, those mappings are merged into the compile-time
-    and run-time settings (respectively) immediately after defaults are loaded.
-    Only top-level keys that already exist in the model defaults are applied;
-    unknown keys are ignored with a warning. Nested dicts are deep-merged so a
-    sparse override file can change a subset of fields. Run-time overrides are
-    applied after dynamic fields (case title, output paths, and default
-    timestepping from CFL) are set, so you can still tune e.g. ``ndtfast`` or
-    ``dt`` from an override file.
+    Use the optional ``override`` argument to pass one or more YAML files with
+    settings overrides. Each file may be either:
+    - a direct mapping of settings keys for one settings tree, or
+    - a mapping with ``compile_time`` and/or ``run_time`` sections.
+
+    Files are merged after model defaults are loaded. Only top-level keys that
+    already exist in the model defaults are applied; unknown keys are ignored
+    with a warning. Nested dicts are deep-merged so sparse override files can
+    change subsets of settings. Run-time overrides are applied after dynamic
+    fields (case title, output paths, and default timestepping from CFL) are
+    set, so you can still tune e.g. ``ndtfast`` or ``dt``.
 
     **Key Concepts:**
     
@@ -197,6 +192,7 @@ class CstarSpecBuilder(BaseModel):
         alias="CDR_forcing",
         validate_default=False,
     )
+    override: Optional[List[Union[str, Path]]] = Field(default=None, validate_default=False)
     ensemble_id: Optional[int] = Field(default=None, validate_default=False)
     # Internal attributes (computed/loaded)
     blueprint: Optional[cstar_models.RomsMarblBlueprint] = Field(
@@ -855,6 +851,33 @@ class CstarSpecBuilder(BaseModel):
                 pointer.unlink(missing_ok=True)
 
         pointer.symlink_to(target)
+
+    def _rewrite_staged_runtime_roms_in_paths(self) -> None:
+        """
+        Rewrite staged ``input/runtime_code/roms.in`` to use staged dataset paths.
+
+        This is a final safety pass after C-Star setup has staged runtime files.
+        """
+        roms_in = self.run_output_dir / "input" / "runtime_code" / "roms.in"
+        if not roms_in.is_file():
+            return
+
+        source_prefix = str(self.input_data_dir.resolve())
+        staged_prefix = str((self.run_output_dir / "input" / "input_datasets").resolve())
+
+        try:
+            text = roms_in.read_text()
+        except OSError:
+            return
+
+        if source_prefix not in text:
+            return
+
+        updated = text.replace(source_prefix, staged_prefix)
+        if updated == text:
+            return
+
+        roms_in.write_text(updated)
     
     def _persist_settings(self, blueprint_path: Path) -> None:
         """
@@ -1948,20 +1971,25 @@ class CstarSpecBuilder(BaseModel):
         
         return self.blueprint
 
-    def _merge_cwd_settings_override_file(self, path: Path, kind: str) -> None:
+    def _merge_settings_override_file(self, path: Path, kind: str) -> None:
         """
-        If *path* exists, load YAML and deep-merge into compile- or run-time settings.
+        Load a YAML override file and merge into compile- or run-time settings.
 
         Parameters
         ----------
         path : Path
-            Path to ``compile-time-overrides.yml`` or ``run-time-overrides.yml``.
+            Path to an override YAML file.
         kind : str
             ``\"compile\"`` or ``\"run\"``.
         """
         if kind not in ("compile", "run"):
             raise ValueError(f"kind must be 'compile' or 'run', got {kind!r}")
         if not path.is_file():
+            warnings.warn(
+                f"Override file {path} does not exist; skipping.",
+                UserWarning,
+                stacklevel=2,
+            )
             return
         try:
             with path.open("r") as f:
@@ -1982,10 +2010,32 @@ class CstarSpecBuilder(BaseModel):
                 stacklevel=2,
             )
             return
+
+        section = "compile_time" if kind == "compile" else "run_time"
+        other_section = "run_time" if kind == "compile" else "compile_time"
+        payload: Dict[str, Any]
+        if section in raw:
+            section_data = raw.get(section)
+            if section_data is None:
+                return
+            if not isinstance(section_data, dict):
+                warnings.warn(
+                    f"Override file {path} has non-mapping '{section}' section; ignoring.",
+                    UserWarning,
+                    stacklevel=2,
+                )
+                return
+            payload = section_data
+        elif other_section in raw:
+            # File is explicitly scoped to the opposite settings tree.
+            return
+        else:
+            payload = raw
+
         target = self._settings_compile_time if kind == "compile" else self._settings_run_time
         label = "compile-time" if kind == "compile" else "run-time"
         merged: Dict[str, Any] = {}
-        for key, value in raw.items():
+        for key, value in payload.items():
             if key in target:
                 merged[key] = value
             else:
@@ -2003,6 +2053,16 @@ class CstarSpecBuilder(BaseModel):
             self._update_settings_run_time(merged)
         print(f"ℹ️  Merged {label} settings from {path.resolve()}")
 
+    @property
+    def _override_paths(self) -> List[Path]:
+        if not self.override:
+            return []
+        return [Path(p).expanduser().resolve() for p in self.override]
+
+    def _merge_settings_override_files(self, kind: str) -> None:
+        for path in self._override_paths:
+            self._merge_settings_override_file(path, kind)
+
     def _init_settings_compile_time(self) -> None:
         """
         Initialize compile-time settings dictionary from model defaults.
@@ -2015,9 +2075,6 @@ class CstarSpecBuilder(BaseModel):
         original defaults. User overrides can be applied via `_update_settings_compile_time()`
         or by passing `compile_time_settings` to `configure_build()`.
 
-        If ``./OVERRIDE/compile-time-overrides.yml`` exists under the process
-        current working directory, it is merged after the steps above.
-        
         **Called by:** `_initialize_blueprint()` during initialization.
         """
         # Initialize from defaults (deep copy to avoid modifying the original)
@@ -2032,8 +2089,7 @@ class CstarSpecBuilder(BaseModel):
             else:
                self._settings_compile_time["extract_data"]["extract_period"] = period_default
 
-        cwd_override = Path.cwd() / _CWD_SETTINGS_OVERRIDE_DIR / _CWD_SETTINGS_OVERRIDE_COMPILE
-        self._merge_cwd_settings_override_file(cwd_override, "compile")
+        self._merge_settings_override_files("compile")
 
     def _init_settings_run_time(self, dt: Optional[float] = None) -> None:
         """
@@ -2060,9 +2116,6 @@ class CstarSpecBuilder(BaseModel):
             Timestep in seconds for time_stepping calculation. If None, computed
             from CFL criterion using grid properties. Default is None.
 
-        If ``./OVERRIDE/run-time-overrides.yml`` exists under the process current
-        working directory, it is merged after timestepping defaults are applied.
-        
         **Called by:** `_initialize_blueprint()` during initialization.
         """
         # Initialize from defaults (deep copy to avoid modifying the original)
@@ -2079,8 +2132,7 @@ class CstarSpecBuilder(BaseModel):
         # Set timestepping defaults (will compute dt from CFL if dt is None)
         self._set_run_time_settings_timestepping_defaults(dt=dt)
 
-        cwd_override = Path.cwd() / _CWD_SETTINGS_OVERRIDE_DIR / _CWD_SETTINGS_OVERRIDE_RUN
-        self._merge_cwd_settings_override_file(cwd_override, "run")
+        self._merge_settings_override_files("run")
 
     def _update_settings_compile_time(self, settings_compile_time: Dict[str, Any]) -> None:
         """
@@ -2491,6 +2543,7 @@ class CstarSpecBuilder(BaseModel):
             self._cstar_simulation.fs_manager.work_dir.mkdir(parents=True, exist_ok=True)
         # ------------------------------------------------------------
         self._cstar_simulation.setup()
+        self._rewrite_staged_runtime_roms_in_paths()
         self._ensure_runtime_code_cdr_pointer()
         self._cstar_simulation.build(rebuild=rebuild)
         return self._cstar_simulation
