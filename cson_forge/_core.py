@@ -18,7 +18,7 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 
 import xarray as xr
 import yaml
-from pydantic import AliasChoices, BaseModel, ConfigDict, Field, PrivateAttr, field_validator, model_validator
+from pydantic import BaseModel, ConfigDict, Field, PrivateAttr, model_validator
 
 import cstar.orchestration.models as cstar_models
 from cstar.orchestration.serialization import deserialize
@@ -146,7 +146,21 @@ class CstarSpecBuilder(BaseModel):
        - Achieved by calling `run()` after `build()`
        - Blueprint persisted with runtime parameters
        - Model executable runs
-       
+
+    **Settings overrides via files:**
+
+    Use the optional ``override`` argument to pass one or more YAML files with
+    settings overrides. Each file may be either:
+    - a direct mapping of settings keys for one settings tree, or
+    - a mapping with ``compile_time`` and/or ``run_time`` sections.
+
+    Files are merged after model defaults are loaded. Only top-level keys that
+    already exist in the model defaults are applied; unknown keys are ignored
+    with a warning. Nested dicts are deep-merged so sparse override files can
+    change subsets of settings. Run-time overrides are applied after dynamic
+    fields (case title, output paths, and default timestepping from CFL) are
+    set, so you can still tune e.g. ``ndtfast`` or ``dt``.
+
     **Key Concepts:**
     
     - Settings are stored in sidecar YAML files (not in blueprint itself)
@@ -178,18 +192,8 @@ class CstarSpecBuilder(BaseModel):
         alias="CDR_forcing",
         validate_default=False,
     )
+    override: Optional[List[Union[str, Path]]] = Field(default=None, validate_default=False)
     ensemble_id: Optional[int] = Field(default=None, validate_default=False)
-    additional_path: Optional[str] = Field(
-        default=None,
-        validate_default=False,
-        validation_alias=AliasChoices("additional_path", "output_dir", "output_path"),
-        description=(
-            "Optional secondary root directory where generated artifacts are mirrored. "
-            "Primary writes always use default package paths from ``cson_forge.config``; "
-            "when set, files are also copied under this path using subfolders "
-            "``blueprints/``, ``input_data/``, ``builds/``, and ``scratch/``."
-        ),
-    )
     # Internal attributes (computed/loaded)
     blueprint: Optional[cstar_models.RomsMarblBlueprint] = Field(
         default=None,
@@ -233,39 +237,12 @@ class CstarSpecBuilder(BaseModel):
     _settings_compile_time: Dict[str, Any] = PrivateAttr(default_factory=dict)
     _settings_run_time: Dict[str, Any] = PrivateAttr(default_factory=dict)
     
-    @field_validator("additional_path", mode="before")
-    @classmethod
-    def _normalize_additional_path(cls, v: Any) -> Optional[str]:
-        if v is None:
-            return None
-        if isinstance(v, Path):
-            v = str(v)
-        if isinstance(v, str) and not v.strip():
-            return None
-        return v
-    
     @model_validator(mode="after")
     def _validate_dates(self) -> "CstarSpecBuilder":
         """Validate that start_date precedes end_date."""
         if self.end_date <= self.start_date:
             raise ValueError("end_date must be after start_date")
         return self
-    
-    @property
-    def _resolved_additional_path(self) -> Optional[Path]:
-        if self.additional_path is None:
-            return None
-        return Path(self.additional_path).expanduser().resolve()
-
-    @property
-    def _resolved_output_dir(self) -> Optional[Path]:
-        """Backward-compatible alias for ``_resolved_additional_path``."""
-        return self._resolved_additional_path
-
-    @property
-    def output_dir(self) -> Optional[str]:
-        """Backward-compatible alias for ``additional_path``."""
-        return self.additional_path
     
     @property
     def input_data_dir(self) -> Path:
@@ -436,71 +413,8 @@ class CstarSpecBuilder(BaseModel):
                 f"  Simulation output (scratch): {self.run_output_dir.resolve()}",
             ]
         )
-        if self._resolved_additional_path is not None:
-            lines.append(f"  Additional copy root: {self._resolved_additional_path}")
         print("\n".join(lines))
         print()
-
-    def _copy_to_additional_path(self, source_path: Union[str, Path]) -> None:
-        """Mirror generated artifacts to ``additional_path`` when configured."""
-        additional_root = self._resolved_additional_path
-        if additional_root is None:
-            return
-
-        source = Path(source_path).expanduser().resolve()
-        if not source.exists():
-            return
-
-        root_mappings: List[Tuple[Path, Path]] = [
-            (config.paths.blueprints.resolve(), (additional_root / "blueprints").resolve()),
-            (config.paths.input_data.resolve(), (additional_root / "input_data").resolve()),
-            ((config.paths.here / "builds").resolve(), (additional_root / "builds").resolve()),
-            (config.paths.scratch.resolve(), (additional_root / "scratch").resolve()),
-        ]
-
-        destination: Optional[Path] = None
-        for source_root, destination_root in root_mappings:
-            try:
-                relative = source.relative_to(source_root)
-            except ValueError:
-                continue
-            destination = destination_root / relative
-            break
-
-        if destination is None:
-            destination = additional_root / source.name
-
-        destination.parent.mkdir(parents=True, exist_ok=True)
-
-        src_r = source.resolve()
-        try:
-            dst_r = destination.resolve(strict=False)
-        except TypeError:
-            dst_r = destination.resolve()
-
-        # shutil.copytree fails or recurses if src and dst are the same inode/path
-        # (e.g. additional_path mirrors config.paths via symlinks) or if dst is
-        # inside src.
-        if src_r == dst_r:
-            return
-        try:
-            if destination.exists() and os.path.samefile(source, destination):
-                return
-        except OSError:
-            pass
-        if source.is_dir():
-            try:
-                dst_r.relative_to(src_r)
-                return
-            except ValueError:
-                pass
-            if destination.exists() and destination.is_file():
-                destination.unlink()
-
-        if source.is_dir():
-            shutil.copytree(source, destination, dirs_exist_ok=True)
-        else:
-            shutil.copy2(source, destination)
 
     @property
     def name(self) -> str:
@@ -529,9 +443,7 @@ class CstarSpecBuilder(BaseModel):
 
     @property
     def run_output_dir(self) -> Path:
-        """Return the output directory path."""
-        if self._resolved_output_dir is not None:
-            return self._resolved_output_dir / "scratch" / self.casename
+        """Simulation scratch directory under ``config.paths.scratch`` (primary data tree)."""
         return config.paths.scratch / self.casename
     
     @property
@@ -555,16 +467,12 @@ class CstarSpecBuilder(BaseModel):
     
     @property
     def compile_time_code_dir(self) -> Path:
-        """Return the compile-time code output directory path."""
-        if self._resolved_output_dir is not None:
-            return self._resolved_output_dir / "compile-time"
+        """Compile-time rendered templates under ``config.paths.here / builds``."""
         return config.paths.here / "builds" / self.name / "compile-time"
     
     @property
     def run_time_code_dir(self) -> Path:
-        """Return the run-time code output directory path."""
-        if self._resolved_output_dir is not None:
-            return self._resolved_output_dir / "run-time"
+        """Run-time rendered templates under ``config.paths.here / builds``."""
         return config.paths.here / "builds" / self.name / "run-time"
 
     def persist(self) -> None:
@@ -642,7 +550,6 @@ class CstarSpecBuilder(BaseModel):
         
         # Write settings to sidecar file
         self._persist_settings(bp_path)
-        self._copy_to_additional_path(bp_path)
     
     def _ensure_empty_directory(self, directory: Union[str, Path]) -> None:
         """
@@ -869,6 +776,108 @@ class CstarSpecBuilder(BaseModel):
         out = self.compile_time_code_dir / "cdr_frc.opt"
         out.parent.mkdir(parents=True, exist_ok=True)
         out.write_text(text)
+
+    def _rewrite_roms_input_paths_to_staged_runtime_paths(self) -> None:
+        """
+        Point ``roms.in`` input paths at C-Star staged runtime datasets.
+
+        Generated inputs are first written under ``self.input_data_dir``. During setup,
+        C-Star stages/symlinks these files under
+        ``<run_output_dir>/input/input_datasets``. ROMS reads from this staged
+        directory at run time, so we rewrite relevant ``roms.in`` path fields to
+        match that location.
+        """
+        rt_cfg = self._settings_run_time.get("roms.in")
+        if not isinstance(rt_cfg, dict):
+            return
+
+        source_root = self.input_data_dir.resolve()
+        staged_root = (self.run_output_dir / "input" / "input_datasets").resolve()
+        sections = ("grid", "initial", "forcing")
+
+        for section_name in sections:
+            section = rt_cfg.get(section_name)
+            if not isinstance(section, dict):
+                continue
+
+            for key, value in list(section.items()):
+                if not isinstance(value, str) or not value.strip():
+                    continue
+                if key not in {"grid_file", "initial_file"} and not key.endswith("_path"):
+                    continue
+
+                candidate = Path(value).expanduser()
+                if not candidate.is_absolute():
+                    continue
+
+                try:
+                    candidate.resolve().relative_to(source_root)
+                except ValueError:
+                    continue
+
+                section[key] = str(staged_root / candidate.name)
+
+    def _ensure_runtime_code_cdr_pointer(self) -> None:
+        """
+        Ensure ``<run_output_dir>/input/runtime_code/cdr.nc`` points to staged CDR input.
+
+        The staged CDR dataset path follows:
+        ``<run_output_dir>/input/input_datasets/<safe_case>_cdr.nc``.
+        """
+        cdr_enabled = bool(self.cdr_forcing)
+        cppdefs = self._settings_compile_time.get("cppdefs")
+        if isinstance(cppdefs, dict):
+            cdr_enabled = cdr_enabled or bool(cppdefs.get("cdr_forcing"))
+        cdr_frc = self._settings_compile_time.get("cdr_frc")
+        if isinstance(cdr_frc, dict):
+            cdr_enabled = cdr_enabled or bool(cdr_frc.get("cdr_source"))
+        if not cdr_enabled:
+            return
+
+        safe_case = input_data.netcdf_filename_component(self.name)
+        target = (
+            self.run_output_dir
+            / "input"
+            / "input_datasets"
+            / f"{safe_case}_{input_data.CDR_FORCING_NETCDF_STEM}.nc"
+        )
+        pointer = self.run_output_dir / "input" / "runtime_code" / "cdr.nc"
+
+        pointer.parent.mkdir(parents=True, exist_ok=True)
+        if pointer.exists() or pointer.is_symlink():
+            if pointer.is_dir() and not pointer.is_symlink():
+                shutil.rmtree(pointer)
+            else:
+                pointer.unlink(missing_ok=True)
+
+        pointer.symlink_to(target)
+
+    def _rewrite_staged_runtime_roms_in_paths(self) -> None:
+        """
+        Rewrite staged ``input/runtime_code/roms.in`` to use staged dataset paths.
+
+        This is a final safety pass after C-Star setup has staged runtime files.
+        """
+        roms_in = self.run_output_dir / "input" / "runtime_code" / "roms.in"
+        if not roms_in.is_file():
+            return
+
+        source_prefix = str(self.input_data_dir.resolve())
+        staged_prefix = str((self.run_output_dir / "input" / "input_datasets").resolve())
+
+        try:
+            text = roms_in.read_text()
+        except OSError:
+            return
+
+        if source_prefix not in text:
+            return
+
+        updated = text.replace(source_prefix, staged_prefix)
+        if updated == text:
+            return
+
+        roms_in.write_text(updated)
     
     def _persist_settings(self, blueprint_path: Path) -> None:
         """
@@ -900,7 +909,6 @@ class CstarSpecBuilder(BaseModel):
         # Write settings to YAML file
         with settings_path.open("w") as f:
             yaml.safe_dump(settings_dict, f, default_flow_style=False, sort_keys=False)
-        self._copy_to_additional_path(settings_path)
     
     def _load_settings_from_file(self, blueprint_path: Path) -> None:
         """
@@ -1955,7 +1963,6 @@ class CstarSpecBuilder(BaseModel):
             
             # Persist blueprint to YAML file (skip in test mode)
             self.persist()
-            self._copy_to_additional_path(self.input_data_dir)
         else:            
             # Use existing blueprint from file
             print(f"ℹ️  Using existing blueprint from file: {self.path_blueprint(stage=BlueprintStage.POSTCONFIG).name}")
@@ -1963,6 +1970,98 @@ class CstarSpecBuilder(BaseModel):
             self._stage = BlueprintStage.POSTCONFIG
         
         return self.blueprint
+
+    def _merge_settings_override_file(self, path: Path, kind: str) -> None:
+        """
+        Load a YAML override file and merge into compile- or run-time settings.
+
+        Parameters
+        ----------
+        path : Path
+            Path to an override YAML file.
+        kind : str
+            ``\"compile\"`` or ``\"run\"``.
+        """
+        if kind not in ("compile", "run"):
+            raise ValueError(f"kind must be 'compile' or 'run', got {kind!r}")
+        if not path.is_file():
+            warnings.warn(
+                f"Override file {path} does not exist; skipping.",
+                UserWarning,
+                stacklevel=2,
+            )
+            return
+        try:
+            with path.open("r") as f:
+                raw = yaml.safe_load(f)
+        except OSError as exc:
+            warnings.warn(
+                f"Could not read settings override file {path}: {exc}",
+                UserWarning,
+                stacklevel=2,
+            )
+            return
+        if raw is None:
+            return
+        if not isinstance(raw, dict):
+            warnings.warn(
+                f"Override file {path} must contain a YAML mapping at the top level; ignoring.",
+                UserWarning,
+                stacklevel=2,
+            )
+            return
+
+        section = "compile_time" if kind == "compile" else "run_time"
+        other_section = "run_time" if kind == "compile" else "compile_time"
+        payload: Dict[str, Any]
+        if section in raw:
+            section_data = raw.get(section)
+            if section_data is None:
+                return
+            if not isinstance(section_data, dict):
+                warnings.warn(
+                    f"Override file {path} has non-mapping '{section}' section; ignoring.",
+                    UserWarning,
+                    stacklevel=2,
+                )
+                return
+            payload = section_data
+        elif other_section in raw:
+            # File is explicitly scoped to the opposite settings tree.
+            return
+        else:
+            payload = raw
+
+        target = self._settings_compile_time if kind == "compile" else self._settings_run_time
+        label = "compile-time" if kind == "compile" else "run-time"
+        merged: Dict[str, Any] = {}
+        for key, value in payload.items():
+            if key in target:
+                merged[key] = value
+            else:
+                warnings.warn(
+                    f"Ignoring unknown {label} override top-level key {key!r} in {path}; "
+                    "it is not present in the model defaults.",
+                    UserWarning,
+                    stacklevel=2,
+                )
+        if not merged:
+            return
+        if kind == "compile":
+            self._update_settings_compile_time(merged)
+        else:
+            self._update_settings_run_time(merged)
+        print(f"ℹ️  Merged {label} settings from {path.resolve()}")
+
+    @property
+    def _override_paths(self) -> List[Path]:
+        if not self.override:
+            return []
+        return [Path(p).expanduser().resolve() for p in self.override]
+
+    def _merge_settings_override_files(self, kind: str) -> None:
+        for path in self._override_paths:
+            self._merge_settings_override_file(path, kind)
 
     def _init_settings_compile_time(self) -> None:
         """
@@ -1975,7 +2074,7 @@ class CstarSpecBuilder(BaseModel):
         Settings are deep-copied from the model spec to avoid modifying the
         original defaults. User overrides can be applied via `_update_settings_compile_time()`
         or by passing `compile_time_settings` to `configure_build()`.
-        
+
         **Called by:** `_initialize_blueprint()` during initialization.
         """
         # Initialize from defaults (deep copy to avoid modifying the original)
@@ -1989,6 +2088,8 @@ class CstarSpecBuilder(BaseModel):
                   self._settings_compile_time["extract_data"]["extract_period"] = period_default
             else:
                self._settings_compile_time["extract_data"]["extract_period"] = period_default
+
+        self._merge_settings_override_files("compile")
 
     def _init_settings_run_time(self, dt: Optional[float] = None) -> None:
         """
@@ -2014,7 +2115,7 @@ class CstarSpecBuilder(BaseModel):
         dt : Optional[float], optional
             Timestep in seconds for time_stepping calculation. If None, computed
             from CFL criterion using grid properties. Default is None.
-        
+
         **Called by:** `_initialize_blueprint()` during initialization.
         """
         # Initialize from defaults (deep copy to avoid modifying the original)
@@ -2030,8 +2131,9 @@ class CstarSpecBuilder(BaseModel):
         
         # Set timestepping defaults (will compute dt from CFL if dt is None)
         self._set_run_time_settings_timestepping_defaults(dt=dt)
-    
-    
+
+        self._merge_settings_override_files("run")
+
     def _update_settings_compile_time(self, settings_compile_time: Dict[str, Any]) -> None:
         """
         Update compile-time settings by recursively merging nested dictionaries.
@@ -2310,6 +2412,8 @@ class CstarSpecBuilder(BaseModel):
                 if isinstance(ntimes, float):
                     self._settings_run_time["roms.in"]["time_stepping"]["ntimes"] = int(round(ntimes))
 
+        self._rewrite_roms_input_paths_to_staged_runtime_paths()
+
         # Ensure compile-time code directory is empty
         self._ensure_empty_directory(self.compile_time_code_dir)
         self._ensure_empty_directory(self.run_time_code_dir)
@@ -2359,8 +2463,6 @@ class CstarSpecBuilder(BaseModel):
             self.blueprint = cstar_models.RomsMarblBlueprint.model_construct(**blueprint_dict)
             self._stage = BlueprintStage.BUILD
             self.persist()
-            self._copy_to_additional_path(self.compile_time_code_dir)
-            self._copy_to_additional_path(self.run_time_code_dir)
         
         # Create and setup C-Star simulation from blueprint
         self._cstar_simulation = ROMSSimulation.from_blueprint(self.path_blueprint(stage=BlueprintStage.BUILD))
@@ -2441,6 +2543,8 @@ class CstarSpecBuilder(BaseModel):
             self._cstar_simulation.fs_manager.work_dir.mkdir(parents=True, exist_ok=True)
         # ------------------------------------------------------------
         self._cstar_simulation.setup()
+        self._rewrite_staged_runtime_roms_in_paths()
+        self._ensure_runtime_code_cdr_pointer()
         self._cstar_simulation.build(rebuild=rebuild)
         return self._cstar_simulation
 
