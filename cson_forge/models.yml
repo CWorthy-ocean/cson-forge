@@ -18,6 +18,7 @@ cson_roms-marbl_v0.1:
         - surf_flux.opt.j2
         - tides.opt.j2
         - tracers.opt.j2
+        - upscale_output.opt.j2
 
     run_time:
       location: "{{ config.path.model_configs }}/{{ model.name }}/templates/run-time"
@@ -36,45 +37,45 @@ cson_roms-marbl_v0.1:
       _default_config_yaml: "{{ config.path.model_configs }}/{{ model.name }}/templates/compile-time-defaults.yml"
     run_time:
       _default_config_yaml: "{{ config.path.model_configs }}/{{ model.name }}/templates/run-time-defaults.yml"
-  
+
   code:
     roms:
       location: https://github.com/CWorthy-ocean/ucla-roms.git
-      commit: 45c648c
+      commit: 45a9221
 
     marbl:
       location: https://github.com/marbl-ecosys/MARBL.git
-      commit: marbl0.45.0  
-  
+      commit: marbl0.45.0
+
   inputs:
-    grid: 
+    grid:
       topography_source: ETOPO5
-      
+
     initial_conditions:
       source:
         name: GLORYS
-      bgc_source: 
+      bgc_source:
         name: UNIFIED
         climatology: true
 
     forcing:
       surface:
-        - source: 
+        - source:
             name: ERA5
           type: physics
           correct_radiation: true
           coarse_grid_mode: "never"
-        - source: 
+        - source:
             name: UNIFIED
             climatology: true
           type: bgc
           coarse_grid_mode: "never"
-          
+
       boundary:
         - source:
             name: GLORYS
           type: physics
-        - source: 
+        - source:
             name: UNIFIED
             climatology: true
           type: bgc
@@ -122,7 +123,7 @@ cson_roms-no-bgc_v0.1:
       _default_config_yaml: "{{ config.path.model_configs }}/{{ model.name }}/templates/compile-time-defaults.yml"
     run_time:
       _default_config_yaml: "{{ config.path.model_configs }}/{{ model.name }}/templates/run-time-defaults.yml"
-  
+
   code:
     roms:
       location: https://github.com/CWorthy-ocean/ucla-roms.git
@@ -130,37 +131,37 @@ cson_roms-no-bgc_v0.1:
 
     marbl:
       location: https://github.com/marbl-ecosys/MARBL.git
-      commit: marbl0.45.0  
-  
+      commit: marbl0.45.0
+
   inputs:
-    grid: 
+    grid:
       topography_source: ETOPO5
-      
+
     initial_conditions:
       source:
         name: GLORYS
-      bgc_source: 
+      bgc_source:
         name: UNIFIED
         climatology: true
 
     forcing:
       surface:
-        - source: 
+        - source:
             name: ERA5
           type: physics
           correct_radiation: true
           coarse_grid_mode: "never"
-        - source: 
+        - source:
             name: UNIFIED
             climatology: true
           type: bgc
           coarse_grid_mode: "never"
-          
+
       boundary:
         - source:
             name: GLORYS
           type: physics
-        - source: 
+        - source:
             name: UNIFIED
             climatology: true
           type: bgc
@@ -174,4 +175,4 @@ cson_roms-no-bgc_v0.1:
         - source:
             name: DAI
             climatology: false
-          include_bgc: true          
+          include_bgc: true

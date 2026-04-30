@@ -89,7 +89,9 @@
 
 ! Save advective tendencies at lateral boundaries for use in upscaling applications.
 ! Usage notes: Meant to be used in child domains when forcing will be subsequently applied to parent domains. Only saves ALK and DIC perturbations. Requires MARBL and MARBL_DIAGS to be enabled.
-#undef UPSCALING
+{% if upscale_output.do_upscale|default(false) %}#define UPSCALING
+{% else %}#undef UPSCALING
+{% endif %}
 
 
 !!!!!!!!!!!!!!!!!!!!!!!!! GRID OPTIONS !!!!!!!!!!!!!!!!!!!!!!!!!
