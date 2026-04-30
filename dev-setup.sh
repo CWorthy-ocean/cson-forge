@@ -75,9 +75,11 @@ case "$(uname -s)" in
     ;;
 esac
 
-# Determine which package manager to use (micromamba > conda)
+# Determine which package manager to use (micromamba > mamba > conda > install micromamba)
 PACKAGE_MANAGER=""
 MICROMAMBA_CMD=""
+CONDA_LIKE_CMD="conda"
+PM_SOURCE="detected"
 MICROMAMBA_URL="https://micro.mamba.pm/api/micromamba/${OS_TYPE}-${ARCH_TYPE}/latest"
 
 # Report system information and download details
@@ -131,13 +133,21 @@ fi
 if command -v micromamba >/dev/null 2>&1; then
   PACKAGE_MANAGER="micromamba"
   MICROMAMBA_CMD="micromamba"
+# Check for mamba
+elif command -v mamba >/dev/null 2>&1; then
+  PACKAGE_MANAGER="mamba"
+  CONDA_LIKE_CMD="mamba"
+# Check for conda
+elif command -v conda >/dev/null 2>&1; then
+  PACKAGE_MANAGER="conda"
+  CONDA_LIKE_CMD="conda"
 # Check for local micromamba
 elif [[ -f "$LOCAL_MICROMAMBA" ]] && [[ -x "$LOCAL_MICROMAMBA" ]]; then
   PACKAGE_MANAGER="micromamba"
   MICROMAMBA_CMD="$LOCAL_MICROMAMBA"
-# Try to install micromamba locally
+# Try to install micromamba locally (last resort)
 elif [[ -n "$OS_TYPE" ]] && [[ -n "$ARCH_TYPE" ]]; then
-  echo "micromamba not found. Installing locally to $LOCAL_BIN_DIR..."
+  echo "No micromamba/mamba/conda found. Installing micromamba locally to $LOCAL_BIN_DIR..."
   mkdir -p "$LOCAL_BIN_DIR"
   
   # Download micromamba
@@ -152,6 +162,7 @@ elif [[ -n "$OS_TYPE" ]] && [[ -n "$ARCH_TYPE" ]]; then
     chmod +x "$LOCAL_MICROMAMBA"
     PACKAGE_MANAGER="micromamba"
     MICROMAMBA_CMD="$LOCAL_MICROMAMBA"
+    PM_SOURCE="installed"
     echo "✓ micromamba installed successfully to $LOCAL_BIN_DIR"
   else
     rm -rf "$TEMP_DIR"
@@ -159,14 +170,13 @@ elif [[ -n "$OS_TYPE" ]] && [[ -n "$ARCH_TYPE" ]]; then
   fi
 fi
 
-# Fall back to conda if micromamba is not available
+# Final fallback: try module-based conda (mostly HPC setups)
 if [[ -z "$PACKAGE_MANAGER" ]]; then
-  if command -v conda >/dev/null 2>&1; then
-    PACKAGE_MANAGER="conda"
-  elif command -v module >/dev/null 2>&1; then
+  if command -v module >/dev/null 2>&1; then
     module load conda 2>/dev/null || true
     if command -v conda >/dev/null 2>&1; then
       PACKAGE_MANAGER="conda"
+      CONDA_LIKE_CMD="conda"
     fi
   fi
 fi
@@ -180,6 +190,11 @@ if [[ -z "$PACKAGE_MANAGER" ]]; then
 fi
 
 echo "Using $PACKAGE_MANAGER as package manager"
+if [[ "$PACKAGE_MANAGER" == "micromamba" && "$PM_SOURCE" == "installed" ]]; then
+  echo "Installing $KERNEL_NAME python environment using $PACKAGE_MANAGER (installed locally in this run)..."
+else
+  echo "Installing $KERNEL_NAME python environment using $PACKAGE_MANAGER (detected)..."
+fi
 
 # Initialize and activate environment
 set +u
@@ -230,7 +245,7 @@ else
   source "$(conda info --base)/etc/profile.d/conda.sh"
   
   # Check if environment exists
-  if conda env list | awk '{print $1}' | grep -q "^$KERNEL_NAME$"; then
+  if "$CONDA_LIKE_CMD" env list | awk '{print $1}' | grep -q "^$KERNEL_NAME$"; then
     ENV_EXISTS="true"
   else
     ENV_EXISTS="false"
@@ -241,7 +256,7 @@ else
     echo "Removing existing $PACKAGE_MANAGER environment: $KERNEL_NAME"
     # Suppress harmless error about mamba_trash.txt (directory may be removed before file write)
     # The environment removal still succeeds despite this error
-    conda env remove -n "$KERNEL_NAME" -y 2>&1 | grep -v "mamba_trash.txt" || true
+    "$CONDA_LIKE_CMD" env remove -n "$KERNEL_NAME" -y 2>&1 | grep -v "mamba_trash.txt" || true
     # Small delay to ensure cleanup completes
     sleep 0.5
     ENV_EXISTS="false"
@@ -250,7 +265,7 @@ else
   # Create environment if it doesn't exist
   if [[ "$ENV_EXISTS" == "false" ]]; then
     echo "Creating $PACKAGE_MANAGER environment: $KERNEL_NAME"
-    conda env create -f "$env_file"
+    "$CONDA_LIKE_CMD" env create -f "$env_file"
   fi
   
   # Activate environment
@@ -261,38 +276,51 @@ fi
 # We'll restore set -u at the very end of the script
 
 #--------------------------------------------------------
-# Install compilers (Mac only)
+# Optional compiler/library install
 #--------------------------------------------------------
-if [[ "$(uname)" == "Darwin" ]]; then
-  # Ensure environment is active
-  if [[ "$PACKAGE_MANAGER" == "micromamba" ]]; then
-    if [[ -z "${CONDA_DEFAULT_ENV:-}" ]] || [[ "$CONDA_DEFAULT_ENV" != "$KERNEL_NAME" ]]; then
-      # Shell hook should already be initialized, but ensure alias is set
-      if [[ "$MICROMAMBA_CMD" != "micromamba" ]]; then
-        alias micromamba="$MICROMAMBA_CMD"
-      fi
-      micromamba activate "$KERNEL_NAME"
+ # Ensure environment is active
+if [[ "$PACKAGE_MANAGER" == "micromamba" ]]; then
+  if [[ -z "${CONDA_DEFAULT_ENV:-}" ]] || [[ "$CONDA_DEFAULT_ENV" != "$KERNEL_NAME" ]]; then
+    # Shell hook should already be initialized, but ensure alias is set
+    if [[ "$MICROMAMBA_CMD" != "micromamba" ]]; then
+      alias micromamba="$MICROMAMBA_CMD"
     fi
-  else
-    if [[ -z "${CONDA_DEFAULT_ENV:-}" ]] || [[ "$CONDA_DEFAULT_ENV" != "$KERNEL_NAME" ]]; then
-      source "$(conda info --base)/etc/profile.d/conda.sh"
-      conda activate "$KERNEL_NAME"
-    fi
+    micromamba activate "$KERNEL_NAME"
   fi
-  
-  echo "Detected macOS - installing compilers and ESMF packages from conda-forge..."
+else
+  if [[ -z "${CONDA_DEFAULT_ENV:-}" ]] || [[ "$CONDA_DEFAULT_ENV" != "$KERNEL_NAME" ]]; then
+    source "$(conda info --base)/etc/profile.d/conda.sh"
+    conda activate "$KERNEL_NAME"
+  fi
+fi
+
+INSTALL_FORTRAN_LIBS="false"
+if [[ "$BATCH_MODE" == "true" ]]; then
+  echo "Batch mode enabled: skipping interactive compiler/library install prompt."
+  echo "To install compilers/libraries later, run:"
+  echo "  ${CONDA_LIKE_CMD} install -y -c conda-forge compilers mpich netcdf-fortran esmpy xesmf"
+else
+  echo ""
+  echo "C-Star Forge requires a FORTRAN compiler and supporting libraries (netcdf, MPI)."
+  echo "This script can install them in the python enviornment, however they may conflict with compilers and libraries already installed locally."
+  read -r -p 'Please indicated whether to install Install compilers and fortran libraries [y/N]: ' install_choice
+  if [[ "$install_choice" =~ ^[Yy]$ ]]; then
+    INSTALL_FORTRAN_LIBS="true"
+  fi
+fi
+
+if [[ "$INSTALL_FORTRAN_LIBS" == "true" ]]; then
+  echo "Installing compilers and ESMF packages from conda-forge..."
   # Package manager install may run deactivation scripts that reference unset variables
   # set +u is already active from the initialization section above
-  # These packages are only installed on macOS; on HPC systems, we rely on system modules
   if [[ "$PACKAGE_MANAGER" == "micromamba" ]]; then
     micromamba install -y -c conda-forge compilers mpich netcdf-fortran esmpy xesmf
   else
-    conda install -y -c conda-forge compilers mpich netcdf-fortran esmpy xesmf
+    "$CONDA_LIKE_CMD" install -y -c conda-forge compilers mpich netcdf-fortran esmpy xesmf
   fi
   echo "✓ Compiler installation completed successfully!"
 else
-  echo "Not macOS - skipping compiler installation"
-  echo "Relying on C-Star to manage build environment"
+  echo "Skipping compiler/library installation."
 fi
 
 #--------------------------------------------------------
@@ -404,6 +432,66 @@ echo ""
 echo "✓ Environment setup completed successfully!"
 echo "  Package manager: $PACKAGE_MANAGER"
 echo "  Environment: $KERNEL_NAME"
+
+#--------------------------------------------------------
+# Local micromamba convenience messaging (only when local binary is used)
+#--------------------------------------------------------
+MICROMAMBA_PATH_SH="$LOCAL_BIN_DIR/micromamba-path.sh"
+USING_LOCAL_MICROMAMBA="false"
+if [[ "$PACKAGE_MANAGER" == "micromamba" ]] && [[ "$MICROMAMBA_CMD" != "micromamba" ]] && [[ -x "$LOCAL_MICROMAMBA" ]]; then
+  USING_LOCAL_MICROMAMBA="true"
+fi
+
+if [[ "$USING_LOCAL_MICROMAMBA" == "true" ]]; then
+  MAMBA_ROOT_PREFIX_EFFECTIVE="${MAMBA_ROOT_PREFIX:-$HOME/micromamba}"
+
+  # Persist PATH + MAMBA_ROOT_PREFIX for shells that source ./bin/micromamba-path.sh
+  cat > "$MICROMAMBA_PATH_SH" <<EOF
+# Generated by dev-setup.sh — do not edit by hand (regenerated on each setup).
+export PATH="${LOCAL_BIN_DIR}:\${PATH}"
+export MAMBA_ROOT_PREFIX="${MAMBA_ROOT_PREFIX_EFFECTIVE}"
+EOF
+  chmod a+r "$MICROMAMBA_PATH_SH"
+
+  # Optional: put micromamba on default PATH for new terminals if ~/.local/bin exists or is creatable.
+  USER_LOCAL_BIN="${HOME}/.local/bin"
+  if mkdir -p "$USER_LOCAL_BIN" 2>/dev/null && ln -sf "$LOCAL_MICROMAMBA" "$USER_LOCAL_BIN/micromamba" 2>/dev/null; then
+    echo "micromamba symlink: $USER_LOCAL_BIN/micromamba"
+    echo "  (Works in new terminals if $USER_LOCAL_BIN is on your PATH; many setups add it by default.)"
+    echo ""
+  fi
+
+  echo "micromamba is installed at: $LOCAL_MICROMAMBA"
+  if [[ "${BASH_SOURCE[0]}" != "${0}" ]]; then
+    echo "This script was sourced: ./bin is already on PATH for this shell; run: micromamba --help"
+  else
+    echo "This script was run as a subprocess; your current shell PATH was not changed."
+    echo "  In this terminal, run once:"
+    echo "    source \"$MICROMAMBA_PATH_SH\""
+    echo "  Then you can run: micromamba --help"
+  fi
+  echo ""
+
+fi
+
+echo "In a new terminal, activate by name with:"
+if [[ "$PACKAGE_MANAGER" == "micromamba" ]]; then
+  if [[ -f "$MICROMAMBA_PATH_SH" ]]; then
+    echo "  source \"$MICROMAMBA_PATH_SH\""
+    echo "  eval \"\$(micromamba shell hook -s bash)\"   # or: -s zsh / -s fish"
+    echo "  micromamba activate $KERNEL_NAME"
+  else
+    echo "  eval \"\$(micromamba shell hook -s bash)\"   # or: -s zsh / -s fish"
+    echo "  micromamba activate $KERNEL_NAME"
+  fi
+elif [[ "$PACKAGE_MANAGER" == "mamba" ]]; then
+  echo "  source \"\$(conda info --base)/etc/profile.d/conda.sh\""
+  echo "  conda activate $KERNEL_NAME"
+else
+  echo "  source \"\$(conda info --base)/etc/profile.d/conda.sh\""
+  echo "  conda activate $KERNEL_NAME"
+fi
+echo ""
 
 # Restore strict variable checking now that all conda operations are complete
 set -u
