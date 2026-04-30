@@ -4,7 +4,7 @@ channels:
   - nodefaults
 dependencies:
   - python>=3.12
-  - PyCO2SYS
+  - pyco2sys
   - black
   - cartopy
   - cmocean
