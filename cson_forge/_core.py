@@ -2380,9 +2380,17 @@ class CstarSpecBuilder(BaseModel):
         self._update_settings_compile_time(compile_time_settings)
         self._update_settings_run_time(run_time_settings)
 
-        # cppdefs.opt: #define CDR_FORCING only when builder has CDR_forcing releases.
+        user_cdr_forcing_override = (
+            isinstance(compile_time_settings.get("cppdefs"), dict)
+            and "cdr_forcing" in compile_time_settings["cppdefs"]
+        ) or ("cdr_frc" in compile_time_settings)
+        user_cdr_output_override = "cdr_output" in compile_time_settings
+
+        # cppdefs.opt: #define CDR_FORCING when releases are present, unless user
+        # explicitly supplied a compile_time_settings override for cdr_forcing.
         self._settings_compile_time.setdefault("cppdefs", {})
-        self._settings_compile_time["cppdefs"]["cdr_forcing"] = bool(self.cdr_forcing)
+        if not user_cdr_forcing_override:
+            self._settings_compile_time["cppdefs"]["cdr_forcing"] = bool(self.cdr_forcing)
         
         # If user supplied any CDR releases, force compile-time CDR options on.
         # This ensures cdr_frc.opt renders cdr_source = .true., ncdr_parm matches the
@@ -2394,7 +2402,7 @@ class CstarSpecBuilder(BaseModel):
         # absolute path via ``_fortran_cdr_file_decl`` splits the string across Fortran
         # continuation lines, so the check fails even when the logical path ends in
         # ``..._cdr.nc``.
-        if self.cdr_forcing:
+        if self.cdr_forcing and not user_cdr_forcing_override:
             self._settings_compile_time.setdefault("cdr_frc", {})
             self._settings_compile_time["cdr_frc"]["cdr_source"] = True
             self._settings_compile_time["cdr_frc"]["ncdr_parm"] = len(self.cdr_forcing)
@@ -2402,6 +2410,11 @@ class CstarSpecBuilder(BaseModel):
             self._settings_compile_time["cdr_frc"]["cdr_volume"] = all(
                 isinstance(release, rt.VolumeRelease) for release in self.cdr_forcing
             )
+        # Auto-enable CDR diagnostics whenever CDR forcing releases are provided,
+        # unless the user explicitly overrides cdr_output compile-time settings.
+        if not user_cdr_output_override:
+            self._settings_compile_time.setdefault("cdr_output", {})
+            self._settings_compile_time["cdr_output"]["do_cdr"] = bool(self.cdr_forcing)
         self._normalize_cdr_frc_cdr_file_setting()
 
         # Ensure ntimes is an integer (don't recalculate, just ensure type is correct)
