@@ -27,13 +27,17 @@ jobs:
     - name: Install dependencies
       uses: mamba-org/setup-micromamba@v2
       with:
+        condarc: |
+          channels:
+            - conda-forge
+            - nodefaults
+          channel_priority: strict
         cache-downloads: true
-        cache-environment: true
+        cache-environment: false
         micromamba-version: 'latest'
         environment-file: environment.yml
         create-args: |
           python=${{ matrix.python-version }}
-        cache-environment-key: micromamba-${{ matrix.python-version }}-${{ runner.os }}
         post-cleanup: none
         
     - name: Set up conda for build tests
