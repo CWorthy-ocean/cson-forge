@@ -64,6 +64,7 @@ dependencies:
   - redis-py
   - regionmask
   - rioxarray
+  - rsync
   - ruff>=0.12.2
   - scipy
   - seawater
