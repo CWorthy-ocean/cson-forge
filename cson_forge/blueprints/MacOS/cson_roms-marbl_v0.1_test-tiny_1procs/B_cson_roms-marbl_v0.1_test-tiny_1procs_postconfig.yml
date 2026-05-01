@@ -9,7 +9,7 @@ code:
     documentation: ''
     locked: false
     location: https://github.com/CWorthy-ocean/ucla-roms.git
-    commit: 84f4ee7886e9ee4c33b3248b35c955551f3b9c06
+    commit: 45a9221
     branch: ''
     filter: null
   run_time:
@@ -37,42 +37,46 @@ initial_conditions:
   documentation: ''
   locked: false
   data:
-  - location: /Users/mclong/cson-forge-data/input-data/cson_roms-marbl_v0.1_test-tiny_1procs/cson_roms-marbl_v0.1_test-tiny_1procs_initial_conditions.nc
+  - location: /Users/eilerman/cson-forge-data/input-data/cson_roms-marbl_v0_1_test-tiny_1procs/cson_roms-marbl_v0_1_test-tiny_1procs_initial_conditions.nc
     partitioned: false
 grid:
   documentation: ''
   locked: false
   data:
-  - location: /Users/mclong/cson-forge-data/input-data/cson_roms-marbl_v0.1_test-tiny_1procs/cson_roms-marbl_v0.1_test-tiny_1procs_grid.nc
+  - location: /Users/eilerman/cson-forge-data/input-data/cson_roms-marbl_v0_1_test-tiny_1procs/cson_roms-marbl_v0_1_test-tiny_1procs_grid.nc
     partitioned: false
 forcing:
   boundary:
     documentation: ''
     locked: false
     data:
-    - location: /Users/mclong/cson-forge-data/input-data/cson_roms-marbl_v0.1_test-tiny_1procs/cson_roms-marbl_v0.1_test-tiny_1procs_boundary-physics_201201.nc
+    - location: /Users/eilerman/cson-forge-data/input-data/cson_roms-marbl_v0_1_test-tiny_1procs/cson_roms-marbl_v0_1_test-tiny_1procs_boundary-physics_201112.nc
       partitioned: false
-    - location: /Users/mclong/cson-forge-data/input-data/cson_roms-marbl_v0.1_test-tiny_1procs/cson_roms-marbl_v0.1_test-tiny_1procs_boundary-bgc_clim.nc
+    - location: /Users/eilerman/cson-forge-data/input-data/cson_roms-marbl_v0_1_test-tiny_1procs/cson_roms-marbl_v0_1_test-tiny_1procs_boundary-physics_201201.nc
+      partitioned: false
+    - location: /Users/eilerman/cson-forge-data/input-data/cson_roms-marbl_v0_1_test-tiny_1procs/cson_roms-marbl_v0_1_test-tiny_1procs_boundary-bgc_clim.nc
       partitioned: false
   surface:
     documentation: ''
     locked: false
     data:
-    - location: /Users/mclong/cson-forge-data/input-data/cson_roms-marbl_v0.1_test-tiny_1procs/cson_roms-marbl_v0.1_test-tiny_1procs_surface-physics_201201.nc
+    - location: /Users/eilerman/cson-forge-data/input-data/cson_roms-marbl_v0_1_test-tiny_1procs/cson_roms-marbl_v0_1_test-tiny_1procs_surface-physics_201112.nc
       partitioned: false
-    - location: /Users/mclong/cson-forge-data/input-data/cson_roms-marbl_v0.1_test-tiny_1procs/cson_roms-marbl_v0.1_test-tiny_1procs_surface-bgc_clim.nc
+    - location: /Users/eilerman/cson-forge-data/input-data/cson_roms-marbl_v0_1_test-tiny_1procs/cson_roms-marbl_v0_1_test-tiny_1procs_surface-physics_201201.nc
+      partitioned: false
+    - location: /Users/eilerman/cson-forge-data/input-data/cson_roms-marbl_v0_1_test-tiny_1procs/cson_roms-marbl_v0_1_test-tiny_1procs_surface-bgc_clim.nc
       partitioned: false
   tidal:
     documentation: ''
     locked: false
     data:
-    - location: /Users/mclong/cson-forge-data/input-data/cson_roms-marbl_v0.1_test-tiny_1procs/cson_roms-marbl_v0.1_test-tiny_1procs_tidal.nc
+    - location: /Users/eilerman/cson-forge-data/input-data/cson_roms-marbl_v0_1_test-tiny_1procs/cson_roms-marbl_v0_1_test-tiny_1procs_tidal.nc
       partitioned: false
   river:
     documentation: ''
     locked: false
     data:
-    - location: /Users/mclong/cson-forge-data/input-data/cson_roms-marbl_v0.1_test-tiny_1procs/cson_roms-marbl_v0.1_test-tiny_1procs_river.nc
+    - location: /Users/eilerman/cson-forge-data/input-data/cson_roms-marbl_v0_1_test-tiny_1procs/cson_roms-marbl_v0_1_test-tiny_1procs_river.nc
       partitioned: false
   corrections: null
 partitioning:
@@ -81,3 +85,9 @@ partitioning:
   hash: null
   n_procs_x: 1
   n_procs_y: 1
+cdr_forcing:
+  documentation: ''
+  locked: false
+  data:
+  - location: /Users/eilerman/cson-forge-data/input-data/cson_roms-marbl_v0_1_test-tiny_1procs/cson_roms-marbl_v0_1_test-tiny_1procs_cdr.nc
+    partitioned: false

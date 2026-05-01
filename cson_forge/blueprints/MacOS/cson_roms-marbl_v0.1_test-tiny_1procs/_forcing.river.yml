@@ -1,5 +1,5 @@
 ---
-roms_tools_version: 3.4.0
+roms_tools_version: 3.6.1.dev15+g349d53f65
 ---
 Grid:
   nx: 6
@@ -16,7 +16,9 @@ Grid:
   topography_source:
     name: ETOPO5
   mask_shapefile: null
+  close_narrow_channels: false
   hmin: 5.0
+  filename: null
 RiverForcing:
   start_time: '2012-01-01T00:00:00'
   end_time: '2012-01-02T00:00:00'

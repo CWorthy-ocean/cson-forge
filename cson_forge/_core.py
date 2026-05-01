@@ -5,11 +5,14 @@ This class provides a Pydantic-based interface for building RomsMarblBlueprint o
 """
 from __future__ import annotations
 
+import asyncio
 import copy
 import inspect
 import os
+import sys
 import time
 import warnings
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import asdict as dataclass_asdict
 from datetime import datetime
 import shutil
@@ -24,6 +27,10 @@ import cstar.orchestration.models as cstar_models
 from cstar.orchestration.serialization import deserialize
 from cstar.roms import ROMSSimulation
 from cstar.execution.handler import ExecutionStatus
+from cstar.entrypoint.config import JobConfig, ServiceConfiguration, get_job_config, get_service_config
+from cstar.entrypoint.xrunner import XRunnerRequest
+from cstar.entrypoint.worker.worker import SimulationRunner, execute_runner
+from cstar.orchestration.models import RomsMarblBlueprint
 from . import config
 from . import source_data
 from . import models as cson_models
@@ -32,6 +39,14 @@ from .settings import ROMSTemplateRenderer, render_roms_settings
 from .util import compute_timestep_from_cfl
 import roms_tools as rt
 
+def _schedule_coroutine(coro):
+    """Schedule a coroutine on the running loop, returns a Task."""
+    try:
+        loop = asyncio.get_running_loop()
+        return loop.create_task(coro)
+    except RuntimeError:
+        # No running loop, just run it directly
+        return asyncio.run(coro)
 
 class DatasetsDict(dict):
     """Dictionary-like class that supports method call with key parameter."""
@@ -187,7 +202,7 @@ class CstarSpecBuilder(BaseModel):
     partitioning: cstar_models.PartitioningParameterSet
     start_date: datetime = Field(alias="start_time")
     end_date: datetime = Field(alias="end_time")
-    cdr_forcing: Optional[List[Union[rt.TracerPerturbation, rt.VolumeRelease]]] = Field(
+    cdr_forcing: Optional[dict] = Field(
         default=None,
         alias="CDR_forcing",
         validate_default=False,
@@ -551,131 +566,8 @@ class CstarSpecBuilder(BaseModel):
         # Write settings to sidecar file
         self._persist_settings(bp_path)
     
-    def _ensure_empty_directory(self, directory: Union[str, Path]) -> None:
-        """
-        Ensure a directory exists and is empty.
-        
-        If the directory exists and is not empty, clears all contents silently.
-        If the directory doesn't exist, creates it.
-        
-        Parameters
-        ----------
-        directory : Union[str, Path]
-            Path to the directory to ensure is empty.
-        """
-        directory = Path(directory)
-        if directory.exists():
-            if any(directory.iterdir()):
-                # Remove all contents silently (this is expected behavior)
-                for item in directory.iterdir():
-                    if item.is_file():
-                        item.unlink()
-                    elif item.is_dir():
-                        shutil.rmtree(item)
-            # Directory exists and is now empty (or was already empty)
-        else:
-            # Create output directory if it doesn't exist
-            directory.mkdir(parents=True, exist_ok=True)
-    
-    def _clear_cstar_externals(self) -> None:
-        """
-        Clear C-Star externals directories before setup to avoid "dir not empty" errors.
-        
-        C-Star clones code repositories to externals directories. If these directories
-        already exist and are not empty, the clone operation will fail. This method
-        clears the externals directories for all codebases in the simulation.
-        """
-        try:
-            from cstar.system.manager import cstar_sysmgr
-                        
-            # Get the package root (where C-Star is installed)
-            package_root = Path(cstar_sysmgr.environment.package_root)
-            externals_dir = package_root / "externals"
-            
-            # Clear externals directory if it exists
-            if externals_dir.exists():
-                for item in externals_dir.iterdir():
-                    if item.is_dir():
-                        # Remove the directory and all its contents
-                        shutil.rmtree(item)
-                    elif item.is_file():
-                        # Remove individual files
-                        item.unlink()
-        except (ImportError, AttributeError) as e:
-            # If we can't access C-Star internals, just warn and continue
-            warnings.warn(
-                f"Could not clear C-Star externals directory: {e}. "
-                "If you encounter 'dir not empty' errors, manually clear "
-                f"{externals_dir if 'externals_dir' in locals() else 'C-Star externals directory'}.",
-                UserWarning,
-                stacklevel=2
-            )
-    
-    def _clear_simulation_directory(self) -> None:
-        """
-        Clear the entire C-Star simulation directory to avoid symlink FileExistsError.
-        
-        C-Star creates symlinks to input datasets in the run directory. If these
-        symlinks already exist, C-Star will fail with FileExistsError. This method
-        clears the entire simulation directory (including all subdirectories and files)
-        before setup.
-        """
-        try:
-            roots: list[Path] = [Path(self.run_output_dir)]
-            if getattr(self, "_cstar_simulation", None) is not None and getattr(
-                self._cstar_simulation, "directory", None
-            ):
-                roots.append(Path(self._cstar_simulation.directory))
-            if getattr(self, "blueprint", None) is not None and getattr(
-                self.blueprint, "runtime_params", None
-            ) is not None:
-                roots.append(Path(self.blueprint.runtime_params.output_dir))
 
-            cleared: set[Path] = set()
-            for raw in roots:
-                sim_dir = raw.expanduser().resolve()
-                if sim_dir in cleared:
-                    continue
-                cleared.add(sim_dir)
-                if sim_dir.exists():
-                    shutil.rmtree(sim_dir)
-        except (AttributeError, TypeError) as e:
-            # If we can't access the simulation or directory, just warn and continue
-            warnings.warn(
-                f"Could not clear simulation directory: {e}. "
-                "If you encounter 'FileExistsError' for symlinks, manually clear "
-                f"{sim_dir if 'sim_dir' in locals() else 'simulation directory'}.",
-                UserWarning,
-                stacklevel=2
-            )
 
-    def _unlink_roms_work_symlinks(self) -> None:
-        """
-        Remove ROMS/C-Star convention symlinks under ``work/`` if they still exist.
-
-        C-Star's ``DatasetLinker`` recreates ``work/cdr.nc`` (and ``work/nesting.nc``)
-        during ``setup()``; a leftover link causes ``FileExistsError`` on some runs
-        (e.g. partial cleanup or path skew between blueprint and simulation).
-        """
-        roots: list[Path] = [Path(self.run_output_dir)]
-        if getattr(self, "_cstar_simulation", None) is not None and getattr(
-            self._cstar_simulation, "directory", None
-        ):
-            roots.append(Path(self._cstar_simulation.directory))
-
-        seen: set[Path] = set()
-        for raw in roots:
-            work = raw.expanduser().resolve() / "work"
-            if work in seen or not work.is_dir():
-                continue
-            seen.add(work)
-            for name in ("cdr.nc", "nesting.nc"):
-                p = work / name
-                try:
-                    if p.is_symlink() or p.is_file():
-                        p.unlink(missing_ok=True)
-                except OSError:
-                    pass
     
     def _path_settings_file(self, blueprint_path: Path) -> Path:
         """
@@ -731,51 +623,7 @@ class CstarSpecBuilder(BaseModel):
         else:
             return obj
 
-    def _normalize_cdr_frc_cdr_file_setting(self) -> None:
-        """
-        Force ``cdr_frc.cdr_file`` to the short basename (``cdr.nc``) whenever CDR is on.
 
-        If ``cdr_file`` is an absolute path to the generated NetCDF, C-Star can still
-        create ``work/cdr.nc`` pointing at ``input/input_datasets/<case>_cdr.nc`` without
-        staging that file, which raises ``FileNotFoundError`` at symlink time. ROMS still
-        reads the logical name via ``cdr_frc.opt``; the real path lives in the blueprint
-        ``cdr_forcing`` resource list.
-        """
-        ct = getattr(self, "_settings_compile_time", None)
-        if not isinstance(ct, dict):
-            return
-        cpp = ct.get("cppdefs")
-        if not isinstance(cpp, dict) or not cpp.get("cdr_forcing"):
-            return
-        cdr_frc = ct.setdefault("cdr_frc", {})
-        if not isinstance(cdr_frc, dict):
-            ct["cdr_frc"] = {}
-            cdr_frc = ct["cdr_frc"]
-        short = f"{input_data.netcdf_filename_component(input_data.CDR_FORCING_NETCDF_STEM)}.nc"
-        cdr_frc["cdr_file"] = short
-
-    def _rewrite_cdr_frc_opt_from_settings(self) -> None:
-        """Re-render ``cdr_frc.opt`` from current settings when CDR is enabled."""
-        ct = getattr(self, "_settings_compile_time", None)
-        if not isinstance(ct, dict):
-            return
-        cpp = ct.get("cppdefs")
-        if not isinstance(cpp, dict) or not cpp.get("cdr_forcing"):
-            return
-        cfr = ct.get("cdr_frc")
-        if not isinstance(cfr, dict):
-            return
-        tpl_meta = self._model_spec.templates.compile_time
-        if tpl_meta is None:
-            return
-        tpl_root = Path(tpl_meta.location)
-        if not (tpl_root / "cdr_frc.opt.j2").is_file():
-            return
-        renderer = ROMSTemplateRenderer(template_dir=str(tpl_root))
-        text = renderer.render_template("cdr_frc.opt.j2", {"cdr_frc": cfr})
-        out = self.compile_time_code_dir / "cdr_frc.opt"
-        out.parent.mkdir(parents=True, exist_ok=True)
-        out.write_text(text)
 
     def _rewrite_roms_input_paths_to_staged_runtime_paths(self) -> None:
         """
@@ -817,40 +665,6 @@ class CstarSpecBuilder(BaseModel):
 
                 section[key] = str(staged_root / candidate.name)
 
-    def _ensure_runtime_code_cdr_pointer(self) -> None:
-        """
-        Ensure ``<run_output_dir>/input/runtime_code/cdr.nc`` points to staged CDR input.
-
-        The staged CDR dataset path follows:
-        ``<run_output_dir>/input/input_datasets/<safe_case>_cdr.nc``.
-        """
-        cdr_enabled = bool(self.cdr_forcing)
-        cppdefs = self._settings_compile_time.get("cppdefs")
-        if isinstance(cppdefs, dict):
-            cdr_enabled = cdr_enabled or bool(cppdefs.get("cdr_forcing"))
-        cdr_frc = self._settings_compile_time.get("cdr_frc")
-        if isinstance(cdr_frc, dict):
-            cdr_enabled = cdr_enabled or bool(cdr_frc.get("cdr_source"))
-        if not cdr_enabled:
-            return
-
-        safe_case = input_data.netcdf_filename_component(self.name)
-        target = (
-            self.run_output_dir
-            / "input"
-            / "input_datasets"
-            / f"{safe_case}_{input_data.CDR_FORCING_NETCDF_STEM}.nc"
-        )
-        pointer = self.run_output_dir / "input" / "runtime_code" / "cdr.nc"
-
-        pointer.parent.mkdir(parents=True, exist_ok=True)
-        if pointer.exists() or pointer.is_symlink():
-            if pointer.is_dir() and not pointer.is_symlink():
-                shutil.rmtree(pointer)
-            else:
-                pointer.unlink(missing_ok=True)
-
-        pointer.symlink_to(target)
 
     def _rewrite_staged_runtime_roms_in_paths(self) -> None:
         """
@@ -891,7 +705,6 @@ class CstarSpecBuilder(BaseModel):
         blueprint_path : Path
             Path to the blueprint file (used to determine settings file path).
         """
-        self._normalize_cdr_frc_cdr_file_setting()
         settings_path = self._path_settings_file(blueprint_path)
         
         # Prepare settings dictionary
@@ -940,7 +753,6 @@ class CstarSpecBuilder(BaseModel):
                     self._settings_compile_time = settings_dict["compile_time"]
                 if "run_time" in settings_dict:
                     self._settings_run_time = settings_dict["run_time"]
-                self._normalize_cdr_frc_cdr_file_setting()
         except Exception as e:
             # If loading fails, issue a warning but don't fail
             warnings.warn(
@@ -1861,9 +1673,9 @@ class CstarSpecBuilder(BaseModel):
         postconfig_path = self.path_blueprint(stage=BlueprintStage.POSTCONFIG)
         force_regenerate = False
         if postconfig_path.exists() and not clobber:
-            make_new_blueprint = self._prompt_yes_no(
-                f"POSTCONFIG blueprint already exists at {postconfig_path}. Create a new blueprint?"
-            )
+            make_new_blueprint = False # self._prompt_yes_no(
+            #     f"POSTCONFIG blueprint already exists at {postconfig_path}. Create a new blueprint?"
+            # )
             if make_new_blueprint:
                 self._delete_blueprint_and_settings(postconfig_path)
                 force_regenerate = True
@@ -2380,42 +2192,7 @@ class CstarSpecBuilder(BaseModel):
         self._update_settings_compile_time(compile_time_settings)
         self._update_settings_run_time(run_time_settings)
 
-        user_cdr_forcing_override = (
-            isinstance(compile_time_settings.get("cppdefs"), dict)
-            and "cdr_forcing" in compile_time_settings["cppdefs"]
-        ) or ("cdr_frc" in compile_time_settings)
-        user_cdr_output_override = "cdr_output" in compile_time_settings
 
-        # cppdefs.opt: #define CDR_FORCING when releases are present, unless user
-        # explicitly supplied a compile_time_settings override for cdr_forcing.
-        self._settings_compile_time.setdefault("cppdefs", {})
-        if not user_cdr_forcing_override:
-            self._settings_compile_time["cppdefs"]["cdr_forcing"] = bool(self.cdr_forcing)
-        
-        # If user supplied any CDR releases, force compile-time CDR options on.
-        # This ensures cdr_frc.opt renders cdr_source = .true., ncdr_parm matches the
-        # number of releases, and cdr_file is the conventional run-directory name ``cdr.nc``.
-        #
-        # Use the basename ``cdr.nc`` (not an absolute path to ``{case}_cdr.nc``). C-Star
-        # creates ``work_dir/cdr.nc`` as a symlink to the staged dataset and validates that
-        # ``cdr_frc.opt`` contains the contiguous substring ``cdr.nc``. Emitting a long
-        # absolute path via ``_fortran_cdr_file_decl`` splits the string across Fortran
-        # continuation lines, so the check fails even when the logical path ends in
-        # ``..._cdr.nc``.
-        if self.cdr_forcing and not user_cdr_forcing_override:
-            self._settings_compile_time.setdefault("cdr_frc", {})
-            self._settings_compile_time["cdr_frc"]["cdr_source"] = True
-            self._settings_compile_time["cdr_frc"]["ncdr_parm"] = len(self.cdr_forcing)
-            self._settings_compile_time["cdr_frc"]["forcing_parameterized"] = True
-            self._settings_compile_time["cdr_frc"]["cdr_volume"] = all(
-                isinstance(release, rt.VolumeRelease) for release in self.cdr_forcing
-            )
-        # Auto-enable CDR diagnostics whenever CDR forcing releases are provided,
-        # unless the user explicitly overrides cdr_output compile-time settings.
-        if not user_cdr_output_override:
-            self._settings_compile_time.setdefault("cdr_output", {})
-            self._settings_compile_time["cdr_output"]["do_cdr"] = bool(self.cdr_forcing)
-        self._normalize_cdr_frc_cdr_file_setting()
 
         # Ensure ntimes is an integer (don't recalculate, just ensure type is correct)
         if "roms.in" in self._settings_run_time and "time_stepping" in self._settings_run_time["roms.in"]:
@@ -2425,11 +2202,7 @@ class CstarSpecBuilder(BaseModel):
                 if isinstance(ntimes, float):
                     self._settings_run_time["roms.in"]["time_stepping"]["ntimes"] = int(round(ntimes))
 
-        self._rewrite_roms_input_paths_to_staged_runtime_paths()
 
-        # Ensure compile-time code directory is empty
-        self._ensure_empty_directory(self.compile_time_code_dir)
-        self._ensure_empty_directory(self.run_time_code_dir)
             
         # Render templates and get location and file list
         # Get n_tracers from model_spec properties
@@ -2476,231 +2249,65 @@ class CstarSpecBuilder(BaseModel):
             self.blueprint = cstar_models.RomsMarblBlueprint.model_construct(**blueprint_dict)
             self._stage = BlueprintStage.BUILD
             self.persist()
-        
-        # Create and setup C-Star simulation from blueprint
-        self._cstar_simulation = ROMSSimulation.from_blueprint(self.path_blueprint(stage=BlueprintStage.BUILD))
-        
-        return self._cstar_simulation
-    
-    def build(
+
+        return
+
+    def prep_cstar_environment(self,
+                               account_key: Optional[str] = None,
+                               queue_name: Optional[str] = None,
+                               walltime: str | None = None,
+                               clobber: bool = True,
+                               on_compute_node: bool = False,
+                               n_procs_available: int = 0,
+                               ):
+        """
+        TODO
+        """
+
+        account_key = account_key or config.machine_config.account
+        queue_name = queue_name or config.machine_config.queues.get("default")
+        walltime = walltime or "6:00:00"
+        os.environ["CSTAR_CLOBBER_WORKING_DIR"] = "1" if clobber else "0"
+        os.environ["CSTAR_IN_ACTIVE_ALLOCATION"] = "1" if on_compute_node else "0"
+        os.environ["CSTAR_SLURM_ACCOUNT"] = account_key
+        os.environ["CSTAR_SLURM_QUEUE"] = queue_name
+        os.environ["CSTAR_SLURM_WALLTIME"] = walltime
+
+        if n_procs_available:
+            os.environ["CSTAR_NPROCS_POST"] = str(n_procs_available)
+        else:
+            if os.getenv("CSTAR_NPROCS_POST"):
+                del os.environ["CSTAR_NPROCS_POST"]
+
+        if config.system == "RCAC_anvil":
+            # find the right conda path to this environment and put it in the front of the path
+            # otherwise, it might find the wrong cstar executable
+            bin_dir = Path(sys.executable).parent
+            _current_path = os.environ["PATH"]
+            os.environ["PATH"] = str(bin_dir) + os.pathsep + _current_path
+
+
+
+    async def run(
         self,
-        rebuild: bool = True,
-        **kwargs
     ):
         """
-        Build the model executable from the configured blueprint.
-        
-        This method compiles the ROMS model using the configuration files
-        generated during `configure_build()`. It must be called after
-        `configure_build()` has been executed.
-        
-        **Process:**
-        
-        1. Clears C-Star externals directories (to avoid "dir not empty" errors)
-        2. Clears simulation directory (to avoid symlink FileExistsError)
-        3. Sets up the C-Star simulation (calls `_cstar_simulation.setup()`)
-        4. Builds the model executable (calls `_cstar_simulation.build()`)
-        
-        **Prerequisites:**
-        
-        - Blueprint must be in BUILD stage (call `configure_build()` first)
-        - `_cstar_simulation` must be initialized (done by `configure_build()`)
-        
-        **Stage:**
-        
-        The blueprint remains in BUILD stage during and after this method.
-        The model executable is built but not yet run.
-        
-        Parameters
-        ----------
-        **kwargs
-            Additional keyword arguments (reserved for future use).
-        
-        Returns
-        -------
-        ROMSSimulation
-            The C-Star simulation instance (same as `_cstar_simulation`).
-        
-        Raises
-        ------
-        ValueError
-            If `_cstar_simulation` is not initialized (call `configure_build()` first).
-        """
-       
-        
-        # ------------------------------------------------------------
-        # TODO: These should be uncessary if C-Star can manage the directories itself,
-        #       but these seem necessary for now.
-        #
-        # Clear externals directories before setup to avoid "dir not empty" errors
-        self._clear_cstar_externals()
-        #
-        # Clear simulation directory to avoid symlink FileExistsError
-        self._clear_simulation_directory()
-        #
-        # C-Star refuses a non-empty ROMS input staging tree unless this is set (see error text).
-        # setdefault respects a user-provided value in the parent environment.
-        os.environ.setdefault("CSTAR_CLOBBER_WORKING_DIR", "1")
-        #
-        # Belt-and-suspenders: stale work/cdr.nc breaks DatasetLinker.symlink_to(...)
-        self._unlink_roms_work_symlinks()
-        #
-        self._normalize_cdr_frc_cdr_file_setting()
-        self._rewrite_cdr_frc_opt_from_settings()
-        #
-        # C-Star's ``ROMSSimulation.setup()`` never mkdirs ``work/`` (only ``input/...``);
-        # ``DatasetLinker`` still creates ``work/cdr.nc`` / ``work/nesting.nc``, which
-        # raises ``FileNotFoundError`` if the parent directory is missing. ``run()``
-        # creates ``work/``; create it here so ``setup()`` can link.
-        if self._cstar_simulation is not None:
-            self._cstar_simulation.fs_manager.work_dir.mkdir(parents=True, exist_ok=True)
-        # ------------------------------------------------------------
-        self._cstar_simulation.setup()
-        self._rewrite_staged_runtime_roms_in_paths()
-        self._ensure_runtime_code_cdr_pointer()
-        self._cstar_simulation.build(rebuild=rebuild)
-        return self._cstar_simulation
-
-    def run(
-        self, 
-        account_key: Optional[str] = None,
-        queue_name: Optional[str] = None,
-        walltime: str = "06:00:00",         
-        run_time_settings: Optional[cstar_models.RuntimeParameterSet] = None, 
-        **kwargs
-    ):
-        """
-        Run the model executable and advance blueprint to RUN stage.
-        
-        This method executes the ROMS model simulation using the built executable.
-        It must be called after `build()` has been executed.
-        
-        **Process:**
-        
-        1. Validates run-time settings are initialized
-        2. Sets `_stage` to RUN
-        3. Persists blueprint to disk with runtime parameters
-        4. Executes the model simulation (calls `_cstar_simulation.run()`)
-        
-        **Stage Transition:**
-        
-        - **Input:** Blueprint in BUILD stage (executable built)
-        - **Output:** Blueprint in RUN stage (simulation executed)
-        
-        **Prerequisites:**
-        
-        - Blueprint must be in BUILD stage (call `build()` first)
-        - `_cstar_simulation` must be initialized (done by `configure_build()`)
-        
-        Parameters
-        ----------
-        account_key : str, optional
-            The user's account key on the system (required if using a job scheduler).
-            If not provided, defaults to the account from machine configuration.
-            Default is None.
-        queue_name : str, optional
-            The name of the scheduler queue to submit the job to.
-            If not provided, defaults to the default queue from machine configuration.
-            Default is None.
-        walltime : str, optional
-            Maximum allowed execution time for a scheduler job in HH:MM:SS format.
-            Default is "06:00:00".
-        run_time_settings : RuntimeParameterSet, optional
-            Runtime parameters for the simulation. **Not currently supported.**
-            If provided, raises NotImplementedError. The C-Star simulation object
-            is instantiated in `configure_build()` and built in `build()`, and
-            cannot be updated with new run-time settings. To change run-time
-            settings, call `configure_build()` again with the desired settings,
-            then `build()` and `run()`.
-            Default is None.
-        **kwargs
-            Additional keyword arguments (reserved for future use).
-        
-        Raises
-        ------
-        NotImplementedError
-            If `run_time_settings` is provided (not supported).
-        RuntimeError
-            If run-time settings are not initialized, or if `_cstar_simulation`
-            is not initialized (call `build()` first).
+        TODO
         """
 
-        # Ensure runtime settings are initialized before configuring
-        # If settings are not present or empty, something has gone wrong
-        if not hasattr(self, '_settings_run_time') or not self._settings_run_time:
-            raise RuntimeError(
-                "_settings_run_time is not initialized or is empty. "
-            )
-        
-        # Update with user-provided settings - NOT SUPPORTED
-        # The C-Star simulation object is instantiated in configure_build() and
-        # built in build(), and we don't know how to update it with new run-time settings
-        if run_time_settings:
-            raise NotImplementedError(
-                "Changing run_time_settings in run() is not supported. "
-                "The C-Star simulation object is instantiated in configure_build() and "
-                "built in build(), and cannot be updated with new run-time settings. "
-                "To change run-time settings, call configure_build() again with the "
-                "desired settings, then build() and run()."
-            )
-               
-        # Update blueprint with runtime_params before running
-        #blueprint_dict = self.blueprint.model_dump()
-        #blueprint_dict["runtime_params"] = final_runtime_params.model_dump()
-        #self.blueprint = cstar_models.RomsMarblBlueprint(**blueprint_dict)
-        
+        self.prep_cstar_environment()
+
+        request = XRunnerRequest(uri=self.path_blueprint(stage=BlueprintStage.BUILD), bp_type=RomsMarblBlueprint, name=self.casename)
+        service_cfg = get_service_config(log_level="INFO")
+        job_cfg = get_job_config()
+        runner = execute_runner(job_cfg, service_cfg, request)
+        task = _schedule_coroutine(runner)
+        task.add_done_callback(lambda t: print(t.result()))
+
         # Persist blueprint to file
         self._stage = BlueprintStage.RUN
         self.persist()
-        
-        # Get account and queue from machine config if not provided
-        machine_config = config.machine_config
-        if account_key is None:
-            account_key = machine_config.account
-        if queue_name is None and machine_config.queues:
-            queue_name = machine_config.queues.get("default")
-        
-        # Build run arguments
-        run_kwargs = {
-            "account_key": account_key,
-            "queue_name": queue_name,
-            "walltime": walltime,
-            "job_name": self.casename,
-        }
-        
-        
-        # Run the simulation
-        return self._cstar_simulation.run(**run_kwargs)
-    
-    def pre_run(self) -> None:
-        """
-        Execute pre-run operations.
-        
-        Calls the C-Star simulation's pre_run() method if the simulation is initialized.
-        
-        Raises
-        ------
-        ValueError
-            If cstar_simulation is not initialized (build() must be called first).
-        """
-        if self._cstar_simulation is None:
-            raise ValueError("cstar_simulation is not initialized. Call build() first.")        
-        self._cstar_simulation.pre_run()
-    
-    def post_run(self) -> None:
-        """
-        Execute post-run operations.
-        
-        Calls the C-Star simulation's post_run() method if the simulation is initialized.
-        
-        Raises
-        ------
-        ValueError
-            If cstar_simulation is not initialized (build() must be called first).
-        """
-        if self._cstar_simulation is None:
-            raise ValueError("cstar_simulation is not initialized. Call build() first.")
-        self._cstar_simulation.post_run()
+
 
     def set_blueprint_state(self, state: str) -> None:
         """

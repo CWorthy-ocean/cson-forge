@@ -50,7 +50,6 @@ dependencies:
   - pooch
   - packaging
   - gcm_filters >=0.5.1
-  - netcdf4
   - PyYAML
   - pyamg
   - bottleneck
@@ -60,3 +59,9 @@ dependencies:
   - pydantic>2,<3
   - dask[diagnostics]
   - gcsfs
+  - xesmf
+# below are needed for c-star on macs
+  - rsync
+  - compilers
+  - mpich
+  - netcdf-fortran
