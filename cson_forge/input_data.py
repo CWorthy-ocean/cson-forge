@@ -8,6 +8,7 @@ the ROMS-MARBL specific implementation.
 from __future__ import annotations
 
 import warnings
+from collections import defaultdict
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Union
@@ -16,6 +17,8 @@ from pydantic import BaseModel, ConfigDict, Field
 import xarray as xr
 
 import cstar.orchestration.models as cstar_models
+from roms_tools import Grid
+
 from . import config
 from . import models as cson_models
 from . import source_data
@@ -109,64 +112,6 @@ class InputData:
         stem = netcdf_filename_component(input_name)
         return self.input_data_dir / f"{d}_{stem}.nc"
 
-    def _link_cdr_legacy_alias(self, canonical: Path) -> None:
-        """
-        Ensure ``{domain}_cdr_forcing.nc`` exists as a symlink to ``{domain}_cdr.nc``.
-
-        C-Star run setup and older POSTCONFIG blueprints may still use the legacy
-        basename; compile-time ``cdr_frc.opt`` expects a path containing ``cdr.nc``.
-        """
-        canonical = Path(canonical).resolve()
-        legacy = self._forcing_filename("cdr_forcing")
-        if not canonical.exists():
-            return
-        if legacy.resolve() == canonical:
-            return
-        try:
-            if legacy.is_symlink() or legacy.is_file():
-                if legacy.resolve() == canonical:
-                    return
-                legacy.unlink()
-            legacy.symlink_to(canonical.name)
-        except OSError:
-            pass
-
-    def _enforce_cdr_canonical_path(self, canonical: Path, paths: List[str]) -> List[str]:
-        """
-        If ``roms_tools.CDRForcing.save`` ignored the requested path and wrote e.g.
-        ``{domain}_cdr_forcing.nc``, rename the file on disk to *canonical*
-        (``{domain}_cdr.nc``) and fix ``paths[0]``.
-        """
-        if not paths:
-            return paths
-        canonical = Path(canonical).resolve()
-        first = Path(paths[0]).resolve()
-        if first == canonical:
-            return paths
-        if not first.exists():
-            return paths
-        if canonical.exists():
-            try:
-                if first.samefile(canonical):
-                    paths[0] = str(canonical)
-                    return paths
-            except OSError:
-                pass
-            try:
-                canonical.unlink()
-            except OSError:
-                pass
-        try:
-            first.rename(canonical)
-            paths[0] = str(canonical.resolve())
-        except OSError as e:
-            warnings.warn(
-                f"Could not rename CDR output {first} to {canonical}: {e}",
-                UserWarning,
-                stacklevel=2,
-            )
-        return paths
-    
     def _ensure_empty_or_clobber(self, clobber: bool) -> bool:
         """
         Ensure the input_data_dir is either empty or, if clobber=True,
@@ -259,7 +204,7 @@ class RomsMarblInputData(InputData):
     source_data: source_data.SourceData
     blueprint_dir: Path
     partitioning: cstar_models.PartitioningParameterSet
-    cdr_forcing: Optional[List[Union[rt.TracerPerturbation, rt.VolumeRelease]]] = None
+    cdr_forcing: Optional[dict] = None
     grid_child: Optional[rt.Grid] = None
     metadata_child: Optional[dict[str, Any]] = None
     use_dask: bool = True
@@ -312,15 +257,7 @@ class RomsMarblInputData(InputData):
         # Optional user-provided CDR forcing via builder kwarg.
         # Merge with model-specified cdr_list if that input already exists.
         if self.cdr_forcing:
-            cdr_step_idx = next((i for i, (k, _) in enumerate(input_list) if k == "cdr_forcing"), None)
-            if cdr_step_idx is not None:
-                step_key, step_kwargs = input_list[cdr_step_idx]
-                cdr_list = list(step_kwargs.get("cdr_list") or [])
-                cdr_list.extend(self.cdr_forcing)
-                step_kwargs["cdr_list"] = cdr_list
-                input_list[cdr_step_idx] = (step_key, step_kwargs)
-            else:
-                input_list.append(("cdr_forcing", {"cdr_list": list(self.cdr_forcing)}))
+            input_list.append(("cdr_forcing", {"cdr_kwargs": self.cdr_forcing}))
         
         self.input_list = input_list
         
@@ -371,7 +308,7 @@ class RomsMarblInputData(InputData):
         )
         
         # Initialize settings dictionaries to empty dicts
-        self._settings_compile_time = {}
+        self._settings_compile_time = defaultdict(dict)
         self._settings_run_time = {"roms.in": {}}
     
     def generate_all(self, clobber: bool = False, partition_files: bool = False, test: bool = False):
@@ -1125,27 +1062,23 @@ class RomsMarblInputData(InputData):
         self._settings_run_time["roms.in"]["forcing"]["river_path"] = paths[0] if isinstance(paths, (list, tuple)) else paths
 
     @register_input(name="cdr_forcing", order=80, label="Generating CDR forcing")
-    def _generate_cdr_forcing(self, key: str = "cdr_forcing", cdr_list=None, **kwargs):
+    def _generate_cdr_forcing(self, key: str = "cdr_forcing", cdr_kwargs=None, **kwargs):
         """Generate CDR forcing input files."""
-        cdr_list = [] if cdr_list is None else cdr_list
-        if not cdr_list:
+        cdr_kwargs = cdr_kwargs or {}
+        if not cdr_kwargs:
             return
         
         yaml_path = self._yaml_filename(key)
-        extra = dict(
-            start_time=self.start_date,
-            end_time=self.end_date,
-            releases=cdr_list,
-        )
-        input_args = self._build_input_args(key, extra=extra, base_kwargs=kwargs)
-        
-        cdr = rt.CDRForcing(grid=self.grid, **input_args)
+
+        input_args = self._build_input_args(key, base_kwargs=cdr_kwargs)
+
+        cdr = rt.CDRForcing(**input_args)
         output_path = self._forcing_filename(CDR_FORCING_NETCDF_STEM)
-        if self._should_reuse_existing_output(output_path):
-            print(f"   ↪ Reusing existing file: {output_path}")
-            paths = [str(output_path)]
-        else:
-            paths = cdr.save(output_path)
+        # if self._should_reuse_existing_output(output_path):
+        #     print(f"   ↪ Reusing existing file: {output_path}")
+        #     paths = [str(output_path)]
+        # else:
+        paths = cdr.save(output_path)
 
         # Normalize output paths to absolute strings so downstream template
         # settings can reliably embed full file locations.
@@ -1160,17 +1093,23 @@ class RomsMarblInputData(InputData):
                 path_obj = output_path.parent / path_obj
             normalized_paths.append(str(path_obj.resolve()))
         paths = normalized_paths
-        paths = self._enforce_cdr_canonical_path(output_path, paths)
-
-        if paths:
-            self._link_cdr_legacy_alias(Path(paths[0]))
 
         cdr.to_yaml(yaml_path)
         # Append Resources directly to blueprint_elements.cdr_forcing
         for path in paths:
             resource = cstar_models.Resource(location=path, partitioned=False)
             self.blueprint_elements.cdr_forcing.data.append(resource)
-    
+
+        self._settings_compile_time["cppdefs"]["cdr_forcing"] = True
+        # always set this to cdr.nc per conventions; c-star will symlink to the real path in the blueprint
+        self._settings_compile_time["cdr_frc"]["cdr_file"] = "cdr.nc"
+        self._settings_compile_time["cdr_frc"]["cdr_source"] = True
+        self._settings_compile_time["cdr_frc"]["ncdr_parm"] = len(cdr.releases)
+        self._settings_compile_time["cdr_frc"]["forcing_parameterized"] = True
+        self._settings_compile_time["cdr_frc"]["cdr_volume"] = cdr.releases.release_type == "volume"
+        # enable cdr output
+        self._settings_compile_time["cdr_output"]["do_cdr"] = True
+
     @register_input(name="forcing.corrections", order=90, label="Generating corrections forcing")
     def _generate_corrections(self, key: str = "corrections", **kwargs):
         """Generate corrections forcing (not implemented)."""

@@ -1,5 +1,5 @@
 ---
-roms_tools_version: 3.4.0
+roms_tools_version: 3.6.1.dev15+g349d53f65
 ---
 Grid:
   nx: 6
@@ -16,20 +16,25 @@ Grid:
   topography_source:
     name: ETOPO5
   mask_shapefile: null
+  close_narrow_channels: false
   hmin: 5.0
+  filename: null
 InitialConditions:
   ini_time: '2012-01-01T00:00:00'
   source:
     name: GLORYS
     climatology: false
     path:
-    - /Users/mclong/cson-forge-data/source-data/GLORYS_REGIONAL/cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_test-tiny_20120101.nc
-    - /Users/mclong/cson-forge-data/source-data/GLORYS_REGIONAL/cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_test-tiny_20120102.nc
+    - /Users/eilerman/cson-forge-data/source-data/GLORYS_REGIONAL/cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_test-tiny_20111231.nc
+    - /Users/eilerman/cson-forge-data/source-data/GLORYS_REGIONAL/cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_test-tiny_20120101.nc
+    - /Users/eilerman/cson-forge-data/source-data/GLORYS_REGIONAL/cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_test-tiny_20120102.nc
+    - /Users/eilerman/cson-forge-data/source-data/GLORYS_REGIONAL/cmems_mod_glo_phy_my_0.083deg_P1D-m_REGIONAL_test-tiny_20120103.nc
   bgc_source:
     name: UNIFIED
     climatology: true
-    path: /Users/mclong/cson-forge-data/source-data/UNIFIED_BGC/BGCdataset.nc
+    path: /Users/eilerman/cson-forge-data/source-data/UNIFIED_BGC/BGCdataset.nc
   model_reference_date: '2000-01-01T00:00:00'
   allow_flex_time: false
-  horizontal_chunk_size: 50
+  chunks: null
+  initial_slice_bounds: null
   bypass_validation: false

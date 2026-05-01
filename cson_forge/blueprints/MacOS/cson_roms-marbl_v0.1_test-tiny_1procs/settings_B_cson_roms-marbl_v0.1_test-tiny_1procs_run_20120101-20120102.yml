@@ -1,12 +1,12 @@
 compile_time:
   bgc:
-    wrt_his: true
+    wrt_his: false
     output_period_his: 86400
     nrpf_his: 7
     wrt_avg: false
     output_period_avg: 86400
     nrpf_avg: 7
-    wrt_his_dia: true
+    wrt_his_dia: false
     output_period_his_dia: 86400
     nrpf_his_dia: 7
     wrt_avg_dia: false
@@ -22,6 +22,13 @@ compile_time:
     obc_north: true
     obc_south: false
     marbl: true
+    cdr_forcing: true
+  cdr_output:
+    do_cdr: true
+    do_avg: true
+    monthly_averages: false
+    output_period: 3600
+    nrpf: 24
   param:
     LLm: 6
     MMm: 2
@@ -34,10 +41,10 @@ compile_time:
     ntrc_bio: 32
   ocean_vars:
     wrt_file_rst: true
-    output_period_rst: 43200
+    output_period_rst: 86400
     monthly_restarts: false
     nrpf_rst: 2
-    wrt_file_his: true
+    wrt_file_his: false
     output_period_his: 86400
     nrpf_his: 7
     wrt_Z: true
@@ -106,11 +113,11 @@ compile_time:
   tracers:
     interp_t: 1
   cdr_frc:
-    cdr_source: false
-    cdr_volume: true
+    cdr_source: true
+    cdr_volume: false
     cdr_analytical: false
-    ncdr: 1
-    cdr_file: cdr_forcing.nc
+    ncdr_parm: 4
+    cdr_file: cdr.nc
     cdrvol_vname: cdr_volume
     cdrvol_tname: cdr_time
     cdrtrc_vname: cdr_tracer
@@ -122,6 +129,18 @@ compile_time:
     cdr_loc_dep: cdr_dep
     cdr_scl_hor: cdr_hsc
     cdr_scl_vrt: cdr_vsc
+    nz_chd: 50
+    forcing_parameterized: true
+  extract_data:
+    do_extract: false
+    extract_file: sample_edata.nc
+    nrpf: 24
+    edat_prec: nf90_double
+    N_chd: 90
+    theta_s_chd: 5.0
+    theta_b_chd: 2.0
+    hc_chd: 250.0
+    extract_period: 3600.0
   sponge_tune:
     pflx_w_vname: up_west
     pflx_w_tname: bry_time
@@ -134,36 +153,42 @@ compile_time:
     ub_tune: false
     spn_avg: true
     sp_timscale: 86400
-    wrt_sponge: true
+    wrt_sponge: false
     nrpf: 7
     output_period: 86400
+  upscale_output:
+    do_upscale: false
+    nrpf_uscl: 48
+    output_period_uscl: 3600
+    uscl_prec: nf90_double
 run_time:
   roms.in:
     title:
       casename: cson_roms-marbl_v0.1_test-tiny_1procs_20120101-20120102
     time_stepping:
-      ntimes: 48
-      dt: 1800
+      ntimes: 12
+      dt: 7200
       ndtfast: 60
       ninfo: 1
     s_coord:
-      tcline: 250.0
-      theta_b: 2.0
       theta_s: 5.0
+      theta_b: 2.0
+      tcline: 250.0
     grid:
-      grid_file: /Users/mclong/cson-forge-data/input-data/cson_roms-marbl_v0.1_test-tiny_1procs/cson_roms-marbl_v0.1_test-tiny_1procs_grid.nc
+      grid_file: /Users/eilerman/cson-forge-data/input-data/cson_roms-marbl_v0_1_test-tiny_1procs/cson_roms-marbl_v0_1_test-tiny_1procs_grid.nc
     forcing:
-      surface_forcing_path: /Users/mclong/cson-forge-data/input-data/cson_roms-marbl_v0.1_test-tiny_1procs/cson_roms-marbl_v0.1_test-tiny_1procs_surface-physics_201201.nc
-      surface_forcing_bgc_path: /Users/mclong/cson-forge-data/input-data/cson_roms-marbl_v0.1_test-tiny_1procs/cson_roms-marbl_v0.1_test-tiny_1procs_surface-bgc_clim.nc
-      boundary_forcing_path: /Users/mclong/cson-forge-data/input-data/cson_roms-marbl_v0.1_test-tiny_1procs/cson_roms-marbl_v0.1_test-tiny_1procs_boundary-physics_201201.nc
-      boundary_forcing_bgc_path: /Users/mclong/cson-forge-data/input-data/cson_roms-marbl_v0.1_test-tiny_1procs/cson_roms-marbl_v0.1_test-tiny_1procs_boundary-bgc_clim.nc
-      river_path: /Users/mclong/cson-forge-data/input-data/cson_roms-marbl_v0.1_test-tiny_1procs/cson_roms-marbl_v0.1_test-tiny_1procs_river.nc
+      surface_forcing_path: /Users/eilerman/cson-forge-data/input-data/cson_roms-marbl_v0_1_test-tiny_1procs/cson_roms-marbl_v0_1_test-tiny_1procs_surface-physics_201112.nc
+      surface_forcing_bgc_path: /Users/eilerman/cson-forge-data/input-data/cson_roms-marbl_v0_1_test-tiny_1procs/cson_roms-marbl_v0_1_test-tiny_1procs_surface-bgc_clim.nc
+      boundary_forcing_path: /Users/eilerman/cson-forge-data/input-data/cson_roms-marbl_v0_1_test-tiny_1procs/cson_roms-marbl_v0_1_test-tiny_1procs_boundary-physics_201112.nc
+      boundary_forcing_bgc_path: /Users/eilerman/cson-forge-data/input-data/cson_roms-marbl_v0_1_test-tiny_1procs/cson_roms-marbl_v0_1_test-tiny_1procs_boundary-bgc_clim.nc
+      tidal_forcing_path: /Users/eilerman/cson-forge-data/input-data/cson_roms-marbl_v0_1_test-tiny_1procs/cson_roms-marbl_v0_1_test-tiny_1procs_tidal.nc
+      river_path: /Users/eilerman/cson-forge-data/input-data/cson_roms-marbl_v0_1_test-tiny_1procs/cson_roms-marbl_v0_1_test-tiny_1procs_river.nc
     lateral_visc:
       visc2: 0.0
       visc4: 0.0
       rho0: 1000.0
     output_root_name:
-      output_root_name: /Users/mclong/cson-forge-data/cson-forge-run/cson_roms-marbl_v0.1_test-tiny_1procs_20120101-20120102/output/cson_roms-marbl_v0.1_test-tiny_1procs_20120101-20120102
+      output_root_name: /Users/eilerman/cson-forge-data/cson-forge-run/cson_roms-marbl_v0.1_test-tiny_1procs_20120101-20120102/output/cson_roms-marbl_v0.1_test-tiny_1procs_20120101-20120102
     vertical_mixing:
       akv: 0.0
       akt_default: 0.0
@@ -181,4 +206,4 @@ run_time:
     ubind: 0.1
     initial:
       nrrec: 1
-      initial_file: /Users/mclong/cson-forge-data/input-data/cson_roms-marbl_v0.1_test-tiny_1procs/cson_roms-marbl_v0.1_test-tiny_1procs_initial_conditions.nc
+      initial_file: /Users/eilerman/cson-forge-data/input-data/cson_roms-marbl_v0_1_test-tiny_1procs/cson_roms-marbl_v0_1_test-tiny_1procs_initial_conditions.nc

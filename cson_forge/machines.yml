@@ -12,3 +12,9 @@ RCAC_anvil:
   queues:
     default: wholenode
     shared: shared
+
+MacOS:
+  account: ""
+  pes_per_node: 4
+  queues:
+    default: ""

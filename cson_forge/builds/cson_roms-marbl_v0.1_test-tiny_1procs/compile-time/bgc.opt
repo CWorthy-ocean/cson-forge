@@ -3,7 +3,7 @@
 
       ! note: choice of bgc tracers to output is still selected in tracers.opt.
 
-      logical,parameter :: wrt_his           = .true.             ! t/f to write module history file
+      logical,parameter :: wrt_his           = .false.             ! t/f to write module history file
       real,parameter    :: output_period_his = 86400        ! output period in seconds
       integer,parameter :: nrpf_his          = 7                  ! total recs per file
       
@@ -12,7 +12,7 @@
       real,parameter    :: output_period_avg = 86400        ! output averaging period in seconds
       integer,parameter :: nrpf_avg          = 7                  ! total recs per file
 
-      logical,parameter :: wrt_his_dia           = .true.        ! t/f to write module history file
+      logical,parameter :: wrt_his_dia           = .false.        ! t/f to write module history file
       real,parameter    :: output_period_his_dia = 86400   ! output period in seconds
       integer,parameter :: nrpf_his_dia          = 7             ! total recs per file
 

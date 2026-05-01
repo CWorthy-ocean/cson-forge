@@ -1,5 +1,5 @@
 ---
-roms_tools_version: 3.4.0
+roms_tools_version: 3.6.1.dev15+g349d53f65
 ---
 Grid:
   nx: 6
@@ -16,15 +16,17 @@ Grid:
   topography_source:
     name: ETOPO5
   mask_shapefile: null
+  close_narrow_channels: false
   hmin: 5.0
+  filename: null
 TidalForcing:
   source:
     name: TPXO
     climatology: false
     path:
-      grid: /Users/mclong/cson-forge-data/source-data/TPXO/TPXO10.v2/grid_tpxo10v2.nc
-      h: /Users/mclong/cson-forge-data/source-data/TPXO/TPXO10.v2/h_tpxo10.v2.nc
-      u: /Users/mclong/cson-forge-data/source-data/TPXO/TPXO10.v2/u_tpxo10.v2.nc
+      grid: /Users/eilerman/cson-forge-data/source-data/TPXO/TPXO10.v2/grid_tpxo10v2.nc
+      h: /Users/eilerman/cson-forge-data/source-data/TPXO/TPXO10.v2/h_tpxo10.v2.nc
+      u: /Users/eilerman/cson-forge-data/source-data/TPXO/TPXO10.v2/u_tpxo10.v2.nc
   ntides: 15
   model_reference_date: '2012-01-01T00:00:00'
   bypass_validation: false
