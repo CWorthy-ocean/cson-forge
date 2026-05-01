@@ -12,6 +12,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Union
 
+import yaml
 from pydantic import BaseModel, ConfigDict, Field
 import xarray as xr
 
@@ -953,15 +954,17 @@ class RomsMarblInputData(InputData):
         yaml_path = self._yaml_filename(key)
         output_path = self._forcing_filename(subkey)
         extra = dict(
-            model_reference_date=self.start_date,
             use_dask=self.use_dask,
         )
         input_args = self._build_input_args(key, extra=extra, base_kwargs=kwargs)
         existing_paths = self._existing_output_paths(output_path)
-        tidal: Any = None
+        tidal: rt.TidalForcing = None
         if existing_paths and yaml_path.exists():
             print(f"   ↪ Reusing existing file(s): {', '.join(existing_paths)}")
             paths = existing_paths
+            with yaml_path.open() as f:
+                tide_yaml = yaml.load(f, Loader=yaml.SafeLoader)
+            ntides = tide_yaml["TidalForcing"]["ntides"]
         elif existing_paths:
             print(f"   ↪ Reusing existing file(s): {', '.join(existing_paths)}")
             paths = existing_paths
@@ -1003,7 +1006,7 @@ class RomsMarblInputData(InputData):
         
         # Update settings_dict with tidal forcing parameters
         self._settings_compile_time["tides"] = dict(
-            ntides = 10,
+            ntides = ntides if tidal is None else tidal.ntides,
             bry_tides = True,
             pot_tides = True,
             ana_tides = False
