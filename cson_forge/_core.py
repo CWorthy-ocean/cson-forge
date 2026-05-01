@@ -9,6 +9,7 @@ import asyncio
 import copy
 import inspect
 import os
+import sys
 import time
 import warnings
 from concurrent.futures import ThreadPoolExecutor
@@ -2278,10 +2279,16 @@ class CstarSpecBuilder(BaseModel):
             if os.getenv("CSTAR_NPROCS_POST"):
                 del os.environ["CSTAR_NPROCS_POST"]
 
+        if config.system == "RCAC_anvil":
+            # find the right conda path to this environment and put it in the front of the path
+            # otherwise, it might find the wrong cstar executable
+            bin_dir = Path(sys.executable).parent
+            _current_path = os.environ["PATH"]
+            os.environ["PATH"] = str(bin_dir) + os.pathsep + _current_path
 
 
 
-    def run(
+    async def run(
         self,
     ):
         """
