@@ -171,3 +171,9 @@ sponge_tune:
   wrt_sponge: false
   nrpf: 7
   output_period: 86400  # 24*3600 seconds
+
+upscale_output:
+  do_upscale: false
+  nrpf_uscl: 48
+  output_period_uscl: 3600
+  uscl_prec: 'nf90_double'
