@@ -1,4 +1,4 @@
-name: cson-forge-v0
+name: cstar-forge-0
 channels:
   - conda-forge
   - nodefaults
@@ -8,8 +8,10 @@ dependencies:
   - black
   - bottleneck
   - cartopy
+  - click>=8.3.0
   - cmocean
   # - compilers
+  - coolname
   - copernicusmarine
   - coverage
   - dask
@@ -56,6 +58,7 @@ dependencies:
   - pyyaml>=6.0
   - python-dateutil>=2.8.2
   - python-dotenv
+  - pyyaml
   - quarto
   - rasterio
   - redis-py
@@ -77,6 +80,7 @@ dependencies:
   # Ensure ROMS-Tools runtime deps resolve from conda-forge first.
   - roms-tools>=3.4.0,<4
   - pip:
-    - --no-deps
-    - cson-forge==0.1.0
-    - cstar-ocean==0.3.0
+    # roms-tools from GitHub: use branch (e.g. @main) or commit hash (e.g. @abc123f)
+    - git+https://github.com/CWorthy-ocean/roms-tools.git@main
+    # cstar-ocean from GitHub: use branch (e.g. @main) or commit hash (e.g. @abc123f)
+    - git+https://github.com/CWorthy-ocean/C-Star.git@main

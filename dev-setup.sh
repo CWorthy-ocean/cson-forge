@@ -8,9 +8,9 @@
 #   ./dev-setup.sh --clean --batch  # Clean rebuild without prompts
 #
 # Package Manager:
-#   Uses micromamba if available (fastest), falls back to conda if not.
-#   If micromamba is not found, the script will automatically download and
-#   install it locally to ./bin (no root privileges required).
+#   Uses micromamba if available, then mamba, then conda.
+#   If none are found, the script will automatically download and
+#   install micromamba locally to ./bin (no root privileges required).
 #   Supports macOS (ARM64 and Intel) and Linux automatically.
 
 set -e  # Exit on error
@@ -82,7 +82,24 @@ CONDA_LIKE_CMD="conda"
 PM_SOURCE="detected"
 MICROMAMBA_URL="https://micro.mamba.pm/api/micromamba/${OS_TYPE}-${ARCH_TYPE}/latest"
 
-# Report system information and download details
+# Probe available package manager/binary for reporting (no installs here).
+DETECTED_PM="none"
+DETECTED_PM_BIN="(none found)"
+if command -v micromamba >/dev/null 2>&1; then
+  DETECTED_PM="micromamba"
+  DETECTED_PM_BIN="$(command -v micromamba)"
+elif command -v mamba >/dev/null 2>&1; then
+  DETECTED_PM="mamba"
+  DETECTED_PM_BIN="$(command -v mamba)"
+elif command -v conda >/dev/null 2>&1; then
+  DETECTED_PM="conda"
+  DETECTED_PM_BIN="$(command -v conda)"
+elif [[ -f "$LOCAL_MICROMAMBA" ]] && [[ -x "$LOCAL_MICROMAMBA" ]]; then
+  DETECTED_PM="micromamba (local)"
+  DETECTED_PM_BIN="$LOCAL_MICROMAMBA"
+fi
+
+# Report system information and detected tooling
 echo ""
 echo "Installation Information"
 echo "========================="
@@ -92,9 +109,13 @@ echo "    • OS Type:          $OS_TYPE"
 echo "    • Architecture:     $ARCH_TYPE"
 echo ""
 echo "  Installation Details:"
-echo "    • Target Location:  $LOCAL_BIN_DIR"
-echo "    • Download URL:     $MICROMAMBA_URL"
-echo "    • No root access required"
+echo "    • Package Manager:  $DETECTED_PM"
+echo "    • Binary:           $DETECTED_PM_BIN"
+echo "    • Fallback Install: local micromamba in $LOCAL_BIN_DIR (if no manager detected)"
+if [[ "$DETECTED_PM" == "conda" ]]; then
+  echo "    • Note:             conda installation may be slow; mamba/micromamba is recommended."
+  echo "                        Consider running with --batch for non-interactive setup."
+fi
 echo ""
 echo "  Environment:"
 echo "    • Environment Name: $KERNEL_NAME"
@@ -110,16 +131,16 @@ echo "    • Environment File: $env_file"
 echo ""
 echo "  Clean Mode:"
 if [[ "$CLEAN_MODE" == "true" ]]; then
-  echo "    • Status:           ENABLED (will remove and rebuild environment)"
+  echo "    • Status:           ENABLED via --clean (will remove and rebuild environment)"
 else
-  echo "    • Status:           DISABLED (will reuse existing environment if present)"
+  echo "    • Status:           DISABLED (use --clean to remove and rebuild environment)"
 fi
 echo ""
 echo "  Batch Mode:"
 if [[ "$BATCH_MODE" == "true" ]]; then
-  echo "    • Status:           ENABLED (no user prompts, all operations automatic)"
+  echo "    • Status:           ENABLED via --batch (no user prompts, all operations automatic)"
 else
-  echo "    • Status:           DISABLED (will prompt for confirmation)"
+  echo "    • Status:           DISABLED (use --batch to run non-interactively)"
 fi
 echo ""
 if [[ "$BATCH_MODE" != "true" ]]; then
@@ -182,7 +203,7 @@ if [[ -z "$PACKAGE_MANAGER" ]]; then
 fi
 
 if [[ -z "$PACKAGE_MANAGER" ]]; then
-  echo "Error: Neither micromamba nor conda is available."
+  echo "Error: None of micromamba, mamba, or conda are available."
   echo ""
   echo "The script attempted to install micromamba locally but failed."
   echo "Please install miniconda/anaconda for conda support, or install micromamba manually."
@@ -265,7 +286,7 @@ else
   # Create environment if it doesn't exist
   if [[ "$ENV_EXISTS" == "false" ]]; then
     echo "Creating $PACKAGE_MANAGER environment: $KERNEL_NAME"
-    "$CONDA_LIKE_CMD" env create -f "$env_file"
+    "$CONDA_LIKE_CMD" env create -f "$env_file" -y
   fi
   
   # Activate environment
@@ -298,25 +319,25 @@ INSTALL_FORTRAN_LIBS="false"
 if [[ "$BATCH_MODE" == "true" ]]; then
   echo "Batch mode enabled: skipping interactive compiler/library install prompt."
   echo "To install compilers/libraries later, run:"
-  echo "  ${CONDA_LIKE_CMD} install -y -c conda-forge compilers mpich netcdf-fortran esmpy xesmf"
+  echo "  ${CONDA_LIKE_CMD} install -y -c conda-forge compilers mpich netcdf-fortran"
 else
   echo ""
   echo "C-Star Forge requires a FORTRAN compiler and supporting libraries (netcdf, MPI)."
-  echo "This script can install them in the python enviornment, however they may conflict with compilers and libraries already installed locally."
-  read -r -p 'Please indicated whether to install Install compilers and fortran libraries [y/N]: ' install_choice
+  echo "This script can install them in the python environment, however they may conflict with compilers and libraries already installed locally."
+  read -r -p 'Please indicated whether to install compilers and fortran libraries [y/N]: ' install_choice
   if [[ "$install_choice" =~ ^[Yy]$ ]]; then
     INSTALL_FORTRAN_LIBS="true"
   fi
 fi
 
 if [[ "$INSTALL_FORTRAN_LIBS" == "true" ]]; then
-  echo "Installing compilers and ESMF packages from conda-forge..."
+  echo "Installing compilers and library packages from conda-forge..."
   # Package manager install may run deactivation scripts that reference unset variables
   # set +u is already active from the initialization section above
   if [[ "$PACKAGE_MANAGER" == "micromamba" ]]; then
-    micromamba install -y -c conda-forge compilers mpich netcdf-fortran esmpy xesmf
+    micromamba install -y -c conda-forge compilers mpich netcdf-fortran
   else
-    "$CONDA_LIKE_CMD" install -y -c conda-forge compilers mpich netcdf-fortran esmpy xesmf
+    "$CONDA_LIKE_CMD" install -y -c conda-forge compilers mpich netcdf-fortran
   fi
   echo "✓ Compiler installation completed successfully!"
 else
@@ -344,7 +365,7 @@ else
 fi
 
 # Install local Python packages in editable mode
-echo "Installing local Python packages in editable mode..."
+echo "Installing local Python package(s) in editable mode..."
 for package_dir in "${LOCAL_PYTHON_PACKAGES[@]}"; do
   # Resolve to absolute path
   if [[ "$package_dir" == "." ]]; then
@@ -366,6 +387,7 @@ for package_dir in "${LOCAL_PYTHON_PACKAGES[@]}"; do
   
   # Verify installation by checking if the package can be imported
   # For the root package, check for cson_forge module
+  echo "Activating and testing kernel in environment $KERNEL_NAME... this may take a few minutes."
   if [[ "$package_dir" == "." ]]; then
     if python -c "import cson_forge" 2>/dev/null; then
       echo "  ✓ cson-forge installed successfully"
@@ -382,6 +404,7 @@ echo "✓ Local package installation completed!"
 #--------------------------------------------------------
 # Jupyter kernel setup
 #--------------------------------------------------------
+
 # Ensure environment is active
 # set +u is already active from initialization section
 if [[ "$PACKAGE_MANAGER" == "micromamba" ]]; then
@@ -485,8 +508,8 @@ if [[ "$PACKAGE_MANAGER" == "micromamba" ]]; then
     echo "  micromamba activate $KERNEL_NAME"
   fi
 elif [[ "$PACKAGE_MANAGER" == "mamba" ]]; then
-  echo "  source \"\$(conda info --base)/etc/profile.d/conda.sh\""
-  echo "  conda activate $KERNEL_NAME"
+  echo "  eval \"\$(mamba shell hook --shell bash)\"   # or: --shell zsh / --shell fish"
+  echo "  mamba activate $KERNEL_NAME"
 else
   echo "  source \"\$(conda info --base)/etc/profile.d/conda.sh\""
   echo "  conda activate $KERNEL_NAME"
