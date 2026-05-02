@@ -19,6 +19,17 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
+    - name: Resolve conda environment name from environment.yml
+      shell: bash
+      run: |
+        CONDA_ENV_NAME="$(awk -F': *' '$1=="name"{print $2; exit}' environment.yml)"
+        if [[ -z "$CONDA_ENV_NAME" ]]; then
+          echo "Could not read name: from environment.yml" >&2
+          exit 1
+        fi
+        echo "CONDA_ENV_NAME=$CONDA_ENV_NAME" >> "$GITHUB_ENV"
+        echo "Using conda/micromamba env: $CONDA_ENV_NAME"
+
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v5
       with:
@@ -67,7 +78,7 @@ jobs:
       working-directory: ${{ github.workspace }}
       run: |
         eval "$(micromamba shell hook --shell bash)"
-        micromamba activate cson-forge-v0
+        micromamba activate "$CONDA_ENV_NAME"
         # C-Star and roms-tools come from environment.yml (pip section)
         pip install -e .
         
@@ -75,7 +86,7 @@ jobs:
       shell: bash -l {0}
       working-directory: ${{ github.workspace }}
       run: |
-        micromamba run -n cson-forge-v0 pytest tests/ -v --cov=cson_forge --cov-report=xml --cov-report=term-missing
+        micromamba run -n "$CONDA_ENV_NAME" pytest tests/ -v --cov=cson_forge --cov-report=xml --cov-report=term-missing
 
     - name: Upload coverage reports to Codecov
       uses: codecov/codecov-action@v5
