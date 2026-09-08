@@ -13,6 +13,7 @@ Tests cover:
 """
 
 import shutil
+import sys
 from contextlib import contextmanager
 from datetime import datetime
 from pathlib import Path
@@ -3638,6 +3639,98 @@ def _make_input_data(
         use_dask=False,
         input_data_dir=data_dir,
     )
+
+
+class _BlockPyESPER:
+    """Import hook that makes PyESPER unimportable, whatever is installed."""
+
+    def find_spec(self, name, path=None, target=None):
+        if name == "PyESPER" or name.startswith("PyESPER."):
+            raise ImportError(f"No module named {name!r}")
+
+
+class TestEsperPreflight:
+    """An ESPER bgc source without an importable PyESPER must fail at the very
+    start of ``generate_all`` -- before the grid or any other input is generated --
+    with roms-tools' install guidance, and must not affect non-ESPER configurations.
+    """
+
+    @staticmethod
+    def _block_pyesper(monkeypatch):
+        for mod in [
+            m for m in list(sys.modules) if m == "PyESPER" or m.startswith("PyESPER.")
+        ]:
+            monkeypatch.delitem(sys.modules, mod, raising=False)
+        monkeypatch.setattr(sys, "meta_path", [_BlockPyESPER(), *sys.meta_path])
+
+    @pytest.fixture
+    def esper_input_data(
+        self,
+        tmp_path,
+        sample_grid,
+        sample_open_boundaries,
+        sample_source_data,
+        sample_partitioning,
+    ):
+        ic = forge_models.InitialConditionsInput(
+            source=forge_models.SourceSpec(name="GLORYS")
+        )
+        boundary = forge_models.BoundaryForcing(
+            source=forge_models.SourceSpec(name="GLORYS"),
+            bgc_sources=[
+                forge_models.BgcSourceItem(
+                    source=forge_models.SourceSpec(name="ESPER"),
+                    use_vars=["ALK", "DIC"],
+                ),
+            ],
+        )
+        surface_item = forge_models.SurfaceForcingItem(
+            source=forge_models.SourceSpec(name="ERA5"), type="physics"
+        )
+        forcing_override = _build_forcing_override(
+            ic, surface=[surface_item], boundary=boundary
+        )
+        return _make_input_data(
+            tmp_path,
+            forcing_override,
+            sample_grid,
+            sample_open_boundaries,
+            sample_source_data,
+            sample_partitioning,
+        )
+
+    def test_generate_all_fails_before_any_step(self, esper_input_data, monkeypatch):
+        self._block_pyesper(monkeypatch)
+        data = esper_input_data
+        with (
+            patch.object(data, "_planned_netcdf_outputs") as planned,
+            pytest.raises(RuntimeError, match="PyESPER") as excinfo,
+        ):
+            data.generate_all()
+        planned.assert_not_called()  # pre-flight runs before planning/any step
+        msg = str(excinfo.value)
+        assert "forcing.boundary" in msg
+        assert "No inputs were generated" in msg
+        assert "pip install -e" in msg  # roms-tools' install guidance is attached
+        assert not any(data.input_data_dir.glob("*.nc"))
+
+    def test_non_esper_configuration_is_untouched(self, monkeypatch):
+        """Blocking PyESPER must not affect configurations without an ESPER source
+        -- Forge never imports PyESPER itself.
+        """
+        self._block_pyesper(monkeypatch)
+        step = MagicMock(name="forcing.boundary")
+        kwargs = {
+            "source": {"name": "GLORYS"},
+            "bgc_sources": [
+                {
+                    "source": {"name": "UNIFIED", "climatology": True},
+                    "use_vars": ["ALK"],
+                },
+                {"source": {"name": "constants", "constants": {"NO3": 1.0}}},
+            ],
+        }
+        RomsMarblInputData._preflight_esper_sources([(step, kwargs)])  # no raise
 
 
 class TestBoundaryBgcSources:

@@ -786,6 +786,10 @@ class RomsMarblInputData(InputData):
         step_kwargs_list.sort(key=lambda x: x[0].order)
         total = len(step_kwargs_list) + (1 if partition_files else 0)
 
+        # Fail fast on an ESPER bgc source without PyESPER -- before the grid or any
+        # other input is generated (see _preflight_esper_sources).
+        self._preflight_esper_sources(step_kwargs_list)
+
         # Compute planned outputs once at the start of execution, and record which already exist.
         planned = self._planned_netcdf_outputs(step_kwargs_list)
         self._planned_output_paths = {path.resolve() for path in planned}
@@ -885,6 +889,37 @@ class RomsMarblInputData(InputData):
                 print("\n✅ All input files generated.\n")
 
         return self.roms_marbl_blueprint_elements
+
+    @staticmethod
+    def _preflight_esper_sources(
+        step_kwargs_list: list[tuple[InputStep, dict[str, Any]]],
+    ) -> None:
+        """Raise before any generation step if an ESPER bgc source is configured
+        but PyESPER (CWorthy's fork) is not importable.
+
+        roms-tools performs the same check when the ESPER companion is built, but
+        by then the grid, surface forcing and the physics regrid may already have
+        been generated -- on a production domain, an hour of work before a message
+        that amounts to "install PyESPER". Nothing about PyESPER is imported by
+        Forge itself: this only asks roms-tools' own validator (which also checks
+        the ESPER ``method``/``equation`` keys), so environments without PyESPER
+        keep every other BGC source available and this is a no-op for them.
+        """
+        for step, kwargs in step_kwargs_list:
+            for bs in kwargs.get("bgc_sources") or []:
+                src = bs.get("source") if isinstance(bs, dict) else None
+                if not (isinstance(src, dict) and src.get("name") == "ESPER"):
+                    continue
+                from roms_tools.setup.esper import validate_esper_source
+
+                try:
+                    validate_esper_source(src)
+                except ImportError as exc:
+                    raise RuntimeError(
+                        f"{step.name}: the ESPER BGC source needs PyESPER, which is "
+                        "not available in this environment. No inputs were "
+                        f"generated.\n\n{exc}"
+                    ) from exc
 
     @staticmethod
     def _bgc_output_suffix(
