@@ -201,6 +201,9 @@
     "pmin": 200,
     "ppm3": 1e-06
   },
+  "pio_settings": {
+    "pio_stride": 1
+  },
   "pipe_frc": {
     "npip": 1,
     "p_analytical": false,

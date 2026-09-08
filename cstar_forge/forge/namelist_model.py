@@ -50,6 +50,7 @@ from cstar.roms.namelist import (
     ParamSettings,
     ParticlesSettings,
     ParticlesSettingsV0_5_0,
+    PioSettings,
     PipeFrcSettings,
     RandomOutputSettings,
     ReferenceDateSettings,
@@ -58,6 +59,7 @@ from cstar.roms.namelist import (
     RomsNamelist,
     RomsNamelistBase,
     RomsNamelistV0_5_0,
+    RomsNamelistV0_6_0,
     SCoord,
     SimulationNameSettings,
     SpongeTuneSettings,
@@ -182,6 +184,13 @@ class ParamCfg(_SettingsSection):
     np_eta: int
     nt_passive: int
     ntrc_bio: int = Field(serialization_alias="nt_bgc")
+
+
+class PioSettingsCfg(_SettingsSection):
+    # Deliberate default (like ExtractDataCfg.extract_root_name above): blueprints
+    # saved before &PIO_SETTINGS existed bypass the resolver and hit
+    # model_validate directly, so the Pydantic default is what keeps them valid.
+    pio_stride: int = Field(default=1, ge=1)
 
 
 class InitialCfg(_SettingsSection):
@@ -353,6 +362,72 @@ def check_extract_divides_rst(
             f"(check_output_divides_rst, partial-file prevention). Adjust the "
             f"child DomainSpec metadata 'period' or the extract_data overrides."
         )
+
+
+def cppdefs_for_precheck(
+    cppdefs: dict[str, Any] | None, upscale_output: Any
+) -> dict[str, Any]:
+    """Build the cppdef-activity mapping :func:`cstar.roms.precheck.check_output_streams_divide_rst`
+    expects, from forge's resolved ``cppdefs`` section plus ``upscale_output``.
+
+    Two of that function's guard names aren't literal ``cppdefs.*`` keys in
+    forge's settings, but are still real, derivable, compile-time-active flags
+    (see ``templates/compile-time/cppdefs.opt.j2``):
+
+    * ``marbl_diags`` -- the template ``#define``s ``MARBL_DIAGS`` exactly
+      when it ``#define``s ``MARBL`` (forge has no separate MARBL_DIAGS
+      toggle), so this mirrors ``cppdefs["marbl"]``.
+    * ``upscaling`` -- the template ``#define``s ``UPSCALING`` exactly when
+      ``upscale_output.do_upscale`` is true; there is no ``cppdefs.upscaling``
+      key at all, so it's read off the run-time section instead.
+
+    ``diagnostics`` and ``biology_bec2`` need no such derivation: forge's
+    template hardcodes ``#undef DIAGNOSTICS``/``#undef BIOLOGY_BEC2`` (no BEC2
+    or ROMS term-budget diagnostics support yet), so their absence from
+    ``cppdefs`` already correctly reads as "inactive" to the checker.
+
+    Both derived keys are always OVERWRITTEN (not just filled in when absent):
+    ``cppdefs`` is an unvalidated dict, so a hand-edited/legacy blueprint could
+    carry a stale ``"upscaling"``/``"marbl_diags"`` key that must never mask
+    the real, template-derived value.
+    """
+
+    def _get(section: Any, key: str) -> Any:
+        if section is None:
+            return None
+        return (
+            section.get(key)
+            if isinstance(section, dict)
+            else getattr(section, key, None)
+        )
+
+    result = dict(cppdefs or {})
+    result["marbl_diags"] = bool(result.get("marbl", False))
+    result["upscaling"] = bool(_get(upscale_output, "do_upscale"))
+    return result
+
+
+try:  # cstar >= the release that ships cstar.roms.precheck
+    from cstar.roms.precheck import (
+        check_output_streams_divide_rst as _check_output_streams_divide_rst,
+    )
+except ImportError:  # older cstar without the module -- degrade gracefully
+    _check_output_streams_divide_rst = None
+
+
+def check_output_streams_divide_rst(settings: Any, cppdefs: Any = None) -> None:
+    """Guarded shim around ``cstar.roms.precheck.check_output_streams_divide_rst``.
+
+    The general ucla-roms output-stream / restart-rollover precheck lives in
+    C-Star. Forge installed against a ``cstar`` release predating that module
+    (no ``cstar.roms.precheck``) silently skips this authoring-time check rather
+    than failing to import -- ROMS still enforces the same rule at run start via
+    ``precheck.F90``. Once forge's ``cstar-ocean`` floor is raised to the release
+    that ships it, this shim always delegates and the fallback is dead code.
+    """
+    if _check_output_streams_divide_rst is None:
+        return
+    _check_output_streams_divide_rst(settings, cppdefs)
 
 
 class TsOutputCfg(_SettingsSection):
@@ -611,9 +686,12 @@ class _RunTimeSettingsCommon(_SettingsSection):
     are no value defaults here — the YAML is the single source of defaults.
 
     Not meant to be used directly: the version-varying sections (``ocean_vars``,
-    ``particles``) are typed as the loose common models here; use
-    :class:`RunTimeSettings` (ucla-roms < 0.5.0) or :class:`RunTimeSettingsV0_5_0`
-    (>= 0.5.0), or select one with :func:`run_time_settings_for_ref`.
+    ``particles``) are typed as the loose common models here, and a
+    version-varying section that some schemas lack entirely (``pio_settings``,
+    added by :class:`RunTimeSettingsV0_6_0`) is simply absent here; use
+    :class:`RunTimeSettings` (ucla-roms < 0.5.0), :class:`RunTimeSettingsV0_5_0`
+    (0.5.0 <= ucla-roms < 0.6.0), or :class:`RunTimeSettingsV0_6_0` (>= 0.6.0),
+    or select one with :func:`run_time_settings_for_ref`.
     """
 
     title: TitleCfg
@@ -683,6 +761,20 @@ class RunTimeSettingsV0_5_0(_RunTimeSettingsCommon):
     particles: ParticlesCfgV0_5_0
 
 
+class RunTimeSettingsV0_6_0(RunTimeSettingsV0_5_0):
+    """Forge's run-time settings dict for ucla-roms >= 0.6.0, typed + validated.
+
+    Subclasses :class:`RunTimeSettingsV0_5_0` directly (rather than
+    ``_RunTimeSettingsCommon``) to inherit its ``ocean_vars``/``particles``
+    variants unchanged -- mirrors C-Star's ``RomsNamelistV0_6_0(RomsNamelistV0_5_0)``.
+    Adds ``pio_settings`` (ucla-roms PR #346, ``&PIO_SETTINGS``); the field
+    carries a default (see :class:`PioSettingsCfg`) so a 0.6.0-pinned blueprint
+    saved before this section existed still validates.
+    """
+
+    pio_settings: PioSettingsCfg = Field(default_factory=PioSettingsCfg)
+
+
 # Maps each namelist schema class (C-Star, keyed by ucla-roms version range) to
 # the matching run-time settings class (forge's settings vocabulary).
 _RUN_TIME_SETTINGS_BY_NAMELIST_SCHEMA: dict[
@@ -690,7 +782,31 @@ _RUN_TIME_SETTINGS_BY_NAMELIST_SCHEMA: dict[
 ] = {
     RomsNamelist: RunTimeSettings,
     RomsNamelistV0_5_0: RunTimeSettingsV0_5_0,
+    RomsNamelistV0_6_0: RunTimeSettingsV0_6_0,
 }
+
+
+def version_gated_section_names() -> frozenset[str]:
+    """Section names modeled by at least one registered run-time settings tier
+    (:data:`_RUN_TIME_SETTINGS_BY_NAMELIST_SCHEMA`).
+
+    Distinguishes a section that's *version-gated* -- schema-modeled by some
+    tier but not necessarily the active one, e.g. ``pio_settings`` (only on
+    :class:`RunTimeSettingsV0_6_0`) -- from a section that's *never*
+    schema-modeled by any run-time settings class at all, e.g. ``cppdefs`` (a
+    compile-time settings dict with no run-time settings model counterpart).
+    The wizard's accordion editor (``_SettingsEditor``, ``forge_blueprint_wizard.py``)
+    uses this to decide whether a section absent from the *active* schema
+    should still render via type-inference (cppdefs: yes, always) or be
+    skipped (a version-gated section under an older ref: yes, skip -- the
+    active schema is ``extra="ignore"`` at the top level, so an inferred
+    widget's edits would be silently discarded downstream rather than raising).
+    """
+    return frozenset(
+        name
+        for cls in _RUN_TIME_SETTINGS_BY_NAMELIST_SCHEMA.values()
+        for name in cls.model_fields
+    )
 
 
 def run_time_settings_for_ref(roms_ref: str | None) -> type[_RunTimeSettingsCommon]:
@@ -709,7 +825,8 @@ def run_time_settings_for_ref(roms_ref: str | None) -> type[_RunTimeSettingsComm
     -------
     type[_RunTimeSettingsCommon]
         :class:`RunTimeSettings` for ucla-roms < 0.5.0 or when `roms_ref` is
-        `None`; :class:`RunTimeSettingsV0_5_0` for ucla-roms >= 0.5.0.
+        `None`; :class:`RunTimeSettingsV0_5_0` for 0.5.0 <= ucla-roms < 0.6.0;
+        :class:`RunTimeSettingsV0_6_0` for ucla-roms >= 0.6.0.
 
     Warns
     -----
@@ -767,14 +884,23 @@ def build_namelist(rt: _RunTimeSettingsCommon, n_tracers: int) -> RomsNamelistBa
     the cross-section read of ``rho0`` from ``lateral_visc``. ``exclude=`` drops
     the settings-only fields with no namelist counterpart.
 
-    ``rt``'s concrete type (:class:`RunTimeSettings` or
-    :class:`RunTimeSettingsV0_5_0`) selects the matching namelist schema and
+    ``rt``'s concrete type (:class:`RunTimeSettings`, :class:`RunTimeSettingsV0_5_0`,
+    or :class:`RunTimeSettingsV0_6_0`) selects the matching namelist schema and
     ``basic_output_settings``/``particles_settings`` group classes — the
     ``ocean_vars``/``particles`` sections already carry the right fields and
-    aliases for that variant, so no other branch is needed.
+    aliases for that variant, so no other branch is needed. ``pio_settings`` is
+    the one section a variant can lack entirely rather than just carry a
+    different subtype (pre-0.6.0 namelist schemas reject the group outright,
+    ``extra="forbid"``), so it's added to the constructor kwargs only when
+    ``rt`` is :class:`RunTimeSettingsV0_6_0`, checked *before* the (subclass)
+    ``RunTimeSettingsV0_5_0`` check below.
     """
-    if isinstance(rt, RunTimeSettingsV0_5_0):
-        namelist_cls: type[RomsNamelistBase] = RomsNamelistV0_5_0
+    if isinstance(rt, RunTimeSettingsV0_6_0):
+        namelist_cls: type[RomsNamelistBase] = RomsNamelistV0_6_0
+        basic_output_cls = BasicOutputSettingsV0_5_0
+        particles_cls = ParticlesSettingsV0_5_0
+    elif isinstance(rt, RunTimeSettingsV0_5_0):
+        namelist_cls = RomsNamelistV0_5_0
         basic_output_cls = BasicOutputSettingsV0_5_0
         particles_cls = ParticlesSettingsV0_5_0
     else:
@@ -798,7 +924,7 @@ def build_namelist(rt: _RunTimeSettingsCommon, n_tracers: int) -> RomsNamelistBa
         elif v is not None:
             frc.append(v)
 
-    return namelist_cls(
+    kwargs: dict[str, Any] = dict(
         # ---- structural transforms (regroup / computed / cross-section) ----
         simulation_name_settings=SimulationNameSettings(
             output_root_name=rt.output_root_name.output_root_name,
@@ -857,6 +983,9 @@ def build_namelist(rt: _RunTimeSettingsCommon, n_tracers: int) -> RomsNamelistBa
         particles_settings=particles_cls(**grp(rt.particles)),
         v_sponge_settings=VSpongeSettings(**grp(rt.v_sponge)),
     )
+    if isinstance(rt, RunTimeSettingsV0_6_0):
+        kwargs["pio_settings"] = PioSettings(**grp(rt.pio_settings))
+    return namelist_cls(**kwargs)
 
 
 def validate_run_time_sections(
@@ -909,3 +1038,67 @@ def validate_run_time_sections(
         except ValueError as exc:
             errors.append(str(exc))
     return errors
+
+
+# Maps each forge settings-dict section that check_output_streams_divide_rst's
+# canonical table reads to (the forge Cfg class that types/aliases that raw
+# section, the C-Star RomsNamelistBase group field name the canonical table
+# expects). ``ocean_vars``/``upscale_output`` need no aliasing at all -- their
+# forge field names already ARE the real Fortran namelist keys -- but are
+# still routed through their Cfg class so a malformed section raises loudly
+# rather than silently mismatching field names. Version-pinned to the >= 0.5.0
+# variants (``OceanVarsCfgV0_5_0``, ``ParticlesCfgV0_5_0``): both call sites of
+# :func:`canonical_output_sections_for_precheck` only run this check under the
+# ``settings_cls is not RunTimeSettings`` (>= 0.5.0) gate.
+_PRECHECK_SECTION_MAP: dict[str, tuple[type[_SettingsSection], str]] = {
+    "ocean_vars": (OceanVarsCfgV0_5_0, "basic_output_settings"),
+    "frc_output": (FrcOutputCfg, "frc_output_settings"),
+    "random_output": (RandomOutputCfg, "random_output_settings"),
+    "zslice": (ZsliceCfg, "zslice_settings"),
+    "surf_flux": (SurfFluxCfg, "surf_flx_output_settings"),
+    "particles": (ParticlesCfgV0_5_0, "particles_settings"),
+    "sponge_tune": (SpongeTuneCfg, "sponge_tune_settings"),
+    "diagnostics": (DiagnosticsCfg, "diagnostics_settings"),
+    "cdr_output": (CdrOutputCfg, "cdr_output_settings"),
+    "upscale_output": (UpscaleOutputCfg, "upscale_settings"),
+    "bgc": (BgcCfg, "bgc_settings"),
+    "extract_data": (ExtractDataCfg, "extract_data_settings"),
+}
+
+
+def canonical_output_sections_for_precheck(
+    settings: dict[str, Any], *, include_extract: bool = True
+) -> dict[str, Any]:
+    """Translate the output-stream-relevant sections of a forge run-time
+    settings dict into C-Star's canonical namelist vocabulary (RomsNamelistBase
+    group field name -> its aliased field dict), for
+    :func:`cstar.roms.precheck.check_output_streams_divide_rst` (or this
+    module's guarded shim of the same name).
+
+    Deliberately narrower than a full ``RunTimeSettings.model_validate`` +
+    :func:`build_namelist`: at resolve time (``build_forge_blueprint``), the
+    settings dict is missing the processing-filled sections (``title``/
+    ``grid``/``initial``/``forcing``/``s_coord``/``output_root_name``, plus
+    ``reference_date_settings`` -- all populated later, at
+    ``generate_inputs()``/executor time), so a full run-time-settings
+    validation can't succeed yet. None of those sections affect any
+    output-stream field, so this only validates+aliases the sections the
+    checker actually reads (see :data:`_PRECHECK_SECTION_MAP`). A section
+    absent from ``settings`` is simply omitted from the result -- the checker
+    already treats an absent section as "skip that stream".
+
+    ``include_extract=False`` drops ``extract_data`` from the result -- the
+    resolver's own call site excludes it: :func:`check_extract_divides_rst`
+    already covers the `extract` stream with a more actionable message (it
+    names the child DomainSpec ``period`` knob), so the general checker's copy
+    of that stream would otherwise double-check (and double-raise on) it.
+    """
+    out: dict[str, Any] = {}
+    for section_name, (cfg_cls, group_name) in _PRECHECK_SECTION_MAP.items():
+        if section_name == "extract_data" and not include_extract:
+            continue
+        section = settings.get(section_name)
+        if section is None:
+            continue
+        out[group_name] = cfg_cls.model_validate(section).model_dump(by_alias=True)
+    return out

@@ -4,8 +4,8 @@ description: Generated blueprint
 application: forge
 state: notset
 schema_version: 1.0.0
-working_dir: ~/cstar-forge-run/cson_roms-marbl_v0.1_wio-toy_10procs
-forge_blueprint_version: 6
+working_dir: ~/cstar/_forge_bp_runs/cson_roms-marbl_v0.1_wio-toy_10procs
+forge_blueprint_version: 8
 run:
   start_date: '2012-01-01T00:00:00'
   end_date: '2012-01-02T00:00:00'
@@ -31,12 +31,15 @@ domain:
   partitioning:
     n_procs_x: 2
     n_procs_y: 5
+    auto_tiling: false
+    n_cores: null
   grid_kwargs_parent: null
   grid_kwargs_child: null
   metadata_child: null
   nesting_include_pressure_fluxes: false
   v_sponge: 40000.0
   dt: 7200.0
+  grid_file: null
 forcing:
   initial_conditions:
     source:
@@ -57,6 +60,8 @@ forcing:
         esper_method: null
         esper_equation: null
       use_vars: null
+      bgc_interpolation_method: null
+      serialize_dask: null
     bgc_interpolation_method: depth
     allow_flex_time: false
     prefill: null
@@ -65,6 +70,7 @@ forcing:
     extrap_method: null
     extrap_kwargs: null
     options: {}
+    bypass_validation: false
   surface:
   - source:
       name: ERA5
@@ -144,7 +150,7 @@ forcing:
     extrap_kwargs: null
     options: {}
   boundary:
-  - source:
+    source:
       name: GLORYS
       climatology: false
       glorys_layout: regional
@@ -152,8 +158,18 @@ forcing:
       constants: null
       esper_method: null
       esper_equation: null
-    type: physics
-    use_vars: null
+    bgc_sources:
+    - source:
+        name: UNIFIED
+        climatology: true
+        glorys_layout: null
+        path: null
+        constants: null
+        esper_method: null
+        esper_equation: null
+      use_vars: null
+      bgc_interpolation_method: depth
+      serialize_dask: null
     bgc_interpolation_method: depth
     prefill: null
     prefill_kwargs: null
@@ -161,23 +177,7 @@ forcing:
     extrap_method: null
     extrap_kwargs: null
     options: {}
-  - source:
-      name: UNIFIED
-      climatology: true
-      glorys_layout: null
-      path: null
-      constants: null
-      esper_method: null
-      esper_equation: null
-    type: bgc
-    use_vars: null
-    bgc_interpolation_method: depth
-    prefill: null
-    prefill_kwargs: null
-    regrid_method: null
-    extrap_method: null
-    extrap_kwargs: null
-    options: {}
+    bypass_validation: false
   tidal:
   - source:
       name: TPXO
@@ -209,7 +209,7 @@ forcing:
     coast_snap_buffer_km: null
     domain_edge_buffer: 20
     options: {}
-  cdr_forcing: null
+    custom_file: null
   resolved_datasets:
     GLORYS:
       dataset_key: GLORYS_REGIONAL
@@ -251,6 +251,10 @@ forcing:
       dataset_id: null
       url: null
       streamable: false
+cdr:
+  mode: none
+  cdr_forcing: null
+  cdr_forcing_file: null
 datasets:
 - DAI
 - ERA5
@@ -549,14 +553,14 @@ code:
     branch: null
   templates_compile_time:
     location: https://github.com/CWorthy-ocean/cstar-forge.git
-    commit: 4208f4384431852daccea1ccad01d03c0cb473d9
+    commit: 692e04cebf1735951b377fcf44b1bde59a06bbc9
     branch: null
     directory: templates/compile-time
     files:
     - cppdefs.opt.j2
   templates_run_time:
     location: https://github.com/CWorthy-ocean/cstar-forge.git
-    commit: 4208f4384431852daccea1ccad01d03c0cb473d9
+    commit: 692e04cebf1735951b377fcf44b1bde59a06bbc9
     branch: null
     directory: templates/run-time
     files:
@@ -574,6 +578,10 @@ composition:
     name: glorys-era5-unified
     origin: catalog
     modified: false
+  cdr:
+    name: null
+    origin: custom
+    modified: false
   output:
     name: standard
     origin: catalog
@@ -585,5 +593,5 @@ provenance:
   cstar_version: cstar-ocean==0.6.1.dev1+gb180d30d3
   roms_tools_version: roms-tools==4.1.1.dev6+gc3ecc9af3
   override_files_applied: []
-  content_hash: c803f7c8faf30511d6fb6402531f9960804c07db37036e85230bd0988650ba67
+  content_hash: b61e7465d87cd5326d14b66a3f921d4047a0f6bd2a75d1969dfaf358aacddfd3
   notes: null

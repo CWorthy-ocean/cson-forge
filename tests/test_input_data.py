@@ -13,6 +13,7 @@ Tests cover:
 """
 
 import shutil
+import sys
 from contextlib import contextmanager
 from datetime import datetime
 from pathlib import Path
@@ -2608,6 +2609,104 @@ class TestRiverCustomFileForcing:
         river_input_data.source_data.path_for_source.assert_not_called()
 
 
+class TestNumbaNumThreadsClamping:
+    """``_numba_num_threads`` must clamp its requested thread count to
+    ``numba.config.NUMBA_NUM_THREADS`` -- ``numba.set_num_threads`` raises
+    ValueError for anything above that ceiling, and ``inner_threads`` (computed
+    from the *whole machine's* core count in ``generate_all``) can exceed a
+    smaller configured ceiling (e.g. via the ``NUMBA_NUM_THREADS`` env var).
+    """
+
+    def test_clamps_requested_threads_to_configured_ceiling(self, monkeypatch):
+        import numba
+
+        from cstar_forge.forge.input_data import _numba_num_threads
+
+        monkeypatch.setattr(numba.config, "NUMBA_NUM_THREADS", 4)
+        monkeypatch.setattr(numba, "get_num_threads", lambda: 4)
+        calls = []
+        monkeypatch.setattr(numba, "set_num_threads", calls.append)
+
+        with _numba_num_threads(64):
+            pass
+
+        assert calls == [4, 4]  # clamped down from 64, then restored to "prev" (4)
+
+    def test_does_not_clamp_when_already_within_ceiling(self, monkeypatch):
+        import numba
+
+        from cstar_forge.forge.input_data import _numba_num_threads
+
+        monkeypatch.setattr(numba.config, "NUMBA_NUM_THREADS", 16)
+        monkeypatch.setattr(numba, "get_num_threads", lambda: 16)
+        calls = []
+        monkeypatch.setattr(numba, "set_num_threads", calls.append)
+
+        with _numba_num_threads(2):
+            pass
+
+        assert calls == [2, 16]  # 2 is within the ceiling -> passed through as-is
+
+
+class TestGenerateAllDaskNumWorkersGuard:
+    """``generate_all`` must not divide by (or pass through) a non-positive
+    ``dask_num_workers`` -- a misconfiguration or an explicit 0/negative
+    override must not crash generation before a single input file is written.
+
+    Uses the same minimal harness as ``test_generate_all_test_mode``
+    (``test=True`` skips every step but ``forcing.boundary``, so only
+    ``rt.BoundaryForcing`` + the xarray open/combine calls need mocking) --
+    the point here is only to reach the ``inner_threads``/``dask.config.set``
+    arithmetic near the top of ``generate_all`` without a ZeroDivisionError,
+    not to exercise the rest of generation.
+    """
+
+    @pytest.mark.parametrize("bad_value", [0, -1])
+    @patch("cstar_forge.forge.input_data.rt.BoundaryForcing")
+    @patch("xarray.combine_by_coords")
+    @patch("xarray.open_dataset")
+    def test_non_positive_dask_num_workers_does_not_raise(
+        self,
+        mock_open_dataset,
+        mock_combine,
+        mock_boundary_class,
+        bad_value,
+        sample_roms_marbl_input_data,
+        monkeypatch,
+    ):
+        # Force the "high-core" branch (cpu_count >= 16) so the division this
+        # guards actually executes -- below 16 cores generate_all always falls
+        # back to the conservative 1-thread pin regardless of dask_num_workers.
+        monkeypatch.setattr(
+            "cstar_forge.forge.input_data.os.sched_getaffinity",
+            lambda _pid: set(range(32)),
+            raising=False,  # not available on macOS
+        )
+
+        mock_boundary = MagicMock()
+
+        def boundary_save(path, *args, **kwargs):
+            Path(path).parent.mkdir(parents=True, exist_ok=True)
+            Path(path).touch()
+            return [path]
+
+        mock_boundary.bgc = [MagicMock()]
+        mock_boundary.physics.save.side_effect = boundary_save
+        mock_boundary.to_yaml = MagicMock()
+        mock_boundary_class.return_value = mock_boundary
+
+        mock_ds = xr.Dataset()
+        mock_open_dataset.return_value = mock_ds
+        mock_combine.return_value = mock_ds
+
+        data = sample_roms_marbl_input_data
+        data.dask_num_workers = bad_value
+        data.use_dask = True
+
+        result = data.generate_all(clobber=True, test=True)
+        assert result is not None
+
+
 class TestRomsMarblInputDataGenerateAll:
     """Tests for generate_all method."""
 
@@ -2728,14 +2827,15 @@ class TestRomsMarblInputDataGenerateAll:
                 )
 
         assert result is not None
-        roms_marbl_blueprint_elements, settings_compile_time, settings_run_time = result
+        roms_marbl_blueprint_elements = result
         assert (
             roms_marbl_blueprint_elements
             == sample_roms_marbl_input_data.roms_marbl_blueprint_elements
         )
-        # Settings should be populated (non-empty dicts)
-        assert settings_compile_time is not None
-        assert settings_run_time is not None
+        # Settings should be populated (non-empty dicts) on the executor-owned
+        # dicts, mutated in place by generation -- not on the return value.
+        assert sample_roms_marbl_input_data._settings_compile_time
+        assert sample_roms_marbl_input_data._settings_run_time
 
     @patch("cstar_forge.forge.input_data.rt.BoundaryForcing")
     @patch("xarray.combine_by_coords")
@@ -2840,10 +2940,8 @@ class TestRomsMarblInputDataGenerateAll:
         mock_open_dataset.return_value = mock_ds
         mock_combine.return_value = mock_ds
 
-        elements, _settings_compile_time, _settings_run_time = (
-            sample_roms_marbl_input_data.generate_all(
-                clobber=True, only={"forcing.boundary"}
-            )
+        elements = sample_roms_marbl_input_data.generate_all(
+            clobber=True, only={"forcing.boundary"}
         )
 
         # Selected: grid ran (always does) and boundary ran.
@@ -2975,11 +3073,10 @@ class TestRomsMarblInputDataGenerateAll:
                 )
 
         assert result is not None
-        assert result != (None, {}, {})
-        roms_marbl_blueprint_elements, settings_compile_time, settings_run_time = result
+        roms_marbl_blueprint_elements = result
         assert roms_marbl_blueprint_elements is not None
-        assert settings_compile_time is not None
-        assert settings_run_time is not None
+        assert sample_roms_marbl_input_data._settings_compile_time
+        assert sample_roms_marbl_input_data._settings_run_time
         assert (sample_roms_marbl_input_data.input_data_dir / "existing.nc").exists()
 
     @patch("cstar_forge.forge.input_data.rt.RiverForcing")
@@ -3172,6 +3269,47 @@ class TestRomsMarblInputDataPartitionFiles:
 
             # Should not call partition_netcdf for empty datasets
             # (exact behavior depends on input_list)
+
+    def test_partition_files_raises_clear_error_under_auto_tiling(
+        self, sample_roms_marbl_input_data
+    ):
+        """Under auto_tiling, n_procs_x/n_procs_y are None -- _partition_files
+        (which requires a fixed decomposition) must raise a clear ValueError
+        rather than a TypeError from roms_tools.partition_netcdf.
+        """
+        sample_roms_marbl_input_data.partitioning = (
+            cstar_models.PartitioningParameterSet(
+                n_procs_x=None,
+                n_procs_y=None,
+                use_pio=True,
+                auto_tiling=True,
+                n_cores=4,
+            )
+        )
+
+        with pytest.raises(ValueError, match="incompatible with file"):
+            sample_roms_marbl_input_data._partition_files()
+
+    def test_partition_files_raises_under_auto_tiling_even_with_n_procs(
+        self, sample_roms_marbl_input_data
+    ):
+        """C-Star's PartitioningParameterSet accepts auto_tiling alongside a
+        matching n_procs_x/n_procs_y -- the guard must key on auto_tiling
+        itself, not on None n_procs, or the files get split into a fixed
+        layout ROMS would ignore at runtime.
+        """
+        sample_roms_marbl_input_data.partitioning = (
+            cstar_models.PartitioningParameterSet(
+                n_procs_x=2,
+                n_procs_y=2,
+                use_pio=True,
+                auto_tiling=True,
+                n_cores=4,
+            )
+        )
+
+        with pytest.raises(ValueError, match="incompatible with file"):
+            sample_roms_marbl_input_data._partition_files()
 
     @patch("cstar_forge.forge.input_data.rt.partition_netcdf")
     def test_partition_files_skips_none_location(
@@ -3503,6 +3641,98 @@ def _make_input_data(
     )
 
 
+class _BlockPyESPER:
+    """Import hook that makes PyESPER unimportable, whatever is installed."""
+
+    def find_spec(self, name, path=None, target=None):
+        if name == "PyESPER" or name.startswith("PyESPER."):
+            raise ImportError(f"No module named {name!r}")
+
+
+class TestEsperPreflight:
+    """An ESPER bgc source without an importable PyESPER must fail at the very
+    start of ``generate_all`` -- before the grid or any other input is generated --
+    with roms-tools' install guidance, and must not affect non-ESPER configurations.
+    """
+
+    @staticmethod
+    def _block_pyesper(monkeypatch):
+        for mod in [
+            m for m in list(sys.modules) if m == "PyESPER" or m.startswith("PyESPER.")
+        ]:
+            monkeypatch.delitem(sys.modules, mod, raising=False)
+        monkeypatch.setattr(sys, "meta_path", [_BlockPyESPER(), *sys.meta_path])
+
+    @pytest.fixture
+    def esper_input_data(
+        self,
+        tmp_path,
+        sample_grid,
+        sample_open_boundaries,
+        sample_source_data,
+        sample_partitioning,
+    ):
+        ic = forge_models.InitialConditionsInput(
+            source=forge_models.SourceSpec(name="GLORYS")
+        )
+        boundary = forge_models.BoundaryForcing(
+            source=forge_models.SourceSpec(name="GLORYS"),
+            bgc_sources=[
+                forge_models.BgcSourceItem(
+                    source=forge_models.SourceSpec(name="ESPER"),
+                    use_vars=["ALK", "DIC"],
+                ),
+            ],
+        )
+        surface_item = forge_models.SurfaceForcingItem(
+            source=forge_models.SourceSpec(name="ERA5"), type="physics"
+        )
+        forcing_override = _build_forcing_override(
+            ic, surface=[surface_item], boundary=boundary
+        )
+        return _make_input_data(
+            tmp_path,
+            forcing_override,
+            sample_grid,
+            sample_open_boundaries,
+            sample_source_data,
+            sample_partitioning,
+        )
+
+    def test_generate_all_fails_before_any_step(self, esper_input_data, monkeypatch):
+        self._block_pyesper(monkeypatch)
+        data = esper_input_data
+        with (
+            patch.object(data, "_planned_netcdf_outputs") as planned,
+            pytest.raises(RuntimeError, match="PyESPER") as excinfo,
+        ):
+            data.generate_all()
+        planned.assert_not_called()  # pre-flight runs before planning/any step
+        msg = str(excinfo.value)
+        assert "forcing.boundary" in msg
+        assert "No inputs were generated" in msg
+        assert "pip install -e" in msg  # roms-tools' install guidance is attached
+        assert not any(data.input_data_dir.glob("*.nc"))
+
+    def test_non_esper_configuration_is_untouched(self, monkeypatch):
+        """Blocking PyESPER must not affect configurations without an ESPER source
+        -- Forge never imports PyESPER itself.
+        """
+        self._block_pyesper(monkeypatch)
+        step = MagicMock(name="forcing.boundary")
+        kwargs = {
+            "source": {"name": "GLORYS"},
+            "bgc_sources": [
+                {
+                    "source": {"name": "UNIFIED", "climatology": True},
+                    "use_vars": ["ALK"],
+                },
+                {"source": {"name": "constants", "constants": {"NO3": 1.0}}},
+            ],
+        }
+        RomsMarblInputData._preflight_esper_sources([(step, kwargs)])  # no raise
+
+
 class TestBoundaryBgcSources:
     """``bgc_sources`` are resolved and forwarded straight through to the
     roms-tools ``BoundaryForcing`` wrapper in ONE call -- physics+bgc
@@ -3531,11 +3761,17 @@ class TestBoundaryBgcSources:
         boundary = forge_models.BoundaryForcing(
             source=forge_models.SourceSpec(name="GLORYS"),
             bgc_sources=[
+                # Two bgc sources requires disjoint use_vars on both (see
+                # _require_partitioned_bgc_use_vars) -- arbitrary but disjoint,
+                # since this fixture is about serialize_dask/filenames, not
+                # about which tracers each source actually contributes.
                 forge_models.BgcSourceItem(
-                    source=forge_models.SourceSpec(name="UNIFIED", climatology=True)
+                    source=forge_models.SourceSpec(name="UNIFIED", climatology=True),
+                    use_vars=["ALK", "DIC"],
                 ),
                 forge_models.BgcSourceItem(
-                    source=forge_models.SourceSpec(name="GLODAP")
+                    source=forge_models.SourceSpec(name="GLODAP"),
+                    use_vars=["NO3", "PO4"],
                 ),
             ],
         )
@@ -3635,17 +3871,62 @@ class TestBoundaryBgcSources:
         assert mock_bf.bgc[0].save.call_args.kwargs["serialize_dask"] is True
         assert mock_bf.bgc[1].save.call_args.kwargs["serialize_dask"] is False
 
-        # Tracer derivation still runs across every source, but must NOT save --
-        # each object is saved above with its own serialize_dask.
-        mock_bf.bgc_model.return_value.process_bgc_fields.assert_called_once()
-        pbf_kwargs = mock_bf.bgc_model.return_value.process_bgc_fields.call_args.kwargs
-        assert pbf_kwargs["filepath"] is None
+        # Tracer derivation across every source already ran inside
+        # `rt.BoundaryForcing.__post_init__` (real roms-tools; mocked away here)
+        # -- forge itself must NOT call `process_bgc_fields` again: it would redo
+        # that work and, since the companion roms-tools change dropped
+        # `process_bgc_fields`'s `filepath=` parameter, would now raise TypeError.
+        mock_bf.bgc_model.return_value.process_bgc_fields.assert_not_called()
 
         # `serialize_dask` is a Forge-only write option: roms-tools must never see
         # it among the source items it validates.
         for item in mock_bf_class.call_args.kwargs["bgc_sources"]:
             assert "serialize_dask" not in item
             assert "serialize_dask" not in item["source"]
+
+    @pytest.mark.parametrize("source_name", ["WOA_BGC", "UNIFIED"])
+    @patch("cstar_forge.forge.input_data.rt.BoundaryForcing")
+    def test_planned_and_generated_boundary_bgc_suffix_match(
+        self, mock_bf_class, source_name, sample_roms_marbl_input_data, tmp_path
+    ):
+        """The generated boundary-bgc filename must match what
+        `_planned_netcdf_outputs` (and ForgeExecutor's own planner) computes
+        from the same raw blueprint kwargs. Regression: `_generate_boundary_forcing`
+        used to build the suffix from the RESOLVED source (after
+        `_rename_for_roms_tools` -- e.g. WOA_BGC becomes roms-tools' bare "WOA"),
+        which disagreed with the planners (both use the raw name via
+        `_item_source_name`) whenever a source's `ROMS_TOOLS_SOURCE_NAME` entry
+        renames it. Parametrized over a renamed source (WOA_BGC -> WOA) and an
+        unrenamed one (UNIFIED) as a control.
+        """
+        mock_bf = MagicMock()
+        mock_bf.bgc = [MagicMock()]
+        physics_path = tmp_path / "boundary-physics.nc"
+        physics_path.touch()
+        mock_bf.physics.save.return_value = [physics_path]
+        mock_bf_class.return_value = mock_bf
+
+        data = sample_roms_marbl_input_data
+        boundary_kwargs = {
+            "source": {"name": "GLORYS"},
+            "bgc_sources": [{"source": {"name": source_name}}],
+        }
+
+        planned = data._planned_netcdf_outputs(
+            [(INPUT_REGISTRY["forcing.boundary"], boundary_kwargs)]
+        )
+        planned_bgc = [p for p in planned if "boundary-bgc" in p.name]
+        assert len(planned_bgc) == 1, (
+            f"expected exactly one planned bgc output, got {planned}"
+        )
+
+        data._generate_boundary_forcing(key="forcing.boundary", **boundary_kwargs)
+
+        generated_path = Path(mock_bf.bgc[0].save.call_args.args[0])
+        assert generated_path.name.replace("_nc4", "") == planned_bgc[0].name, (
+            f"generated {generated_path.name!r} does not match planned "
+            f"{planned_bgc[0].name!r} for source {source_name!r}"
+        )
 
     @patch("cstar_forge.forge.input_data.rt.BoundaryForcing")
     def test_global_serialize_flag_is_the_fallback_for_unset_sources(
@@ -3852,7 +4133,9 @@ class TestInitialConditionsMultipleBgcSources:
         """An empty/absent ``bgc_sources`` still calls the wrapper once, but with
         ``bgc_sources=[]``/``bgc_model=None`` -- the plain physics-only path.
         """
-        with patch("cstar_forge.forge.input_data.rt.InitialConditions") as mock_ic_class:
+        with patch(
+            "cstar_forge.forge.input_data.rt.InitialConditions"
+        ) as mock_ic_class:
             mock_ic = MagicMock()
             ic_path = sample_roms_marbl_input_data.input_data_dir / "ic.nc"
             ic_path.touch()
@@ -3869,3 +4152,211 @@ class TestInitialConditionsMultipleBgcSources:
             call_kwargs = mock_ic_class.call_args.kwargs
             assert call_kwargs["bgc_sources"] == []
             assert call_kwargs["bgc_model"] is None
+
+
+class TestExecutorOwnedSettings:
+    """Regression tests: ``settings_compile_time``/``settings_run_time`` are the
+    executor-owned live settings dicts, bound by reference (no copy, no
+    merge-back) -- generation steps mutate them in place, and the caller
+    observes the writes through its own reference to the same dict.
+
+    ``has_bgc`` (mirroring ``ForgeExecutor._has_bgc``, read from ``cppdefs.marbl``)
+    gates ``include_bgc`` on ``make_nesting_info`` and the run-time ``bgc`` section.
+    """
+
+    @pytest.fixture
+    def make_input_data(
+        self,
+        tmp_path,
+        sample_grid,
+        sample_forcing_override,
+        sample_open_boundaries,
+        sample_source_data,
+        sample_partitioning,
+    ):
+        def _make(**overrides):
+            roms_marbl_blueprint_dir = tmp_path / "blueprints"
+            roms_marbl_blueprint_dir.mkdir(parents=True, exist_ok=True)
+            data_dir = tmp_path / "input_data"
+            data_dir.mkdir(parents=True, exist_ok=True)
+            kwargs = dict(
+                domain_name="test_grid",
+                start_date=datetime(2012, 1, 1),
+                end_date=datetime(2012, 1, 2),
+                forcing_override=sample_forcing_override,
+                grid=sample_grid,
+                boundaries=sample_open_boundaries,
+                source_data=sample_source_data,
+                roms_marbl_blueprint_dir=roms_marbl_blueprint_dir,
+                partitioning=sample_partitioning,
+                use_dask=False,
+                input_data_dir=data_dir,
+            )
+            kwargs.update(overrides)
+            return RomsMarblInputData(**kwargs)
+
+        return _make
+
+    def _run_grid_step(self, data):
+        """Run the grid step with roms-tools writers mocked; return the
+        make_nesting_info mock.
+        """
+        with (
+            patch.object(rt.Grid, "to_yaml"),
+            patch.object(rt.Grid, "save"),
+            patch("cstar_forge.forge.input_data.rt.make_nesting_info") as mock_nesting,
+        ):
+            data._generate_grid(key="grid")
+        return mock_nesting
+
+    def test_no_injection_starts_empty(self, make_input_data):
+        data = make_input_data()
+        assert data._settings_compile_time == {}
+
+    def test_settings_are_shared_not_copied(self, make_input_data):
+        """Injected dicts are bound directly (no copy) -- a write by the instance
+        is visible through the caller's own reference to the same dict.
+        """
+        compile_time = {"cppdefs": {"marbl": True}}
+        run_time = {}
+        data = make_input_data(
+            settings_compile_time=compile_time,
+            settings_run_time=run_time,
+        )
+        assert data._settings_compile_time is compile_time
+        assert data._settings_run_time is run_time
+
+        self._run_grid_step(data)
+
+        assert "obc_west" in compile_time["cppdefs"]
+        assert "grid" in run_time
+
+    def test_has_bgc_defaults_include_bgc_on_nesting(
+        self, make_input_data, sample_grid_kwargs
+    ):
+        data = make_input_data(
+            grid_child=rt.Grid(**sample_grid_kwargs),
+            has_bgc=True,
+        )
+        mock_nesting = self._run_grid_step(data)
+        mock_nesting.assert_called_once()
+        assert mock_nesting.call_args.kwargs["include_bgc"] is True
+
+    def test_no_bgc_omits_include_bgc_on_nesting(
+        self, make_input_data, sample_grid_kwargs
+    ):
+        data = make_input_data(grid_child=rt.Grid(**sample_grid_kwargs))
+        mock_nesting = self._run_grid_step(data)
+        mock_nesting.assert_called_once()
+        assert "include_bgc" not in mock_nesting.call_args.kwargs
+
+    def test_metadata_child_include_bgc_wins_over_has_bgc(
+        self, make_input_data, sample_grid_kwargs
+    ):
+        """An explicit include_bgc in metadata_child overrides the has_bgc default."""
+        data = make_input_data(
+            grid_child=rt.Grid(**sample_grid_kwargs),
+            metadata_child={"include_bgc": False},
+            has_bgc=True,
+        )
+        mock_nesting = self._run_grid_step(data)
+        assert mock_nesting.call_args.kwargs["include_bgc"] is False
+
+    @patch("cstar_forge.forge.input_data.rt.SurfaceForcing")
+    def test_has_bgc_populates_bgc_interp_frc(
+        self, mock_sf_class, make_input_data, tmp_path
+    ):
+        mock_sf = MagicMock()
+        mock_sf.use_coarse_grid = False
+        surface_path = tmp_path / "surface.nc"
+        surface_path.touch()
+        mock_sf.save.return_value = surface_path
+        mock_sf_class.return_value = mock_sf
+
+        data = make_input_data(has_bgc=True)
+        data._generate_surface_forcing(
+            key="forcing.surface",
+            source={"name": "UNIFIED", "climatology": True},
+            type="bgc",
+        )
+        assert "interp_frc" in data._settings_run_time["bgc"]
+
+    @patch("cstar_forge.forge.input_data.rt.SurfaceForcing")
+    def test_no_bgc_skips_bgc_runtime_section(
+        self, mock_sf_class, make_input_data, tmp_path
+    ):
+        mock_sf = MagicMock()
+        mock_sf.use_coarse_grid = False
+        surface_path = tmp_path / "surface.nc"
+        surface_path.touch()
+        mock_sf.save.return_value = surface_path
+        mock_sf_class.return_value = mock_sf
+
+        data = make_input_data()
+        data._generate_surface_forcing(
+            key="forcing.surface",
+            source={"name": "UNIFIED", "climatology": True},
+            type="bgc",
+        )
+        assert "bgc" not in data._settings_run_time
+
+    @patch("cstar_forge.forge.input_data.rt.SurfaceForcing")
+    def test_interp_frc_immune_to_resolver_seeded_defaults(
+        self, mock_sf_class, make_input_data, tmp_path
+    ):
+        """The resolver pre-seeds blk_frc/bgc.interp_frc=0 in the shared run-time
+        dict before generation runs. The coarse-grid consistency check must
+        compare only against a value derived THIS run, not that seed -- so a
+        derived interp_frc of 1 must not spuriously conflict with the seeded 0.
+        """
+        mock_sf = MagicMock()
+        mock_sf.use_coarse_grid = True  # derived interp_frc = 1; seed says 0
+        surface_path = tmp_path / "surface.nc"
+        surface_path.touch()
+        mock_sf.save.return_value = surface_path
+        mock_sf_class.return_value = mock_sf
+
+        data = make_input_data(
+            settings_run_time={
+                "blk_frc": {"interp_frc": 0},
+                "bgc": {"interp_frc": 0},
+            },
+            has_bgc=True,
+        )
+        data._generate_surface_forcing(
+            key="forcing.surface",
+            source={"name": "UNIFIED", "climatology": True},
+            type="physics",
+        )
+        assert data._settings_run_time["blk_frc"]["interp_frc"] == 1
+
+    @patch("cstar_forge.forge.input_data.rt.SurfaceForcing")
+    def test_interp_frc_mismatch_within_same_run_raises(
+        self, mock_sf_class, make_input_data, tmp_path
+    ):
+        """Two surface items generated in the SAME run that genuinely disagree on
+        coarse-grid usage must still raise.
+        """
+        surface_path = tmp_path / "surface.nc"
+        surface_path.touch()
+
+        mock_sf_1 = MagicMock()
+        mock_sf_1.use_coarse_grid = True
+        mock_sf_1.save.return_value = surface_path
+        mock_sf_2 = MagicMock()
+        mock_sf_2.use_coarse_grid = False
+        mock_sf_2.save.return_value = surface_path
+        mock_sf_class.side_effect = [mock_sf_1, mock_sf_2]
+
+        data = make_input_data()
+        data._generate_surface_forcing(
+            key="forcing.surface",
+            source={"name": "UNIFIED", "climatology": True},
+            type="physics",
+        )
+        with pytest.raises(ValueError, match="Mismatch in coarse grid settings"):
+            data._generate_surface_forcing(
+                key="forcing.surface",
+                source={"name": "UNIFIED", "climatology": True},
+                type="physics",
+            )

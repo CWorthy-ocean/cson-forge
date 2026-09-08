@@ -109,7 +109,8 @@ class TestInitialConditionsInput:
                     source=SourceSpec(name="GLODAP"), use_vars=["ALK", "DIC"]
                 ),
                 BgcSourceItem(
-                    source=SourceSpec(name="constants", constants={"Fe": 3.0e-3})
+                    source=SourceSpec(name="constants", constants={"Fe": 3.0e-3}),
+                    use_vars=["Fe"],
                 ),
             ],
         )

@@ -57,12 +57,13 @@ import json
 import math
 import re
 import subprocess
+import warnings
 from datetime import UTC, datetime
 from enum import Enum
 from importlib.metadata import PackageNotFoundError
 from importlib.metadata import version as _pkg_version
 from pathlib import Path
-from typing import Any, Literal
+from typing import Any, Literal, get_args
 
 import yaml
 from cstar.orchestration.models import Blueprint
@@ -352,19 +353,26 @@ _HASH_EXCLUDE = {
 # ``forcing.cdr_forcing_file`` -- let a user supply a pre-made netCDF instead of
 # having Forge generate it. All additive (default ``None``); no migration beyond
 # the version bump is needed for existing v5 files.
-# v7 (2026-08): ``forcing.initial_conditions.bgc_source`` (singular) replaced by
+# v7 (2026-08): CDR overhaul. All CDR-forcing config moves out of ``forcing``
+# into a new top-level ``cdr`` section (``CdrSpec``, with 5 modes -- see its
+# docstring); ``forcing.cdr_forcing``/``forcing.cdr_forcing_file`` are gone.
+# ``composition.cdr`` (a ``SpecRef``) records CDR's own catalog provenance,
+# independent of ``composition.forcing``. Migration moves the two old
+# ``forcing`` leaves onto ``cdr``, inferring ``mode`` from which one (if
+# either) was populated.
+# v8 (2026-09): ``forcing.initial_conditions.bgc_source`` (singular) replaced by
 # ``bgc_sources`` (a list of ``BgcSourceItem``), mirroring how boundary/surface
 # forcing already support multiple sources -- lets initial conditions combine
 # multiple BGC datasets (e.g. UNIFIED + GLODAP + a constants source), each
 # down-selected via ``use_vars`` and completed by ``BGCMarbl().process_bgc_fields()``.
-# Also within v7 (never released, so no separate bump/migration needed):
+# Also within v8 (never released, so no separate bump/migration needed):
 # ``forcing.boundary`` changed from a flat, ``type``-discriminated
 # ``list[BoundaryForcingItem]`` to a singular ``BoundaryForcing`` section (``source``
 # + ``bgc_sources: list[BgcSourceItem]``), mirroring ``InitialConditions`` exactly --
 # both sections now build on the same roms-tools wrapper API.
-# NOTE: this branch originally numbered the bgc_sources change v6; main released a
-# different v6 (user-provided files) first, so it was renumbered to v7 on merge.
-FORGE_BLUEPRINT_VERSION = 7
+# NOTE: this change was numbered v6, then v7, on its branch; main released a
+# different v6 (user-provided files) and v7 (CDR overhaul) first, so it is v8.
+FORGE_BLUEPRINT_VERSION = 8
 
 # Identifies the C-Star application that CONSUMES this blueprint — i.e. the "forge"
 # application (this processing engine), whose blueprint IS the ForgeBlueprint. Do not confuse
@@ -376,11 +384,12 @@ DEFAULT_APPLICATION = "forge"
 # spec-default sentinel: ForgeBlueprint expands it to ``<root>/<name>`` on validation,
 # and host providers (Forge's ``config.resolve_host``; eventually C-Star) may rebase
 # default-form paths onto host scratch at run time.
-DEFAULT_WORKING_ROOT = "~/cstar-forge-run"
+DEFAULT_WORKING_ROOT = "~/cstar/_forge_bp_runs"
 
-# Sibling root segment (alongside DEFAULT_WORKING_ROOT's) for the emitted roms-marbl
-# blueprint's working_dir; see ForgeExecutor.roms_blueprint_working_dir in executor.py.
-ROMS_RUN_SEGMENT = "cstar-roms-run"
+# Sibling root segment under the shared ``cstar/`` root (alongside
+# DEFAULT_WORKING_ROOT's) for the emitted roms-marbl blueprint's working_dir; see
+# ForgeExecutor.roms_blueprint_working_dir in executor.py.
+ROMS_RUN_SEGMENT = "_roms_bp_runs"
 
 _NAME_UNSAFE_RE = re.compile(r"[^A-Za-z0-9._-]+")
 _NAME_RUN_RE = re.compile(r"[_.-]{2,}")
@@ -428,13 +437,20 @@ def migrate_forge_blueprint_data(data: dict[str, Any] | None) -> dict[str, Any]:
     ``forcing.cdr_forcing_file``) are purely additive and default to ``None``, so
     a v5 file already validates against the v6 schema unchanged.
 
-    **v6 -> v7**: ``forcing.initial_conditions.bgc_source`` (a single ``SourceSpec``
+    **v6 -> v7**: ``forcing.cdr_forcing``/``forcing.cdr_forcing_file`` (if
+    present) are popped and moved onto a new top-level ``cdr`` dict, with
+    ``mode`` inferred from which one (if either) was populated: a non-null
+    ``cdr_forcing`` dict -> ``"yaml"``; else a non-null ``cdr_forcing_file`` ->
+    ``"netcdf"``; else -> ``"none"``. A no-op when ``cdr`` is already present
+    (e.g. direct keyword construction passing ``cdr=`` explicitly -- never
+    overwrite an explicit value with an inferred one).
+    **v7 -> v8**: ``forcing.initial_conditions.bgc_source`` (a single ``SourceSpec``
     dict) is rewrapped as ``forcing.initial_conditions.bgc_sources`` (a one-item
     list of ``{"source": <old dict>}``); absent/``None`` becomes an empty list. If
     both keys are present in the same dict (an inconsistent, likely hand-edited
     file -- genuinely already-migrated data would only ever have ``bgc_sources``),
     raises rather than silently discarding ``bgc_source``.
-    Also v6 -> v7: ``forcing.boundary`` collapses from a flat, ``type``-
+    Also v7 -> v8: ``forcing.boundary`` collapses from a flat, ``type``-
     discriminated list into a single ``BoundaryForcing`` section -- the
     ``type: physics`` entry supplies ``source`` plus the section's plain fields,
     and every ``type: bgc`` entry becomes a ``bgc_sources`` item. An empty list
@@ -498,60 +514,142 @@ def migrate_forge_blueprint_data(data: dict[str, Any] | None) -> dict[str, Any]:
             ):
                 cdr_output["do_cdr_output"] = cdr_output.pop("do_cdr")
 
-    if version is None or version < 7:
+    if (version is None or version < 7) and "cdr" not in data:
         forcing = data.get("forcing")
         if isinstance(forcing, dict):
-            ic = forcing.get("initial_conditions")
-            if isinstance(ic, dict) and "bgc_source" in ic:
-                old_bgc_source = ic.pop("bgc_source")
-                if "bgc_sources" in ic:
-                    # Both the pre-v6 singular key and the v6+ list key are present
-                    # in the same dict -- an inconsistent/hand-edited file, not
-                    # "already migrated" data (which would only ever have
-                    # `bgc_sources`). Silently discarding `old_bgc_source` here
-                    # would lose a real source with no trace; fail loudly instead.
-                    raise ValueError(
-                        "forcing.initial_conditions has both the pre-v6 'bgc_source' "
-                        "and the v6+ 'bgc_sources' -- remove whichever is stale "
-                        "before loading (this file was likely hand-edited)."
-                    )
-                ic["bgc_sources"] = (
-                    [{"source": old_bgc_source}] if old_bgc_source else []
-                )
+            old_cdr_forcing = forcing.pop("cdr_forcing", None)
+            old_cdr_forcing_file = forcing.pop("cdr_forcing_file", None)
+            # Mode inference shared with the resolver's convenience kwargs and
+            # ForgeExecutor's direct-construction back-compat (defined below,
+            # next to CdrSpec) -- the three entry points can't drift apart.
+            data["cdr"] = {
+                "mode": infer_cdr_mode(old_cdr_forcing, old_cdr_forcing_file)
+            }
+            if old_cdr_forcing is not None:
+                data["cdr"]["cdr_forcing"] = old_cdr_forcing
+            elif old_cdr_forcing_file is not None:
+                data["cdr"]["cdr_forcing_file"] = old_cdr_forcing_file
+        # else: ``forcing`` isn't a plain dict (e.g. an already-built ``Forcing``
+        # instance passed via direct keyword construction) -- nothing to migrate
+        # off of it; ``cdr`` stays absent so the field default (mode="none")
+        # applies.
 
-        # `forcing.boundary` collapsed from a flat, `type`-discriminated list into a
-        # single BoundaryForcing section. Main released v6 with the list shape, so
-        # (unlike when this change was branch-local) real files carry it and DO need
-        # converting: the `type: physics` item becomes the section's own
-        # source + plain fields, each `type: bgc` item becomes a `bgc_sources` entry.
-        if isinstance(forcing, dict) and isinstance(forcing.get("boundary"), list):
-            items = [b for b in forcing["boundary"] if isinstance(b, dict)]
-            if not items:
-                forcing["boundary"] = None
-            else:
-                phys = next(
-                    (b for b in items if b.get("type") in (None, "physics")), None
-                )
-                if phys is None:
-                    raise ValueError(
-                        "forcing.boundary has no type='physics' entry to convert "
-                        "into the v7 BoundaryForcing section source."
-                    )
-                bgc_keys = set(BgcSourceItem.model_fields)
-                sect_keys = set(BoundaryForcing.model_fields) - {"source", "bgc_sources"}
-                section: dict[str, Any] = {"source": phys.get("source")}
-                for k, v in phys.items():
-                    if k in sect_keys:
-                        section[k] = v
-                section["bgc_sources"] = [
-                    {k: v for k, v in b.items() if k in bgc_keys}
-                    for b in items
-                    if b.get("type") == "bgc"
-                ]
-                forcing["boundary"] = section
+    if version is None or version < 8:
+        forcing = data.get("forcing")
+        if isinstance(forcing, dict):
+            migrate_forcing_inputs(forcing.get("initial_conditions"), forcing)
 
     data["forge_blueprint_version"] = FORGE_BLUEPRINT_VERSION
     return data
+
+
+def migrate_forcing_inputs(
+    initial_conditions: dict[str, Any] | None, forcing: dict[str, Any] | None
+) -> None:
+    """Migrate the pre-v8 forcing-input shapes IN PLACE (idempotent).
+
+    Shared by :func:`migrate_forge_blueprint_data` (where ``initial_conditions``
+    lives inside ``forcing``) and by the wizard's ForcingSpec loader (where a
+    catalog ``Forcing.yaml`` keeps ``initial_conditions`` and ``forcing`` as
+    top-level siblings and is otherwise never migrated) -- one function, so
+    the two entry points cannot drift.
+
+    * ``initial_conditions.bgc_source`` (a single source dict) is rewrapped as a
+      one-item ``bgc_sources`` list; absent/``None`` becomes ``[]``. Both keys
+      present at once is an inconsistent, hand-edited file and raises.
+    * ``forcing.boundary`` as a flat, ``type``-discriminated list collapses into
+      the single ``BoundaryForcing`` section: the ``type: physics`` item supplies
+      ``source`` plus the section's plain fields, every ``type: bgc`` item becomes
+      a ``bgc_sources`` entry, and an empty list becomes ``None``.
+
+    Already-current data (a ``bgc_sources`` list, a dict-shaped ``boundary``) is
+    left untouched, so calling this on migrated input is a no-op.
+    """
+    ic = initial_conditions
+    if isinstance(ic, dict) and "bgc_source" in ic:
+        old_bgc_source = ic.pop("bgc_source")
+        if "bgc_sources" in ic:
+            # Both the pre-v6 singular key and the v6+ list key are present in
+            # the same dict -- an inconsistent/hand-edited file, not "already
+            # migrated" data (which would only ever have `bgc_sources`).
+            # Silently discarding `old_bgc_source` here would lose a real
+            # source with no trace; fail loudly instead.
+            raise ValueError(
+                "initial_conditions has both the pre-v6 'bgc_source' and the "
+                "v6+ 'bgc_sources' -- remove whichever is stale before loading "
+                "(this file was likely hand-edited)."
+            )
+        ic["bgc_sources"] = [{"source": old_bgc_source}] if old_bgc_source else []
+
+    # `forcing.boundary` collapsed from a flat, `type`-discriminated list into a
+    # single BoundaryForcing section. Main released v6/v7 with the list shape, so
+    # real files carry it and DO need converting: the `type: physics` item
+    # becomes the section's own source + plain fields, each `type: bgc` item
+    # becomes a `bgc_sources` entry.
+    if isinstance(forcing, dict) and isinstance(forcing.get("boundary"), list):
+        boundary_list = forcing["boundary"]
+        non_dict = [b for b in boundary_list if not isinstance(b, dict)]
+        if non_dict:
+            # The old code silently filtered these out -- an all-non-dict list
+            # became `None` (boundary forcing silently vanishing) and a mixed
+            # list silently lost whichever entries weren't dicts. Both are data
+            # loss with no trace; a malformed file should fail loudly instead.
+            raise ValueError(
+                f"forcing.boundary has {len(non_dict)} non-dict entr"
+                f"{'y' if len(non_dict) == 1 else 'ies'} -- each pre-v8 "
+                "boundary item must be a mapping with a 'type' key; fix the "
+                "file (this is not a migratable shape)."
+            )
+        items = boundary_list
+        if not items:
+            forcing["boundary"] = None
+        else:
+            phys = next((b for b in items if b.get("type") in (None, "physics")), None)
+            if phys is None:
+                raise ValueError(
+                    "forcing.boundary has no type='physics' entry to convert "
+                    "into the v8 BoundaryForcing section source."
+                )
+            bgc_keys = set(BgcSourceItem.model_fields)
+            sect_keys = set(BoundaryForcing.model_fields) - {
+                "source",
+                "bgc_sources",
+            }
+            section: dict[str, Any] = {"source": phys.get("source")}
+            for k, v in phys.items():
+                if k in sect_keys:
+                    section[k] = v
+            bgc_sources = []
+            for idx, b in enumerate(items):
+                if b.get("type") != "bgc":
+                    continue
+                # Per-item keys that a pre-v8 flat boundary item could carry
+                # (e.g. per-item regrid overrides) but `BgcSourceItem` has no
+                # slot for -- BgcSourceItem only has source/use_vars/
+                # bgc_interpolation_method/serialize_dask, the rest of the old
+                # per-item shape lived on the section itself. Warn rather than
+                # silently drop so a hand-authored override doesn't vanish
+                # without a trace.
+                dropped = {
+                    k: v
+                    for k, v in b.items()
+                    if k not in bgc_keys
+                    and k != "type"
+                    and not (v is None or v is False or v == {} or v == [])
+                }
+                if dropped:
+                    src = b.get("source")
+                    src_name = src.get("name") if isinstance(src, dict) else src
+                    warnings.warn(
+                        f"forcing.boundary[{idx}] (source={src_name!r}) sets "
+                        f"{sorted(dropped)}, which are being dropped: per-item "
+                        "regrid options are not representable on BgcSourceItem; "
+                        "set them on the boundary section instead.",
+                        stacklevel=2,
+                    )
+                bgc_sources.append({k: v for k, v in b.items() if k in bgc_keys})
+            section["bgc_sources"] = bgc_sources
+            forcing["boundary"] = section
 
 
 class _Section(BaseModel):
@@ -563,7 +661,7 @@ class UserProvidedFile(_Section):
     """A user-supplied, pre-made netCDF used in place of one Forge would
     otherwise generate (grid / river forcing / CDR forcing -- see
     ``Domain.grid_file``, ``RiverForcingItem.custom_file``,
-    ``Forcing.cdr_forcing_file``).
+    ``CdrSpec.cdr_forcing_file``).
 
     ``location`` is a path on the machine that will run the executor -- it must
     exist there at processing time (a hard error if not: see
@@ -629,13 +727,17 @@ def estimate_forge_cpus(nx: int, ny: int, n_levels: int) -> int:
     """Ballpark CPU count for a forge run (input generation) on a grid this size.
 
     Deliberately imprecise -- roughly one CPU per 150k grid cells
-    (``nx * ny * N``), clamped to [16, 128]. 128 is a strict cap. Calibration
-    anchors: a toy domain (20x20x10) gets the 16 floor; hvalfjordur-0
-    (512x384x100, ~2.0e7 cells) saturates the cap; an exceptionally large
-    domain (1856x960x100, ~1.8e8 cells) is far past it.
+    (``nx * ny * N``), with a floor of 16 and no upper cap here. The forge run is
+    a single process (``ForgeBlueprint.single_node``), so the real ceiling is one
+    node's worth of CPUs on the target partition -- which only the launcher
+    knows (C-Star clamps the request to the queue's CPUs per node at submit
+    time). Calibration anchors: a toy domain (20x20x10) gets the 16 floor;
+    hvalfjordur-0 (512x384x100, ~2.0e7 cells) lands near a 128-core node; an
+    exceptionally large domain (1856x960x100, ~1.8e8 cells) asks for far more
+    than any node has and is clamped to a full node.
     """
     cells = nx * ny * n_levels
-    return max(16, min(128, math.ceil(cells / 150_000)))
+    return max(16, math.ceil(cells / 150_000))
 
 
 class OpenBoundaries(_Section):
@@ -646,8 +748,43 @@ class OpenBoundaries(_Section):
 
 
 class Partitioning(_Section):
-    n_procs_x: int
-    n_procs_y: int
+    n_procs_x: int | None = None
+    n_procs_y: int | None = None
+    auto_tiling: bool = False
+    """Let ROMS pick NP_XI/NP_ETA at runtime from the land mask (ucla-roms 0.5.0's
+    MPI_MASKING cppdef), instead of the fixed n_procs_x/n_procs_y decomposition.
+    Requires PARALLEL_IO (use_pio)."""
+    n_cores: int | None = None
+    """Total number of cores to use when ``auto_tiling`` selects the tiling layout.
+    Forge policy (stricter than C-Star's): always required alongside
+    ``auto_tiling`` -- n_procs_x/n_procs_y are never combined with auto_tiling."""
+
+    @model_validator(mode="after")
+    def _validate_partitioning(self) -> Partitioning:
+        violations: list[str] = []
+
+        if not self.auto_tiling and (self.n_procs_x is None or self.n_procs_y is None):
+            violations.append(
+                "n_procs_x and n_procs_y are required unless auto_tiling is enabled"
+            )
+
+        if self.n_cores is not None and not self.auto_tiling:
+            violations.append("n_cores is only accepted with auto_tiling")
+
+        if self.auto_tiling and self.n_cores is None:
+            violations.append("auto_tiling requires n_cores")
+
+        if self.auto_tiling and (
+            self.n_procs_x is not None or self.n_procs_y is not None
+        ):
+            violations.append(
+                "n_procs_x/n_procs_y must not be set when auto_tiling is enabled"
+            )
+
+        if violations:
+            raise ValueError("; ".join(violations))
+
+        return self
 
 
 class Domain(_Section):
@@ -936,8 +1073,9 @@ class BgcSourceItem(_Section):
     use_vars: list[str] | None = None
     """Down-select which BGC variables this source contributes. Presence-only
     check in roms-tools -- raises if a requested variable isn't provided by the
-    source. Required when multiple ``bgc_sources`` are present, so their variable
-    sets can be arranged not to overlap."""
+    source. Required when multiple ``bgc_sources`` are present (enforced by
+    ``InitialConditions``/``BoundaryForcing``'s ``_bgc_sources_use_vars_partitioned``
+    validator), so their variable sets can be arranged not to overlap."""
     bgc_interpolation_method: BgcInterpMethod | None = None
     """Per-source override of the section's ``bgc_interpolation_method``
     default. ``None`` means "inherit the section default" -- roms-tools' own
@@ -962,6 +1100,40 @@ class BgcSourceItem(_Section):
     concurrent write. Initial conditions merge every bgc source into ONE dataset
     and so cannot be split -- there, any source setting this serializes the whole
     initial-conditions write."""
+
+
+def _require_partitioned_bgc_use_vars(
+    bgc_sources: list[BgcSourceItem], section_label: str
+) -> None:
+    """Shared by ``InitialConditions``/``BoundaryForcing``: when more than one
+    bgc source is present there is no other signal for which tracers each
+    source contributes, so every item MUST declare ``use_vars`` and the
+    declared sets must be pairwise disjoint -- an overlapping tracer would
+    leave it undefined which source's value actually lands in the merged/
+    per-source output.
+    """
+    if len(bgc_sources) <= 1:
+        return
+    seen_by_var: dict[str, tuple[int, str]] = {}
+    for idx, bs in enumerate(bgc_sources):
+        name = bs.source.name
+        if not bs.use_vars:
+            raise ValueError(
+                f"{section_label}.bgc_sources[{idx}] (source={name!r}) has no "
+                "use_vars, but multiple bgc_sources are present -- partition "
+                "with use_vars so each source's tracers are unambiguous"
+            )
+        for var in bs.use_vars:
+            prior = seen_by_var.get(var)
+            if prior is not None:
+                other_idx, other_name = prior
+                raise ValueError(
+                    f"{section_label}.bgc_sources[{idx}] (source={name!r}) and "
+                    f"bgc_sources[{other_idx}] (source={other_name!r}) both "
+                    f"claim {var!r} via use_vars -- partition with use_vars so "
+                    "the tracer sets don't overlap"
+                )
+            seen_by_var[var] = (idx, name)
 
 
 class InitialConditions(_Section):
@@ -990,6 +1162,11 @@ class InitialConditions(_Section):
     across physics + every bgc source). Off (validation runs) by default;
     the wizard exposes this as a checked "Validate" box, so checking it off
     corresponds to setting this True."""
+
+    @model_validator(mode="after")
+    def _bgc_sources_use_vars_partitioned(self) -> InitialConditions:
+        _require_partitioned_bgc_use_vars(self.bgc_sources, "initial_conditions")
+        return self
 
 
 class BoundaryForcing(_Section):
@@ -1023,6 +1200,11 @@ class BoundaryForcing(_Section):
     the wizard exposes this as a checked "Validate" box, so checking it off
     corresponds to setting this True."""
 
+    @model_validator(mode="after")
+    def _bgc_sources_use_vars_partitioned(self) -> BoundaryForcing:
+        _require_partitioned_bgc_use_vars(self.bgc_sources, "forcing.boundary")
+        return self
+
 
 class ResolvedDataset(_Section):
     """A snapshot of how a logical source resolves — frozen from the hardcoded
@@ -1036,11 +1218,14 @@ class ResolvedDataset(_Section):
 
 
 class Forcing(_Section):
-    """All forcing inputs: initial conditions, surface / boundary / tidal / river
-    forcing items, optional CDR, and the resolved dataset registry snapshot.
+    """All forcing inputs: initial conditions and surface / boundary / tidal /
+    river forcing items, plus the resolved dataset registry snapshot.
 
     The former ``Sources`` / inner ``Forcing`` two-level nesting is gone — the
-    items are flat here under a single ``forcing:`` key in the YAML.
+    items are flat here under a single ``forcing:`` key in the YAML. CDR forcing
+    is NOT part of this section -- see the top-level ``cdr`` section
+    (:class:`CdrSpec`) on ``ForgeBlueprint``, which carries CDR's own composable
+    selection independently of the rest of forcing.
     """
 
     initial_conditions: InitialConditions | None = None
@@ -1054,27 +1239,118 @@ class Forcing(_Section):
     a domain with every open boundary disabled."""
     tidal: list[TidalForcingItem] = Field(default_factory=list)
     river: list[RiverForcingItem] = Field(default_factory=list)
-    cdr_forcing: dict[str, Any] | None = None
-    cdr_forcing_file: UserProvidedFile | None = None
-    """A user-supplied pre-made CDR-forcing netCDF, used in place of building CDR
-    forcing from ``cdr_forcing``. Mutually exclusive with ``cdr_forcing`` (see
-    ``_cdr_forcing_file_excludes_cdr_forcing``)."""
     # logical-name -> resolved registry entry (snapshot of source_data.py tables)
     resolved_datasets: dict[str, ResolvedDataset] = Field(default_factory=dict)
-
-    @model_validator(mode="after")
-    def _cdr_forcing_file_excludes_cdr_forcing(self) -> Forcing:
-        if self.cdr_forcing_file is not None and self.cdr_forcing is not None:
-            raise ValueError(
-                "forcing.cdr_forcing_file and forcing.cdr_forcing are mutually "
-                "exclusive; supply either a generated-CDR config or a pre-made "
-                "CDR-forcing file, not both"
-            )
-        return self
 
 
 # Back-compat alias: code that imported Sources can import Forcing instead.
 Sources = Forcing
+
+
+# ===========================================================================
+# B2. CDR (carbon dioxide removal) forcing -- a top-level, independently
+#     composable section (its own catalog spec + Composition.cdr SpecRef),
+#     NOT nested under Forcing. See CdrSpec.mode's docstring for the five modes.
+# ===========================================================================
+# The single source of truth for the CDR mode vocabulary: CdrSpec.mode's
+# annotation below. CDR_MODES is derived from it for membership checks
+# elsewhere (ForgeExecutor.cdr_mode validation, catalog register_cdr) so a
+# future sixth mode is added in exactly one place.
+CdrMode = Literal["none", "simple", "yaml", "netcdf", "upscaled"]
+CDR_MODES: tuple[str, ...] = get_args(CdrMode)
+
+
+def infer_cdr_mode(cdr_forcing: dict[str, Any] | None, cdr_forcing_file: Any) -> str:
+    """Infer a CdrSpec mode from which (if either) CDR payload is populated.
+
+    The shared pre-CdrSpec compatibility rule -- a bare ``cdr_forcing`` dict has
+    "yaml" provenance (the only way one used to exist), a bare file is
+    "netcdf", neither is "none". Used by the v6->v7 blueprint migration, the
+    resolver's convenience-kwarg path, and ``ForgeExecutor``'s direct-construction
+    backward compat, so the three entry points can never drift apart. "simple"
+    is deliberately NOT inferable: a compiled dict's shape doesn't distinguish
+    it from "yaml" (see ``CdrSpec.mode``'s docstring) -- it must be stated.
+    """
+    if cdr_forcing is not None:
+        return "yaml"
+    if cdr_forcing_file is not None:
+        return "netcdf"
+    return "none"
+
+
+class CdrSpec(_Section):
+    """The CDR-forcing selection: which of five mutually-exclusive modes drives
+    ``model_settings["cdr_frc"]`` / the ``CDR_FORCING`` cppdef / the emitted
+    roms_marbl blueprint's ``cdr_forcing`` dataset, and (for two of the modes)
+    the CDR-forcing config itself.
+
+    ``mode`` values:
+
+    * ``"none"`` -- no CDR forcing at all. ``cdr_forcing``/``cdr_forcing_file``
+      must both be unset.
+    * ``"simple"`` -- a compiled roms-tools ``CDRForcing`` kwargs dict authored
+      directly (e.g. hand-built or from a simpler UI form), carried in
+      ``cdr_forcing``. ``cdr_forcing_file`` must be unset.
+    * ``"yaml"`` -- the same compiled kwargs dict, but sourced from an uploaded
+      roms-tools ``CDRForcing.to_yaml(...)`` dump (see
+      ``forge_blueprint_resolve.read_cdr_forcing_yaml``). Carried in the same
+      ``cdr_forcing`` field as ``"simple"`` -- the distinction is provenance
+      (how the dict was authored), not shape; both are generated at processing
+      time via ``rt.CDRForcing(**cdr_forcing)``. ``cdr_forcing_file`` must be
+      unset.
+    * ``"netcdf"`` -- a user-supplied, pre-made CDR-forcing netCDF used in place
+      of generating one, carried in ``cdr_forcing_file``. ``cdr_forcing`` must
+      be unset.
+    * ``"upscaled"`` -- CDR tracers are supplied by C-Star's runtime orchestrator
+      from an upscaled (e.g. multi-domain/ensemble) run, not generated by Forge
+      at all. Both ``cdr_forcing``/``cdr_forcing_file`` must be unset; the
+      resolver instead sets static ``model_settings["cdr_frc"]`` values (no
+      generation step runs to derive them) and the engine emits a placeholder
+      ``Resource`` into the roms_marbl blueprint's ``cdr_forcing`` dataset for
+      C-Star's orchestrator to later replace with the real runtime path. Real
+      CDR tracers exist at runtime under this mode, so it participates in the
+      CDR-output consistency block (do_cdr_output/MARBL diagnostics/marbl
+      requirement) exactly like ``"simple"``/``"yaml"``/``"netcdf"``.
+    """
+
+    mode: CdrMode = "none"
+    cdr_forcing: dict[str, Any] | None = None
+    """Compiled roms-tools ``CDRForcing`` constructor kwargs -- required (and the
+    only populated field) for ``mode in ("simple", "yaml")``."""
+    cdr_forcing_file: UserProvidedFile | None = None
+    """A user-supplied pre-made CDR-forcing netCDF -- required (and the only
+    populated field) for ``mode == "netcdf"``."""
+
+    @model_validator(mode="after")
+    def _fields_match_mode(self) -> CdrSpec:
+        if self.mode in ("none", "upscaled"):
+            if self.cdr_forcing is not None or self.cdr_forcing_file is not None:
+                raise ValueError(
+                    f"cdr.mode={self.mode!r} requires both cdr_forcing and "
+                    "cdr_forcing_file to be unset (this mode carries no CDR "
+                    "config of its own)."
+                )
+        elif self.mode in ("simple", "yaml"):
+            if self.cdr_forcing is None:
+                raise ValueError(
+                    f"cdr.mode={self.mode!r} requires cdr_forcing to be set."
+                )
+            if self.cdr_forcing_file is not None:
+                raise ValueError(
+                    f"cdr.mode={self.mode!r} requires cdr_forcing_file to be unset "
+                    "(mutually exclusive with cdr_forcing)."
+                )
+        elif self.mode == "netcdf":
+            if self.cdr_forcing_file is None:
+                raise ValueError(
+                    "cdr.mode='netcdf' requires cdr_forcing_file to be set."
+                )
+            if self.cdr_forcing is not None:
+                raise ValueError(
+                    "cdr.mode='netcdf' requires cdr_forcing to be unset "
+                    "(mutually exclusive with cdr_forcing_file)."
+                )
+        return self
 
 
 # ===========================================================================
@@ -1124,13 +1400,16 @@ class Composition(_Section):
     """The composable specs selected to build this config. The resolved data lives
     in the sections above; this records provenance for review/UI.
 
-    ``forcing`` corresponds to the ``sources`` section (initial conditions + surface/
-    boundary/tidal/river + CDR).
+    ``forcing`` corresponds to the ``sources`` section (initial conditions +
+    surface/boundary/tidal/river). ``cdr`` corresponds to the top-level ``cdr``
+    section (:class:`CdrSpec`) -- CDR is its own independently composable spec,
+    not part of ``forcing``.
     """
 
     model: SpecRef = Field(default_factory=SpecRef)
     domain: SpecRef = Field(default_factory=SpecRef)
     forcing: SpecRef = Field(default_factory=SpecRef)
+    cdr: SpecRef = Field(default_factory=SpecRef)  # CDR spec (CdrSpec)
     output: SpecRef = Field(
         default_factory=SpecRef
     )  # output-settings spec (OutputSpec)
@@ -1216,6 +1495,7 @@ class ForgeBlueprint(Blueprint):
     run: RunWindow
     domain: Domain
     forcing: Forcing
+    cdr: CdrSpec = Field(default_factory=CdrSpec)
     # Resolved list of host-independent source-dataset keys the executor must prepare
     # (forcing/IC sources + topography), e.g. ["GLORYS_REGIONAL", "UNIFIED_BGC", "ETOPO5"].
     # Cache paths resolve at processing from the injected source_data_cache. Results-affecting
@@ -1287,7 +1567,15 @@ class ForgeBlueprint(Blueprint):
     # ---- derived naming (single source of truth: name + dates) ----
     @property
     def n_procs(self) -> int:
-        return self.domain.partitioning.n_procs_x * self.domain.partitioning.n_procs_y
+        partitioning = self.domain.partitioning
+        if partitioning.n_cores is not None:
+            return partitioning.n_cores
+        if partitioning.n_procs_x is not None and partitioning.n_procs_y is not None:
+            return partitioning.n_procs_x * partitioning.n_procs_y
+        raise ValueError(
+            "cannot determine n_procs: partitioning has neither n_cores nor both "
+            "n_procs_x/n_procs_y set"
+        )
 
     @property
     def cpus_needed(self) -> int:
@@ -1295,7 +1583,9 @@ class ForgeBlueprint(Blueprint):
         itself: roms-tools input generation), overriding the ``Blueprint`` base
         default of 1. Deliberately NOT ``n_procs`` -- that is the ROMS
         partitioning the downstream simulation uses, not what generating the
-        inputs needs. See :func:`estimate_forge_cpus`.
+        inputs needs. See :func:`estimate_forge_cpus`. Uncapped above its floor:
+        because the run is :attr:`single_node`, the launcher clamps this to the
+        target partition's CPUs per node.
 
         When ``domain.grid_file`` is set, ``grid_kwargs`` carries no ``nx``/``ny``/
         ``N`` (a user-supplied grid has no generation-geometry keys -- see
@@ -1309,6 +1599,17 @@ class ForgeBlueprint(Blueprint):
         ny = gk.get("ny", param.get("mmm", 0))
         nvert = gk.get("N", param.get("n", 0))
         return estimate_forge_cpus(int(nx or 0), int(ny or 0), int(nvert or 0))
+
+    @property
+    def single_node(self) -> bool:
+        """The forge run is one Python process (roms-tools on dask's threaded
+        scheduler), not an MPI job: it can never use more than one node. Marking
+        it so lets C-Star's launcher pin the forge step to ``--nodes=1`` and clamp
+        :attr:`cpus_needed` to the target partition's CPUs per node, instead of
+        requesting extra nodes the run would leave idle. Overrides the
+        ``Blueprint`` base default of ``False``.
+        """
+        return True
 
     @property
     def n_tracers(self) -> int:
@@ -1372,15 +1673,30 @@ class ForgeBlueprint(Blueprint):
             grid_file = domain.get("grid_file")
             if grid_file:
                 grid_file.pop("location", None)
-        forcing = data.get("forcing")
-        if forcing:
-            cdr_forcing_file = forcing.get("cdr_forcing_file")
+        cdr = data.get("cdr")
+        if cdr:
+            cdr_forcing_file = cdr.get("cdr_forcing_file")
             if cdr_forcing_file:
                 cdr_forcing_file.pop("location", None)
+        forcing = data.get("forcing")
+        if forcing:
             for river in forcing.get("river") or []:
                 custom_file = river.get("custom_file")
                 if custom_file:
                     custom_file.pop("location", None)
+            # `bypass_validation` (skip roms-tools' post-construction NaN checks)
+            # and each bgc source's `serialize_dask` (force that write onto the
+            # synchronous dask scheduler) are execution-environment knobs -- they
+            # change how the run is performed, not what it produces -- so identical
+            # inputs run with different validation/write-scheduler choices must
+            # still hash identically. Scrub both from initial_conditions and
+            # boundary, same rationale as the `location` scrubs above.
+            for section_key in ("initial_conditions", "boundary"):
+                section = forcing.get(section_key)
+                if section:
+                    section.pop("bypass_validation", None)
+                    for bs in section.get("bgc_sources") or []:
+                        bs.pop("serialize_dask", None)
         blob = json.dumps(data, sort_keys=True, separators=(",", ":"))
         return hashlib.sha256(blob.encode("utf-8")).hexdigest()
 

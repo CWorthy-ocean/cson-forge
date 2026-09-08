@@ -1051,3 +1051,81 @@ def _prepare_rivr2o(self: SourceData) -> Path:
     print(f"✔️  RIVR2O dataset verified at: {rivr2o_dir} ({len(matches)} file(s))")
     self.paths["RIVR2O"] = pattern
     return pattern
+
+
+# ---------------------------
+# GLODAP handler (user-provided dataset)
+# ---------------------------
+
+# roms-tools' GLODAPv2Dataset/GLODAPv2BGCDataset (roms_tools/datasets/lat_lon_datasets.py)
+# read one file per variable named "GLODAPv2.2016b.{var}.nc" out of a directory
+# (unlike EMOD/RIVR2O's any-filename/wildcard pattern). Six BGC variables are
+# required (var_names); temperature/salinity are optional (opt_var_names) --
+# without them post_process() falls back to a uniform 1025 kg/m^3 density for
+# the umol/kg -> mmol/m3 conversion instead of computing in-situ density.
+GLODAP_FILE_PREFIX = "GLODAPv2.2016b"
+GLODAP_REQUIRED_FILES = ("TAlk", "TCO2", "NO3", "PO4", "silicate", "oxygen")
+GLODAP_OPTIONAL_FILES = ("temperature", "salinity")
+
+
+@register_dataset("GLODAP")
+def _prepare_glodap(self: SourceData) -> Path:
+    """
+    Verify that the user has provided GLODAPv2.2016b mapped-climatology files.
+
+    GLODAP has no roms-tools auto-download (unlike the CONSTANTS river-BGC
+    default), so this is a USER_DATASET, like EMOD/RIVR2O/TPXO/WOA: the files
+    must already exist at the expected location.
+
+    Expected location: self.source_data_dir / "GLODAP" /
+    "GLODAPv2.2016b.{var}.nc" for each of the six required BGC variables
+    (TAlk, TCO2, NO3, PO4, silicate, oxygen). The optional temperature/salinity
+    files are not required for this check (a warning is logged if either is
+    missing) since roms-tools tolerates their absence with a coarser density
+    fallback -- see ``GLODAP_OPTIONAL_FILES``'s module comment above.
+
+    Returns
+    -------
+    Path
+        The GLODAP directory itself -- roms-tools' ``filename`` for this
+        dataset is a directory, same as WOA_BGC, not a single file/wildcard.
+
+    Raises
+    ------
+    FileNotFoundError
+        If the GLODAP directory or any required variable file is missing.
+    """
+    glodap_dir = self.source_data_dir / "GLODAP"
+
+    missing_required = [
+        f"{GLODAP_FILE_PREFIX}.{var}.nc"
+        for var in GLODAP_REQUIRED_FILES
+        if not (glodap_dir / f"{GLODAP_FILE_PREFIX}.{var}.nc").exists()
+    ]
+    if missing_required:
+        raise FileNotFoundError(
+            f"GLODAPv2.2016b dataset incomplete/not found at: {glodap_dir}\n"
+            "GLODAPv2.2016b must be obtained separately (mapped climatology, "
+            "https://www.glodap.info/) and placed as one .nc file per "
+            f"variable in {glodap_dir}; missing required file(s): "
+            f"{missing_required}"
+        )
+
+    missing_optional = [
+        var
+        for var in GLODAP_OPTIONAL_FILES
+        if not (glodap_dir / f"{GLODAP_FILE_PREFIX}.{var}.nc").exists()
+    ]
+    if missing_optional:
+        logger.warning(
+            "GLODAP temperature/salinity file(s) missing at %s (%s); "
+            "roms-tools falls back to a uniform 1025 kg/m^3 density for the "
+            "umol/kg -> mmol/m3 unit conversion instead of computing in-situ "
+            "density.",
+            glodap_dir,
+            missing_optional,
+        )
+
+    print(f"✔️  GLODAP dataset verified at: {glodap_dir}")
+    self.paths["GLODAP"] = glodap_dir
+    return glodap_dir

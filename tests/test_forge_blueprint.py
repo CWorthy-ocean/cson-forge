@@ -19,8 +19,9 @@ import pytest
 import yaml
 
 import cstar_forge
+import cstar_forge.forge.namelist_model as _nm
 from cstar_forge.domain_catalog import default_catalog as _CATALOG
-from cstar_forge.forge.forge_blueprint import ForgeBlueprint
+from cstar_forge.forge.forge_blueprint import FORGE_BLUEPRINT_VERSION, ForgeBlueprint
 from cstar_forge.forge_blueprint_resolve import build_forge_blueprint
 
 _MODEL_DIR = (
@@ -32,6 +33,14 @@ _MODEL_DIR_ROMS050 = (
     / "catalog"
     / "ModelSpec"
     / "roms-marbl-0.5-default"
+)
+# ucla-roms >= 0.6.0 ModelSpec (adds &PIO_SETTINGS) -- used by the versioned-namelist
+# golden test below.
+_MODEL_DIR_ROMS060 = (
+    Path(cstar_forge.__file__).parent
+    / "catalog"
+    / "ModelSpec"
+    / "roms-marbl-0.6-default"
 )
 _GRID_KWARGS = dict(
     nx=6,
@@ -98,6 +107,152 @@ def test_naming_is_derived_not_stored():
     assert cfg.output_root_name("/scratch").startswith("/scratch/cson_roms-marbl")
 
 
+def test_partitioning_auto_tiling_with_n_cores_is_valid():
+    from cstar_forge.forge.forge_blueprint import Partitioning
+
+    p = Partitioning(auto_tiling=True, n_cores=4)
+    assert p.n_procs_x is None
+    assert p.n_procs_y is None
+    assert p.n_cores == 4
+
+
+def test_partitioning_requires_n_procs_without_auto_tiling():
+    from cstar_forge.forge.forge_blueprint import Partitioning
+
+    with pytest.raises(ValueError, match="n_procs_x and n_procs_y are required"):
+        Partitioning()
+
+
+def test_partitioning_rejects_n_cores_without_auto_tiling():
+    from cstar_forge.forge.forge_blueprint import Partitioning
+
+    with pytest.raises(ValueError, match="n_cores is only accepted with auto_tiling"):
+        Partitioning(n_procs_x=1, n_procs_y=1, n_cores=4)
+
+
+def test_partitioning_rejects_auto_tiling_without_n_cores():
+    from cstar_forge.forge.forge_blueprint import Partitioning
+
+    with pytest.raises(ValueError, match="auto_tiling requires n_cores"):
+        Partitioning(auto_tiling=True)
+
+
+def test_partitioning_rejects_auto_tiling_combined_with_n_procs():
+    from cstar_forge.forge.forge_blueprint import Partitioning
+
+    with pytest.raises(ValueError, match="must not be set when auto_tiling"):
+        Partitioning(auto_tiling=True, n_cores=8, n_procs_x=4, n_procs_y=2)
+
+
+def test_build_forge_blueprint_auto_tiling_derives_n_cores_from_n_procs():
+    """Switching auto_tiling on over an existing explicit grid (e.g. a loaded
+    blueprint's n_procs_x/n_procs_y) derives n_cores from the product; the
+    resolved Partitioning still carries only n_cores.
+    """
+    cfg = _build(
+        partitioning={"auto_tiling": True, "n_procs_x": 2, "n_procs_y": 2},
+        use_pio=True,
+    )
+    assert cfg.domain.partitioning.n_cores == 4
+    assert cfg.domain.partitioning.n_procs_x is None
+    assert cfg.domain.partitioning.n_procs_y is None
+    assert cfg.n_procs == 4
+
+
+def test_build_forge_blueprint_auto_tiling_accepts_consistent_n_procs_and_n_cores():
+    cfg = _build(
+        partitioning={
+            "auto_tiling": True,
+            "n_cores": 4,
+            "n_procs_x": 2,
+            "n_procs_y": 2,
+        },
+        use_pio=True,
+    )
+    assert cfg.domain.partitioning.n_cores == 4
+    assert cfg.domain.partitioning.n_procs_x is None
+
+
+def test_build_forge_blueprint_auto_tiling_rejects_inconsistent_n_cores():
+    with pytest.raises(ValueError, match="inconsistent with"):
+        _build(
+            partitioning={
+                "auto_tiling": True,
+                "n_cores": 8,
+                "n_procs_x": 2,
+                "n_procs_y": 2,
+            },
+            use_pio=True,
+        )
+
+
+def test_n_procs_property_uses_n_cores_when_set():
+    cfg = _build(partitioning={"auto_tiling": True, "n_cores": 4}, use_pio=True)
+    assert cfg.n_procs == 4
+
+
+def test_n_procs_property_raises_when_neither_available():
+    """Reachable only via direct/unvalidated construction (``Partitioning``'s own
+    validator forbids this combination) -- mirrors the ``model_copy`` bypass used
+    elsewhere in this file (e.g. ``test_domain_grid_file_rejects_generation_geometry_keys``'s
+    docstring) for exercising a validator-adjacent code path directly.
+    """
+    from cstar_forge.forge.forge_blueprint import Partitioning
+
+    cfg = _build()
+    cfg.domain.partitioning = Partitioning.model_construct(
+        n_procs_x=None, n_procs_y=None, auto_tiling=False, n_cores=None
+    )
+    with pytest.raises(ValueError, match="cannot determine n_procs"):
+        _ = cfg.n_procs
+
+
+def test_build_forge_blueprint_auto_tiling_resolves_cppdefs_and_partitioning():
+    cfg = _build(partitioning={"auto_tiling": True, "n_cores": 4}, use_pio=True)
+    assert cfg.model_settings["cppdefs"]["auto_tiling"] is True
+    assert cfg.model_settings["param"]["np_xi"] == 1
+    assert cfg.model_settings["param"]["np_eta"] == 1
+    assert cfg.domain.partitioning.auto_tiling is True
+    assert cfg.domain.partitioning.n_cores == 4
+    assert cfg.domain.partitioning.n_procs_x is None
+    assert cfg.domain.partitioning.n_procs_y is None
+    assert cfg.n_procs == 4
+    assert cfg.name == "cson_roms-marbl_v0.1_test-tiny_4procs"
+
+
+def test_build_forge_blueprint_auto_tiling_requires_use_pio():
+    with pytest.raises(ValueError, match="auto_tiling requires use_pio"):
+        _build(partitioning={"auto_tiling": True, "n_cores": 4}, use_pio=False)
+
+
+def test_build_forge_blueprint_auto_tiling_requires_n_cores():
+    """Only raises when there is no explicit grid to derive n_cores from."""
+    with pytest.raises(ValueError, match="auto_tiling requires partitioning.n_cores"):
+        _build(partitioning={"auto_tiling": True}, use_pio=True)
+    with pytest.raises(ValueError, match="auto_tiling requires partitioning.n_cores"):
+        _build(partitioning={"auto_tiling": True, "n_procs_x": 2}, use_pio=True)
+
+
+def test_build_forge_blueprint_auto_tiling_partitioning_round_trips():
+    """``domain.partitioning.model_dump()`` is exactly the DomainSpec save/load
+    shape (``forge_blueprint_wizard.py``'s ``_domain_spec_data``/``_apply_domain_spec``
+    round-trip a saved ``partitioning`` dict straight back into ``build_forge_blueprint``'s
+    ``partitioning=`` kwarg) -- confirm it feeds back in cleanly, with ``use_pio``
+    passed separately at the top level as the wizard does.
+    """
+    cfg = _build(partitioning={"auto_tiling": True, "n_cores": 4}, use_pio=True)
+    saved = cfg.domain.partitioning.model_dump()
+    cfg2 = _build(partitioning=saved, use_pio=True)
+    assert cfg2.domain.partitioning.auto_tiling is True
+    assert cfg2.domain.partitioning.n_cores == 4
+    assert cfg2.n_procs == 4
+
+
+def test_build_forge_blueprint_n_cores_requires_auto_tiling():
+    with pytest.raises(ValueError, match="n_cores is only accepted with auto_tiling"):
+        _build(partitioning={"n_procs_x": 1, "n_procs_y": 1, "n_cores": 1})
+
+
 def test_resolved_provenance_is_unstamped():
     """generated_at/forge_version/cstar_version/roms_tools_version are left None by
     the resolver -- ``ForgeBlueprint.to_yaml_str`` is what stamps them (see
@@ -152,18 +307,30 @@ def test_working_dir_accepts_path_from_scheduler_override():
     assert ForgeBlueprint(**data).working_dir == "/scratch/run-id/step-root"
 
 
-def test_estimate_forge_cpus_anchors_and_strict_cap():
+def test_estimate_forge_cpus_anchors_floor_and_no_cap():
+    """The estimate has a 16 floor and no upper cap: the forge run is single-node,
+    so the launcher clamps the request to the target partition's CPUs per node
+    (which forge cannot know when authoring the blueprint).
+    """
     from cstar_forge.forge.forge_blueprint import estimate_forge_cpus
 
     # toy domain (wio-toy) hits the 16 floor
     assert estimate_forge_cpus(20, 20, 10) == 16
-    # hvalfjordur-0 (~2.0e7 cells) saturates the cap
-    assert estimate_forge_cpus(512, 384, 100) == 128
-    # an exceptionally large domain is far past the strict 128 cap
-    assert estimate_forge_cpus(1856, 960, 100) == 128
-    assert estimate_forge_cpus(10_000, 10_000, 1_000) == 128
-    # mid-size domains scale between the bounds
+    # hvalfjordur-0 (~2.0e7 cells) lands around a 128-core node
+    assert estimate_forge_cpus(512, 384, 100) == 132
+    # an exceptionally large domain asks for far more than any node has; the
+    # old 128 ceiling is gone and the launcher-side clamp is the real cap
+    assert estimate_forge_cpus(1856, 960, 100) > 1000
+    # mid-size domains scale with cell count
     assert 16 < estimate_forge_cpus(350, 350, 100) < 128
+
+
+def test_forge_blueprint_is_single_node():
+    """ForgeBlueprint declares itself single-node so C-Star pins the forge step
+    to one node and clamps cpus_needed to the queue's CPUs per node.
+    """
+    cfg = _build()
+    assert cfg.single_node is True
 
 
 def test_cpus_needed_is_grid_sized_forge_estimate():
@@ -241,7 +408,7 @@ def test_migrate_v4_cdr_output_do_cdr_renamed(tmp_path, legacy_value):
     back = ForgeBlueprint.from_yaml(p)
     assert back.model_settings["cdr_output"]["do_cdr_output"] is legacy_value
     assert "do_cdr" not in back.model_settings["cdr_output"]
-    assert back.forge_blueprint_version == 7
+    assert back.forge_blueprint_version == FORGE_BLUEPRINT_VERSION
 
 
 def test_migrate_v4_cdr_output_migration_is_idempotent(tmp_path):
@@ -267,7 +434,7 @@ def test_migrate_tolerates_missing_cdr_output_section():
     from cstar_forge.forge.forge_blueprint import migrate_forge_blueprint_data
 
     migrated = migrate_forge_blueprint_data({"forge_blueprint_version": 4})
-    assert migrated["forge_blueprint_version"] == 7
+    assert migrated["forge_blueprint_version"] == FORGE_BLUEPRINT_VERSION
 
 
 def test_migrate_v5_ic_bgc_source_becomes_bgc_sources_list():
@@ -289,7 +456,7 @@ def test_migrate_v5_ic_bgc_source_becomes_bgc_sources_list():
     ic = migrated["forcing"]["initial_conditions"]
     assert "bgc_source" not in ic
     assert ic["bgc_sources"] == [{"source": {"name": "UNIFIED", "climatology": True}}]
-    assert migrated["forge_blueprint_version"] == 7
+    assert migrated["forge_blueprint_version"] == FORGE_BLUEPRINT_VERSION
 
 
 def test_migrate_v5_ic_bgc_source_none_becomes_empty_list():
@@ -347,9 +514,11 @@ def test_migrate_v5_ic_bgc_source_and_bgc_sources_both_present_raises():
     with pytest.raises(ValueError, match="bgc_source.*bgc_sources"):
         migrate_forge_blueprint_data(data)
 
+
 def test_migrate_v5_shaped_dict_loads_with_null_user_file_fields(tmp_path):
-    """A v5 file (predating user-provided files) loads, migrates its version to 6,
-    and the new fields default to ``None`` -- purely additive, no data rewrite.
+    """A v5 file (predating user-provided files) loads, migrates its version to
+    current, and the new fields default to ``None`` -- purely additive, no data
+    rewrite (beyond the v6->v7 CDR relocation, which finds nothing to move here).
     """
     cfg = _build()
     p = cfg.to_yaml(tmp_path / "forge_blueprint.yaml")
@@ -357,10 +526,93 @@ def test_migrate_v5_shaped_dict_loads_with_null_user_file_fields(tmp_path):
     data["forge_blueprint_version"] = 5
 
     back = ForgeBlueprint.from_yaml_data(data)
-    assert back.forge_blueprint_version == 7
+    assert back.forge_blueprint_version == FORGE_BLUEPRINT_VERSION
     assert back.domain.grid_file is None
-    assert back.forcing.cdr_forcing_file is None
+    assert back.cdr.mode == "none"
+    assert back.cdr.cdr_forcing_file is None
     assert all(river.custom_file is None for river in back.forcing.river)
+
+
+class TestMigrateV6ToV7CdrRelocation:
+    """v6 -> v7: ``forcing.cdr_forcing``/``forcing.cdr_forcing_file`` move onto the
+    new top-level ``cdr`` section, with ``mode`` inferred from which (if either)
+    was populated.
+    """
+
+    def _v6_data(self, **forcing_overrides):
+        from cstar_forge.forge.forge_blueprint import migrate_forge_blueprint_data
+
+        cfg = _build()
+        data = yaml.safe_load(cfg.to_yaml_str())
+        data["forge_blueprint_version"] = 6
+        data["forcing"].pop("cdr_forcing", None)
+        data["forcing"].pop("cdr_forcing_file", None)
+        data["forcing"].update(forcing_overrides)
+        data.pop("cdr", None)
+        return data, migrate_forge_blueprint_data
+
+    def test_cdr_forcing_dict_infers_yaml_mode(self):
+        data, migrate = self._v6_data(cdr_forcing={"releases": []})
+        migrated = migrate(data)
+        assert migrated["forge_blueprint_version"] == FORGE_BLUEPRINT_VERSION
+        assert migrated["cdr"] == {"mode": "yaml", "cdr_forcing": {"releases": []}}
+        assert "cdr_forcing" not in migrated["forcing"]
+        assert "cdr_forcing_file" not in migrated["forcing"]
+
+    def test_cdr_forcing_file_infers_netcdf_mode(self):
+        data, migrate = self._v6_data(cdr_forcing_file=dict(_USER_FILE_KWARGS))
+        migrated = migrate(data)
+        assert migrated["cdr"] == {
+            "mode": "netcdf",
+            "cdr_forcing_file": dict(_USER_FILE_KWARGS),
+        }
+        assert "cdr_forcing" not in migrated["forcing"]
+        assert "cdr_forcing_file" not in migrated["forcing"]
+
+    def test_neither_field_infers_none_mode(self):
+        data, migrate = self._v6_data()
+        migrated = migrate(data)
+        assert migrated["cdr"] == {"mode": "none"}
+
+    def test_full_v6_yaml_round_trip_through_from_yaml_data(self, tmp_path):
+        """A full pre-CDR-overhaul YAML (as ``ForgeBlueprint.to_yaml`` would have
+        written it under v6) loads via the real public entry point, not just the
+        bare migration function.
+        """
+        data, _ = self._v6_data(cdr_forcing={"releases": [{"lon": 1.0}]})
+        back = ForgeBlueprint.from_yaml_data(data)
+        assert back.forge_blueprint_version == FORGE_BLUEPRINT_VERSION
+        assert back.cdr.mode == "yaml"
+        assert back.cdr.cdr_forcing == {"releases": [{"lon": 1.0}]}
+        assert back.cdr.cdr_forcing_file is None
+
+    def test_idempotent_on_already_migrated_data(self):
+        """Running the migration twice (or on data that already declares an
+        explicit ``cdr``) must not clobber the explicit value.
+        """
+        from cstar_forge.forge.forge_blueprint import migrate_forge_blueprint_data
+
+        data, _ = self._v6_data(cdr_forcing={"releases": []})
+        once = migrate_forge_blueprint_data(data)
+        twice = migrate_forge_blueprint_data(dict(once))
+        assert (
+            twice["cdr"]
+            == once["cdr"]
+            == {
+                "mode": "yaml",
+                "cdr_forcing": {"releases": []},
+            }
+        )
+
+    def test_direct_construction_with_explicit_cdr_is_not_overwritten(self):
+        """Direct keyword construction (``version is None``) must not let the
+        v6->v7 step clobber an explicitly-passed ``cdr=`` with an inferred one.
+        """
+        from cstar_forge.forge.forge_blueprint import migrate_forge_blueprint_data
+
+        data = {"forcing": {}, "cdr": {"mode": "upscaled"}}
+        migrated = migrate_forge_blueprint_data(data)
+        assert migrated["cdr"] == {"mode": "upscaled"}
 
 
 _USER_FILE_KWARGS = dict(location="/data/staged/grid.nc", content_hash="a" * 64)
@@ -502,22 +754,77 @@ def test_river_custom_file_excludes_bgc_source():
         )
 
 
-def test_forcing_cdr_forcing_file_mutually_exclusive_with_cdr_forcing():
-    # Constructs ``Forcing`` directly (see the comment on the sibling grid_file
-    # test above for why ``model_copy`` won't do here).
-    from cstar_forge.forge.forge_blueprint import (
-        Forcing,
-        InitialConditions,
-        SourceSpec,
-        UserProvidedFile,
-    )
+class TestCdrSpecValidatorMatrix:
+    """``CdrSpec._fields_match_mode``: each of the five modes accepts exactly the
+    field combination its docstring promises, and rejects every other one.
+    """
 
-    with pytest.raises(ValueError, match="mutually exclusive"):
-        Forcing(
-            initial_conditions=InitialConditions(source=SourceSpec(name="GLORYS")),
-            cdr_forcing={"some": "config"},
-            cdr_forcing_file=UserProvidedFile(**_USER_FILE_KWARGS),
-        )
+    def _file(self):
+        from cstar_forge.forge.forge_blueprint import UserProvidedFile
+
+        return UserProvidedFile(**_USER_FILE_KWARGS)
+
+    @pytest.mark.parametrize("mode", ["none", "upscaled"])
+    def test_none_and_upscaled_accept_no_fields(self, mode):
+        from cstar_forge.forge.forge_blueprint import CdrSpec
+
+        spec = CdrSpec(mode=mode)
+        assert spec.cdr_forcing is None
+        assert spec.cdr_forcing_file is None
+
+    @pytest.mark.parametrize("mode", ["none", "upscaled"])
+    def test_none_and_upscaled_reject_cdr_forcing(self, mode):
+        from cstar_forge.forge.forge_blueprint import CdrSpec
+
+        with pytest.raises(ValueError, match="requires both cdr_forcing"):
+            CdrSpec(mode=mode, cdr_forcing={"some": "config"})
+
+    @pytest.mark.parametrize("mode", ["none", "upscaled"])
+    def test_none_and_upscaled_reject_cdr_forcing_file(self, mode):
+        from cstar_forge.forge.forge_blueprint import CdrSpec
+
+        with pytest.raises(ValueError, match="requires both cdr_forcing"):
+            CdrSpec(mode=mode, cdr_forcing_file=self._file())
+
+    @pytest.mark.parametrize("mode", ["simple", "yaml"])
+    def test_simple_and_yaml_require_cdr_forcing(self, mode):
+        from cstar_forge.forge.forge_blueprint import CdrSpec
+
+        spec = CdrSpec(mode=mode, cdr_forcing={"some": "config"})
+        assert spec.cdr_forcing == {"some": "config"}
+        assert spec.cdr_forcing_file is None
+        with pytest.raises(ValueError, match="requires cdr_forcing to be set"):
+            CdrSpec(mode=mode)
+
+    @pytest.mark.parametrize("mode", ["simple", "yaml"])
+    def test_simple_and_yaml_reject_cdr_forcing_file(self, mode):
+        from cstar_forge.forge.forge_blueprint import CdrSpec
+
+        with pytest.raises(ValueError, match="requires cdr_forcing_file to be unset"):
+            CdrSpec(
+                mode=mode,
+                cdr_forcing={"some": "config"},
+                cdr_forcing_file=self._file(),
+            )
+
+    def test_netcdf_requires_cdr_forcing_file(self):
+        from cstar_forge.forge.forge_blueprint import CdrSpec
+
+        spec = CdrSpec(mode="netcdf", cdr_forcing_file=self._file())
+        assert spec.cdr_forcing_file is not None
+        assert spec.cdr_forcing is None
+        with pytest.raises(ValueError, match="requires cdr_forcing_file to be set"):
+            CdrSpec(mode="netcdf")
+
+    def test_netcdf_rejects_cdr_forcing(self):
+        from cstar_forge.forge.forge_blueprint import CdrSpec
+
+        with pytest.raises(ValueError, match="requires cdr_forcing to be unset"):
+            CdrSpec(
+                mode="netcdf",
+                cdr_forcing_file=self._file(),
+                cdr_forcing={"some": "config"},
+            )
 
 
 def test_content_hash_ignores_user_file_location_but_not_content_hash():
@@ -859,10 +1166,11 @@ def test_build_forge_blueprint_cdr_forcing_file_carries_hash_and_forces_output(
 
     cfg = _build(cdr_forcing_file=str(cdr_path))
 
-    assert cfg.forcing.cdr_forcing_file is not None
-    assert cfg.forcing.cdr_forcing_file.location == str(cdr_path)
-    assert cfg.forcing.cdr_forcing_file.content_hash == hash_netcdf_contents(cdr_path)
-    assert cfg.forcing.cdr_forcing is None
+    assert cfg.cdr.mode == "netcdf"
+    assert cfg.cdr.cdr_forcing_file is not None
+    assert cfg.cdr.cdr_forcing_file.location == str(cdr_path)
+    assert cfg.cdr.cdr_forcing_file.content_hash == hash_netcdf_contents(cdr_path)
+    assert cfg.cdr.cdr_forcing is None
 
     settings = cfg.model_settings
     assert settings["cdr_output"]["do_cdr_output"] is True
@@ -881,7 +1189,7 @@ def test_build_forge_blueprint_cdr_forcing_file_trusted_dict_skips_rehash(tmp_pa
             "content_hash": "not-the-real-hash",
         }
     )
-    assert cfg.forcing.cdr_forcing_file.content_hash == "not-the-real-hash"
+    assert cfg.cdr.cdr_forcing_file.content_hash == "not-the-real-hash"
 
 
 def test_build_forge_blueprint_cdr_forcing_file_missing_raises(tmp_path):
@@ -919,6 +1227,149 @@ def test_build_forge_blueprint_cdr_forcing_file_conflicts_with_cdr_forcing_yaml(
     cdr_path = _write_tiny_netcdf(tmp_path, name="cdr.nc")
     with pytest.raises(ValueError, match="mutually exclusive"):
         _build(cdr_forcing_file=str(cdr_path), cdr_forcing_yaml=_CDR_SAMPLE_YAML)
+
+
+# ---------------------------------------------------------------------------
+# Resolver: the `cdr=` kwarg (a full CdrSpec selection) -- mode matrix, conflicts
+# with the cdr_forcing/cdr_forcing_yaml/cdr_forcing_file conveniences, and
+# convenience-kwarg/`cdr=` parity.
+# ---------------------------------------------------------------------------
+def test_build_forge_blueprint_cdr_kwarg_conflicts_with_cdr_forcing():
+    with pytest.raises(ValueError, match="mutually exclusive"):
+        _build(cdr={"mode": "none"}, cdr_forcing={"releases": []})
+
+
+def test_build_forge_blueprint_cdr_kwarg_conflicts_with_cdr_forcing_yaml():
+    with pytest.raises(ValueError, match="mutually exclusive"):
+        _build(cdr={"mode": "none"}, cdr_forcing_yaml=_CDR_SAMPLE_YAML)
+
+
+def test_build_forge_blueprint_cdr_kwarg_conflicts_with_cdr_forcing_file(tmp_path):
+    cdr_path = _write_tiny_netcdf(tmp_path, name="cdr.nc")
+    with pytest.raises(ValueError, match="mutually exclusive"):
+        _build(cdr={"mode": "none"}, cdr_forcing_file=str(cdr_path))
+
+
+def test_build_forge_blueprint_cdr_kwarg_none_mode():
+    cfg = _build(cdr={"mode": "none"})
+    assert cfg.cdr.mode == "none"
+    settings = cfg.model_settings
+    assert settings["cppdefs"]["cdr_forcing"] is False
+    assert settings["cdr_output"]["do_cdr_output"] is False
+
+
+def test_build_forge_blueprint_cdr_kwarg_simple_mode():
+    """The "simple" mode (an authored-fresh kwargs dict) is reachable only via
+    ``cdr=`` -- the convenience kwargs always land on "yaml" (see the module
+    docstring on ``cdr_forcing_yaml``).
+    """
+    cfg = _build(cdr={"mode": "simple", "cdr_forcing": {"releases": []}})
+    assert cfg.cdr.mode == "simple"
+    assert cfg.cdr.cdr_forcing == {"releases": []}
+    settings = cfg.model_settings
+    assert settings["cppdefs"]["cdr_forcing"] is True
+    assert settings["cdr_output"]["do_cdr_output"] is True
+    diags = settings["marbl_bgc"]["marbl_diagnostics_to_write"]
+    for name in _CDR_OUTPUT_REQUIRED_DIAGNOSTICS:
+        assert name in diags
+
+
+def test_build_forge_blueprint_cdr_kwarg_yaml_mode_strips_tracer_metadata():
+    cfg = _build(
+        cdr={
+            "mode": "yaml",
+            "cdr_forcing": {
+                "releases": [],
+                "_tracer_metadata": {"temp": {"units": "C"}},
+            },
+        }
+    )
+    assert cfg.cdr.mode == "yaml"
+    assert "_tracer_metadata" not in cfg.cdr.cdr_forcing
+    assert cfg.model_settings["cppdefs"]["cdr_forcing"] is True
+
+
+def test_build_forge_blueprint_cdr_kwarg_netcdf_mode(tmp_path):
+    from cstar_forge.forge.user_files import hash_netcdf_contents
+
+    cdr_path = _write_tiny_netcdf(tmp_path, name="cdr.nc")
+    cfg = _build(cdr={"mode": "netcdf", "cdr_forcing_file": str(cdr_path)})
+    assert cfg.cdr.mode == "netcdf"
+    assert cfg.cdr.cdr_forcing_file.location == str(cdr_path)
+    assert cfg.cdr.cdr_forcing_file.content_hash == hash_netcdf_contents(cdr_path)
+    settings = cfg.model_settings
+    assert settings["cppdefs"]["cdr_forcing"] is True
+    assert settings["cdr_output"]["do_cdr_output"] is True
+
+
+def test_build_forge_blueprint_cdr_kwarg_netcdf_mode_missing_file_raises(tmp_path):
+    missing = tmp_path / "does-not-exist.nc"
+    with pytest.raises(FileNotFoundError):
+        _build(cdr={"mode": "netcdf", "cdr_forcing_file": str(missing)})
+
+
+def test_build_forge_blueprint_cdr_kwarg_upscaled_mode_sets_cdr_frc_statics():
+    """The "upscaled" mode: no generation step runs, so the resolver is the sole source
+    of these ``cdr_frc`` statics (see ``build_forge_blueprint``'s upscaled
+    handling); it also participates in the CDR-output consistency block just
+    like the generated/custom-file modes.
+    """
+    cfg = _build(cdr={"mode": "upscaled"})
+    assert cfg.cdr.mode == "upscaled"
+    assert cfg.cdr.cdr_forcing is None
+    assert cfg.cdr.cdr_forcing_file is None
+    settings = cfg.model_settings
+    assert settings["cppdefs"]["cdr_forcing"] is True
+    assert settings["cdr_output"]["do_cdr_output"] is True
+    diags = settings["marbl_bgc"]["marbl_diagnostics_to_write"]
+    for name in _CDR_OUTPUT_REQUIRED_DIAGNOSTICS:
+        assert name in diags
+    cdr_frc = settings["cdr_frc"]
+    assert cdr_frc["cdr_source"] is True
+    assert cdr_frc["cdr_file"] == "cdr.nc"
+    assert cdr_frc["forcing_depth_profiles"] is True
+    assert cdr_frc["forcing_parameterized"] is False
+    assert cdr_frc["cdr_volume"] is False
+    assert cdr_frc["relocate_to_wet_pts"] is False
+
+
+def test_build_forge_blueprint_cdr_kwarg_upscaled_requires_marbl():
+    """Mirrors test_cdr_output_requires_marbl / the cdr_forcing_file variant:
+    "upscaled" implies do_cdr_output just like generated/custom-file CDR, so it
+    must raise the same way when bgc_mode="none".
+    """
+    with pytest.raises(ValueError, match="do_cdr_output"):
+        _build(
+            cdr={"mode": "upscaled"},
+            bgc_mode="none",
+            forcing_inputs=_PHYSICS_ONLY_FORCING,
+        )
+
+
+def test_build_forge_blueprint_cdr_kwarg_accepts_cdrspec_instance():
+    from cstar_forge.forge.forge_blueprint import CdrSpec
+
+    cfg = _build(cdr=CdrSpec(mode="yaml", cdr_forcing={"releases": []}))
+    assert cfg.cdr.mode == "yaml"
+    assert cfg.cdr.cdr_forcing == {"releases": []}
+
+
+def test_build_forge_blueprint_convenience_kwargs_match_cdr_kwarg_semantics():
+    """The cdr_forcing/cdr_forcing_yaml/cdr_forcing_file conveniences remain
+    exactly equivalent to the ``cdr=`` shape they map onto (mode inferred) --
+    pre-CdrSpec callers get an identical resolved blueprint either way.
+    """
+    via_convenience = _build(cdr_forcing={"releases": []})
+    via_cdr_kwarg = _build(cdr={"mode": "yaml", "cdr_forcing": {"releases": []}})
+    assert via_convenience.cdr == via_cdr_kwarg.cdr
+    assert (
+        via_convenience.model_settings["cppdefs"]["cdr_forcing"]
+        == via_cdr_kwarg.model_settings["cppdefs"]["cdr_forcing"]
+    )
+    assert (
+        via_convenience.model_settings["cdr_output"]
+        == via_cdr_kwarg.model_settings["cdr_output"]
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -1203,6 +1654,36 @@ def test_golden_model_settings_test_tiny_roms050():
         "from the golden fixture. If this is an intentional schema/default "
         "change, regenerate tests/fixtures/golden_model_settings_test-tiny-"
         "roms050.json; otherwise the change is a regression in the settings the "
+        "executor feeds to namelist.nml / cppdefs.opt."
+    )
+
+
+def test_golden_model_settings_test_tiny_roms060():
+    """Behavior-preservation snapshot for the ``roms-marbl-0.6-default`` ModelSpec
+    (ucla-roms >= 0.6.0, adds ``&PIO_SETTINGS``), resolved from the same
+    test-tiny domain/forcing/output setup as ``test_golden_model_settings_test_tiny``.
+
+    Mirrors ``test_golden_model_settings_test_tiny_roms050`` exactly; the only
+    resolved-settings difference from that fixture is the added ``pio_settings``
+    entry (see ``TestGoldenNamelist.test_golden_namelist_test_tiny_roms060`` in
+    ``tests/test_core.py`` for the versioned-namelist assertion).
+    """
+    import json
+
+    golden_path = (
+        Path(cstar_forge.__file__).parents[1]
+        / "tests"
+        / "fixtures"
+        / "golden_model_settings_test-tiny-roms060.json"
+    )
+    golden = json.loads(golden_path.read_text())
+    cfg = _build(model_dir=_MODEL_DIR_ROMS060)  # test-tiny, dt=7200
+    got = json.loads(json.dumps(cfg.model_settings, sort_keys=True, default=str))
+    assert got == golden, (
+        "Resolved model_settings for test-tiny (roms-marbl-0.6-default) drifted "
+        "from the golden fixture. If this is an intentional schema/default "
+        "change, regenerate tests/fixtures/golden_model_settings_test-tiny-"
+        "roms060.json; otherwise the change is a regression in the settings the "
         "executor feeds to namelist.nml / cppdefs.opt."
     )
 
@@ -1576,8 +2057,9 @@ def test_forge_blueprint_to_builder_kwargs_carries_cdr_forcing_file(tmp_path):
     cfg = _build(cdr_forcing_file=str(cdr_path))
 
     kwargs = forge_blueprint_to_builder_kwargs(cfg)
-    assert kwargs["cdr_forcing_file"] == cfg.forcing.cdr_forcing_file
+    assert kwargs["cdr_forcing_file"] == cfg.cdr.cdr_forcing_file
     assert kwargs["cdr_forcing"] is None
+    assert kwargs["cdr_mode"] == "netcdf"
 
     ov = sources_to_forcing_override(cfg)
     assert "cdr_forcing_file" not in ov
@@ -1762,8 +2244,9 @@ def test_forcing_override_used_by_input_data(tmp_path):
     # Minimal mock of what __post_init__ needs beyond the input_list building
     mock_spec = MagicMock()
     mock_spec.inputs.grid = None  # skip grid
-    # Note: marbl is now read from _settings_compile_time["cppdefs"]["marbl"],
-    # not from model_spec.settings.properties — no need to set it on mock_spec.
+    # Note: BGC is now the explicit `has_bgc` constructor arg (mirroring
+    # ForgeExecutor._has_bgc, itself read from _settings_compile_time["cppdefs"]["marbl"]),
+    # not read from model_spec.settings.properties — no need to set it on mock_spec.
 
     with patch.object(
         id_mod.RomsMarblInputData,
@@ -1938,6 +2421,65 @@ def test_resolver_extract_check_gated_off_for_legacy_roms():
     assert cfg.model_settings["extract_data"]["extract_period"] == 5000.0
 
 
+def _standard_output_settings_with_bad_frc():
+    """A copy of the 'standard' OutputSpec with `frc` enabled and set to a
+    period that doesn't evenly divide `ocean_vars.output_period_rst`
+    (86400 s): 4 (nrpf) * 5000 s = 20000 s, and 86400 % 20000 != 0.
+    """
+    settings = {
+        k: (dict(v) if isinstance(v, dict) else v)
+        for k, v in _CATALOG.output_data("standard").items()
+    }
+    settings["frc_output"] = {
+        **settings["frc_output"],
+        "wrt_frc": True,
+        "output_period": 5000.0,
+    }
+    return settings
+
+
+@pytest.mark.skipif(
+    _nm._check_output_streams_divide_rst is None,
+    reason="cstar.roms.precheck not available in this cstar release; check is guarded off",
+)
+def test_resolver_rejects_non_extract_stream_not_dividing_rst_for_roms050():
+    """The general C-Star `check_output_streams_divide_rst` check (which covers
+    every ucla-roms >= 0.5.0 precheck stream, not just `extract`) also fires at
+    resolve time -- here for `frc`.
+    """
+    with pytest.raises(ValueError, match="evenly divide"):
+        _build(
+            model_dir=_MODEL_DIR_ROMS050,
+            output_settings=_standard_output_settings_with_bad_frc(),
+        )
+
+
+def test_resolver_non_extract_stream_check_gated_off_for_legacy_roms():
+    """The same nonconforming `frc` config resolves fine for a pre-0.5.0 model
+    -- older ucla-roms has no such precheck, so authoring isn't blocked.
+    """
+    cfg = _build(  # default _MODEL_DIR pins roms 0.2.0 (legacy schema)
+        output_settings=_standard_output_settings_with_bad_frc(),
+    )
+    assert cfg.model_settings["frc_output"]["wrt_frc"] is True
+
+
+def test_resolver_skips_output_stream_check_when_cstar_precheck_absent(monkeypatch):
+    """Forge installed against a cstar release predating ``cstar.roms.precheck``
+    degrades gracefully: the guarded shim no-ops, so a would-be-violating >= 0.5.0
+    config still resolves at authoring time (ROMS still enforces it at run start).
+    """
+    from cstar_forge.forge import namelist_model
+
+    # Simulate the older-cstar import fallback (`_check... = None`).
+    monkeypatch.setattr(namelist_model, "_check_output_streams_divide_rst", None)
+    cfg = _build(
+        model_dir=_MODEL_DIR_ROMS050,
+        output_settings=_standard_output_settings_with_bad_frc(),
+    )
+    assert cfg.model_settings["frc_output"]["wrt_frc"] is True
+
+
 def test_resolver_output_settings_override():
     from cstar_forge.domain_catalog import default_catalog as cat
 
@@ -2065,8 +2607,9 @@ def test_read_cdr_forcing_yaml_rejects_non_cdr():
 
 def test_build_with_cdr_forcing_yaml():
     cfg = _build(cdr_forcing_yaml=_CDR_SAMPLE_YAML)
-    assert cfg.forcing.cdr_forcing["releases"]
-    assert "_tracer_metadata" not in cfg.forcing.cdr_forcing
+    assert cfg.cdr.mode == "yaml"
+    assert cfg.cdr.cdr_forcing["releases"]
+    assert "_tracer_metadata" not in cfg.cdr.cdr_forcing
     assert cfg.model_settings["cppdefs"]["cdr_forcing"] is True
 
 
@@ -2074,7 +2617,7 @@ def test_build_forge_blueprint_strips_tracer_metadata():
     cfg = _build(
         cdr_forcing={"releases": [], "_tracer_metadata": {"temp": {"units": "C"}}}
     )
-    assert "_tracer_metadata" not in cfg.forcing.cdr_forcing
+    assert "_tracer_metadata" not in cfg.cdr.cdr_forcing
 
 
 def test_cdr_forcing_content_hash_stable_across_yaml_round_trip(tmp_path):
@@ -2237,11 +2780,13 @@ def test_bgc_source_item_serialize_dask_roundtrips():
     # Omitted means "inherit", which must stay distinguishable from an explicit
     # False -- the CLI flag can only take over when the source said nothing.
     assert BgcSourceItem(source={"name": "ESPER"}).serialize_dask is None
-    assert BgcSourceItem(source={"name": "ESPER"}, serialize_dask=False).serialize_dask is False
+    assert (
+        BgcSourceItem(source={"name": "ESPER"}, serialize_dask=False).serialize_dask
+        is False
+    )
 
     with pytest.raises(ValidationError):
         BgcSourceItem(source={"name": "ESPER"}, serialize_dsk=True)
-
 
 
 class TestEnsureCdrOutputMarblDiagnostics:
@@ -2651,6 +3196,224 @@ def test_committed_example_validates():
     cfg = ForgeBlueprint.from_yaml(example)
     assert cfg.composition.model.name == "cson_roms-marbl_v0.1"
     assert cfg.composition.model.origin == "catalog"
+
+
+# ---------------------------------------------------------------------------
+# Multiple bgc_sources: use_vars partitioning is required and enforced disjoint
+# on both InitialConditions and BoundaryForcing (_require_partitioned_bgc_use_vars).
+# ---------------------------------------------------------------------------
+class TestBgcSourcesUseVarsPartitioning:
+    def _two_sources(self, use_vars=(None, None)):
+        from cstar_forge.forge.forge_blueprint import BgcSourceItem
+
+        return [
+            BgcSourceItem(source={"name": "UNIFIED"}, use_vars=use_vars[0]),
+            BgcSourceItem(source={"name": "GLODAP"}, use_vars=use_vars[1]),
+        ]
+
+    @pytest.mark.parametrize(
+        "section_cls_name", ["InitialConditions", "BoundaryForcing"]
+    )
+    def test_single_bgc_source_needs_no_use_vars(self, section_cls_name):
+        """Control: a single bgc source is never ambiguous, so use_vars stays
+        optional -- the shipped blueprints all have exactly one.
+        """
+        from cstar_forge.forge import forge_blueprint as fb
+
+        cls = getattr(fb, section_cls_name)
+        section = cls(
+            source={"name": "GLORYS"},
+            bgc_sources=[fb.BgcSourceItem(source={"name": "UNIFIED"})],
+        )
+        assert section.bgc_sources[0].use_vars is None
+
+    @pytest.mark.parametrize(
+        "section_cls_name", ["InitialConditions", "BoundaryForcing"]
+    )
+    def test_multiple_bgc_sources_require_use_vars_on_every_item(
+        self, section_cls_name
+    ):
+        from cstar_forge.forge import forge_blueprint as fb
+
+        cls = getattr(fb, section_cls_name)
+        with pytest.raises(ValueError, match="partition with use_vars"):
+            cls(
+                source={"name": "GLORYS"},
+                bgc_sources=self._two_sources(use_vars=(["ALK"], None)),
+            )
+
+    @pytest.mark.parametrize(
+        "section_cls_name", ["InitialConditions", "BoundaryForcing"]
+    )
+    def test_multiple_bgc_sources_reject_overlapping_use_vars(self, section_cls_name):
+        from cstar_forge.forge import forge_blueprint as fb
+
+        cls = getattr(fb, section_cls_name)
+        with pytest.raises(ValueError, match="partition with use_vars"):
+            cls(
+                source={"name": "GLORYS"},
+                bgc_sources=self._two_sources(use_vars=(["ALK", "DIC"], ["DIC"])),
+            )
+
+    @pytest.mark.parametrize(
+        "section_cls_name", ["InitialConditions", "BoundaryForcing"]
+    )
+    def test_multiple_bgc_sources_accept_disjoint_use_vars(self, section_cls_name):
+        from cstar_forge.forge import forge_blueprint as fb
+
+        cls = getattr(fb, section_cls_name)
+        section = cls(
+            source={"name": "GLORYS"},
+            bgc_sources=self._two_sources(use_vars=(["ALK", "DIC"], ["NO3"])),
+        )
+        assert [bs.use_vars for bs in section.bgc_sources] == [["ALK", "DIC"], ["NO3"]]
+
+    def test_shipped_blueprints_have_single_bgc_source_and_still_validate(self):
+        """The new validator must not break any file already in the repo -- every
+        shipped blueprint has exactly one bgc source per section.
+        """
+        for p in _shipped_blueprint_paths():
+            cfg = ForgeBlueprint.from_yaml(p)
+            for section in (cfg.forcing.initial_conditions, cfg.forcing.boundary):
+                if section is not None:
+                    assert len(section.bgc_sources) <= 1, (
+                        f"{p} has multiple bgc_sources -- the validator matrix "
+                        "above should gain a case for this instead of relying "
+                        "on this assumption"
+                    )
+
+
+# ---------------------------------------------------------------------------
+# migrate_forcing_inputs hardening: warn on dropped per-item bgc keys, raise on
+# a non-dict boundary entry (silent data loss before), and a direct test of the
+# shared function on a ForcingSpec-shaped (ic + forcing siblings) pair.
+# ---------------------------------------------------------------------------
+class TestMigrateForcingInputsHardening:
+    def test_dropped_bgc_item_keys_warn_with_index_and_source_name(self):
+        from cstar_forge.forge.forge_blueprint import migrate_forcing_inputs
+
+        forcing = {
+            "boundary": [
+                {"type": "physics", "source": {"name": "GLORYS"}},
+                {
+                    "type": "bgc",
+                    "source": {"name": "UNIFIED"},
+                    "regrid_method": "nearest",  # not on BgcSourceItem -- dropped
+                },
+            ]
+        }
+        with pytest.warns(
+            UserWarning, match=r"forcing\.boundary\[1\].*UNIFIED.*regrid_method"
+        ):
+            migrate_forcing_inputs(None, forcing)
+        assert forcing["boundary"]["bgc_sources"] == [{"source": {"name": "UNIFIED"}}]
+
+    def test_no_warning_when_no_extra_keys_dropped(self):
+        import warnings
+
+        from cstar_forge.forge.forge_blueprint import migrate_forcing_inputs
+
+        forcing = {
+            "boundary": [
+                {"type": "physics", "source": {"name": "GLORYS"}},
+                {"type": "bgc", "source": {"name": "UNIFIED"}, "use_vars": None},
+            ]
+        }
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")
+            migrate_forcing_inputs(None, forcing)
+        assert not w
+
+    def test_non_dict_boundary_entry_raises(self):
+        from cstar_forge.forge.forge_blueprint import migrate_forcing_inputs
+
+        with pytest.raises(ValueError, match="non-dict entr"):
+            migrate_forcing_inputs(
+                None,
+                {"boundary": [{"type": "physics", "source": {"name": "GLORYS"}}, None]},
+            )
+
+    def test_all_non_dict_boundary_list_raises_not_silently_none(self):
+        """Previously an all-non-dict list silently became `None` (boundary
+        forcing quietly vanishing); it must now raise instead.
+        """
+        from cstar_forge.forge.forge_blueprint import migrate_forcing_inputs
+
+        with pytest.raises(ValueError, match="non-dict entr"):
+            migrate_forcing_inputs(None, {"boundary": [None, "not-a-dict"]})
+
+    def test_direct_call_on_forcingspec_shaped_pair(self):
+        """A catalog ``Forcing.yaml`` keeps ``initial_conditions`` and
+        ``forcing`` as top-level siblings (not nested under one ``forcing``
+        dict, unlike a full ForgeBlueprint) -- migrate_forcing_inputs must
+        accept exactly that shape, since it's the wizard's ForcingSpec loader's
+        real call signature.
+        """
+        from cstar_forge.forge.forge_blueprint import migrate_forcing_inputs
+
+        ic = {"bgc_source": {"name": "UNIFIED"}}
+        forcing = {
+            "boundary": [
+                {"type": "physics", "source": {"name": "GLORYS"}},
+                {"type": "bgc", "source": {"name": "UNIFIED"}},
+            ]
+        }
+        migrate_forcing_inputs(ic, forcing)
+        assert ic["bgc_sources"] == [{"source": {"name": "UNIFIED"}}]
+        assert forcing["boundary"]["source"] == {"name": "GLORYS"}
+        assert forcing["boundary"]["bgc_sources"] == [{"source": {"name": "UNIFIED"}}]
+
+    def test_already_migrated_pair_is_a_no_op(self):
+        import copy
+
+        from cstar_forge.forge.forge_blueprint import migrate_forcing_inputs
+
+        ic = {"bgc_sources": [{"source": {"name": "UNIFIED"}}]}
+        forcing = {"boundary": {"source": {"name": "GLORYS"}, "bgc_sources": []}}
+        ic_before, forcing_before = copy.deepcopy(ic), copy.deepcopy(forcing)
+        migrate_forcing_inputs(ic, forcing)
+        assert ic == ic_before
+        assert forcing == forcing_before
+
+
+# ---------------------------------------------------------------------------
+# Shipped-blueprint hygiene: every checked-in blueprint must be current version,
+# hash-consistent with its own content, and load with no warnings.
+# ---------------------------------------------------------------------------
+def _shipped_blueprint_paths() -> list[Path]:
+    pkg_root = Path(cstar_forge.__file__).parent
+    repo_root = pkg_root.parent
+    paths = sorted((pkg_root / "catalog" / "blueprints").glob("*.forge_blueprint.yaml"))
+    example = repo_root / "docs" / "forge-blueprint-example.wio-toy.yaml"
+    if example.exists():
+        paths.append(example)
+    return paths
+
+
+@pytest.mark.parametrize("path", _shipped_blueprint_paths(), ids=lambda p: p.name)
+def test_shipped_blueprint_hygiene(path):
+    import warnings
+
+    raw = yaml.safe_load(path.read_text())
+    assert raw.get("forge_blueprint_version") == FORGE_BLUEPRINT_VERSION, (
+        f"{path} is stamped forge_blueprint_version={raw.get('forge_blueprint_version')!r}, "
+        f"expected {FORGE_BLUEPRINT_VERSION!r} -- restamp it (see B1's restamp recipe)."
+    )
+    stored_hash = raw.get("provenance", {}).get("content_hash")
+
+    with warnings.catch_warnings(record=True) as w:
+        warnings.simplefilter("always")
+        cfg = ForgeBlueprint.from_yaml(path)
+    assert not w, (
+        f"{path} emits warning(s) on load: {[str(x.message) for x in w]} -- a "
+        "shipped blueprint should already be in current, warning-free shape."
+    )
+
+    assert stored_hash == cfg.content_hash(), (
+        f"{path}'s stored provenance.content_hash is stale -- restamp it (see "
+        "B1's restamp recipe: rewrite the content_hash: line with "
+        "ForgeBlueprint.from_yaml(p).content_hash())."
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -4016,9 +4779,10 @@ class TestForgeBlueprintWizard:
         `_populate_from`, loading `.../ccs-4km_64procs.forge_blueprint.yaml`).
         """
         w1 = self._wizard()
+        w1.cdr_mode_dd.value = "yaml"
         w1._cdr_forcing = {"releases": [{"lon": 1.0, "lat": 2.0}]}
         w1._rebuild()
-        assert w1.config.forcing.cdr_forcing == w1._cdr_forcing
+        assert w1.config.cdr.cdr_forcing == w1._cdr_forcing
 
         p = tmp_path / "forge_blueprint.yaml"
         w1.save_path.value = str(p)
@@ -4159,7 +4923,13 @@ class TestForgeBlueprintEngine:
         kw = forge_blueprint_to_builder_kwargs(cfg)
         assert kw["name"] == cfg.name
         assert kw["grid_name"] == "test-tiny"
-        assert kw["partitioning"] == {"n_procs_x": 1, "n_procs_y": 1}
+        # Subset, not full-dict equality: forge_blueprint_engine.py also injects a
+        # use_pio leaf (from cppdefs) into this dict for ForgeExecutor's
+        # PartitioningParameterSet, which is out of scope here -- see
+        # forge_blueprint_to_builder_kwargs's own docstring/comment for why.
+        assert kw["partitioning"]["n_procs_x"] == 1
+        assert kw["partitioning"]["n_procs_y"] == 1
+        assert kw["partitioning"]["auto_tiling"] is False
         assert kw["open_boundaries"]["east"] is True
         # host/machine/paths must NOT be passed (builder resolves them)
         assert not any(k in kw for k in ("machine", "paths", "scratch", "source_data"))
@@ -4340,7 +5110,7 @@ class TestForgeBlueprintEngine:
         # working_dir is the injected per-run artifact root; source_data_cache is the
         # shared host download cache. Both resolved from config, not the spec file.
         # The spec default carries a per-run subdirectory: <root>/<name>.
-        assert "cstar-forge-run" in str(h.working_dir)
+        assert "_forge_bp_runs" in str(h.working_dir)
         assert str(h.working_dir).endswith(cfg.name)
         assert h.source_data_cache is not None
 
@@ -4764,28 +5534,84 @@ class TestSaveModifiedSpecsToCatalog:
         # And a fresh wizard picking that spec back up still carries it.
         wiz2 = self._wizard(isolated_catalog)
         wiz2.forcing_dd.value = "serialized-esper-forcing"
-        assert any(
-            bs.serialize_dask for bs in wiz2.config.forcing.boundary.bgc_sources
-        )
+        assert any(bs.serialize_dask for bs in wiz2.config.forcing.boundary.bgc_sources)
 
-    def test_save_forcing_spec_embeds_and_reloads_cdr(self, isolated_catalog):
+    def test_save_cdr_spec_marks_unmodified(self, isolated_catalog):
+        """The CDR row in "Save modified specs to catalog": register_cdr from the
+        wizard's current "yaml" mode state, verified via the same round-trip
+        pattern as output/model/domain/forcing (see class docstring).
+        """
         wiz = self._wizard(isolated_catalog)
+        wiz.cdr_mode_dd.value = "yaml"
         fake_cdr = {"releases": [{"lon": 1.0, "lat": 2.0}]}
         wiz._cdr_forcing = fake_cdr
         wiz._rebuild()
-        assert wiz.config.forcing.cdr_forcing == fake_cdr
+        assert wiz.config.cdr.cdr_forcing == fake_cdr
+        assert wiz.config.composition.cdr.modified is False  # <custom>: moot
 
-        wiz.save_forcing_name.value = "my-cdr-forcing"
-        wiz._on_save_forcing(None)
-        assert wiz.config.composition.forcing.modified is False
-        assert (
-            isolated_catalog.forcing_data("my-cdr-forcing")["cdr_forcing"] == fake_cdr
+        wiz.save_cdr_name.value = "my-cdr-spec"
+        wiz._on_save_cdr(None)
+
+        assert "my-cdr-spec" in isolated_catalog.cdr_names
+        assert isolated_catalog.cdr_data("my-cdr-spec") == {
+            "description": wiz.description.value,
+            "mode": "yaml",
+            "cdr_forcing": fake_cdr,
+            "cdr_forcing_file": None,
+        }
+        assert wiz.cdr_dd.value == "my-cdr-spec"
+        assert wiz.config.composition.cdr.modified is False
+        assert "✓" in wiz.save_cdr_status.value
+
+    def test_save_cdr_spec_refuses_mode_none(self, isolated_catalog):
+        wiz = self._wizard(isolated_catalog)
+        assert wiz.cdr_mode_dd.value == "none"
+
+        wiz.save_cdr_name.value = "should-not-be-saved"
+        wiz._on_save_cdr(None)
+
+        assert "should-not-be-saved" not in isolated_catalog.cdr_names
+        assert "nothing to save" in wiz.save_cdr_status.value.lower()
+
+    def test_cdr_spec_dropdown_load_back(self, isolated_catalog):
+        """Picking a CdrSpec from the catalog loads its mode + fields, and a
+        subsequent hand edit is reported via composition.cdr.modified (mirrors
+        domain/forcing's snapshot-based "modified" tracking).
+        """
+        isolated_catalog.register_cdr(
+            "my-simple-cdr",
+            mode="simple",
+            cdr_forcing={
+                "start_time": "2012-01-01T00:00:00",
+                "end_time": "2012-01-02T00:00:00",
+                "releases": [
+                    {
+                        "name": "test_release",
+                        "lat": 12.0,
+                        "lon": 34.0,
+                        "depth": 5.0,
+                        "hsc": 20.0,
+                        "vsc": 30.0,
+                        "times": ["2012-01-01T00:00:00", "2012-01-02T00:00:00"],
+                        "tracer_fluxes": {"ALK": [1.0, 1.0]},
+                        "release_type": "tracer_perturbation",
+                    }
+                ],
+            },
         )
+        wiz = self._wizard(isolated_catalog)
 
-        # a fresh wizard picking this ForcingSpec reloads the same CDR dict.
-        wiz2 = self._wizard(isolated_catalog)
-        wiz2.forcing_dd.value = "my-cdr-forcing"
-        assert wiz2._cdr_forcing == fake_cdr
+        wiz.cdr_dd.value = "my-simple-cdr"
+
+        assert wiz.cdr_mode_dd.value == "simple"
+        assert wiz.cdr_simple_name.value == "test_release"
+        assert wiz.cdr_simple_lat.value == 12.0
+        assert wiz.cdr_simple_lon.value == 34.0
+        assert wiz.config.composition.cdr.modified is False
+
+        wiz.cdr_simple_lat.value = 99.0
+
+        assert wiz.config.composition.cdr.modified is True
 
     def test_save_domain_spec_marks_unmodified_and_preserves_other_specs(
         self, isolated_catalog

@@ -43,12 +43,6 @@ _RT_DATA_INPUTS = {
     # user-facing option knob.
     "bgc_sources",
     "bgc_model",
-    # `.save()`/`process_bgc_fields(filepath=...)`'s write-strategy switch (see
-    # `roms_tools.utils.save_datasets`): not a constructor field this coverage
-    # test's SKIP_LIST mechanism covers, but IS a real, intentional Forge option
-    # -- `RomsMarblInputData.serialize_dask_write`, forwarded to every
-    # IC/boundary `.save()` call.
-    "serialize_dask",
 }
 
 # ── option fields in each Forge item model ───────────────────────────────────
@@ -65,9 +59,6 @@ _FORGE_FIELDS = {
         # model_reference_date is handled run-level; options dict is passthrough
         "model_reference_date",
         "options",
-        # legacy single-bgc-source convenience (forge never emits this directly,
-        # but rt.InitialConditions' own wrapper constructor still accepts it)
-        "use_vars",
         # wizard "validate" checkbox (checked = bypass_validation=False, the
         # roms-tools default); promoted from the SKIP_LIST after a real
         # production crash traced to _validate() running unprotected.
@@ -145,10 +136,17 @@ _FORGE_FIELDS = {
 # Params deliberately NOT typed into the Forge schema. Document the reason.
 _SKIP = {
     # All rt classes: use_dask is hardcoded from RomsMarblInputData.use_dask.
-    "*": {"use_dask"},
+    # serialize_dask: forge-only write flag (a `.save()` kwarg, not a
+    # constructor param of any class here) -- RomsMarblInputData.serialize_dask_write
+    # / BgcSourceItem.serialize_dask control it; never a user-facing rt option.
+    "*": {"use_dask", "serialize_dask"},
     "InitialConditions": {
         "chunks",  # advanced Dask tuning; expose via options passthrough
         "initial_slice_bounds",  # advanced spatial Dask subsetting
+        # legacy single-bgc-source convenience (forge never emits this directly,
+        # but rt.InitialConditions' own wrapper constructor still accepts it);
+        # use_vars lives on BgcSourceItem, forwarded per item.
+        "use_vars",
     },
     "SurfaceForcing": {
         "chunks",
@@ -231,7 +229,7 @@ def test_bgc_marbl_process_bgc_fields_params_are_data_inputs():
     """``BGCMarbl.process_bgc_fields`` isn't a constructor (so it isn't covered by
     ``test_all_rt_params_are_exposed_or_skipped`` above) but is still user-facing
     roms-tools surface Forge drives (batched boundary/IC bgc completion + save --
-    see ``RomsMarblInputData._flush_boundary_bgc_batch``/``_generate_initial_conditions``).
+    see ``RomsMarblInputData._generate_boundary_forcing``/``_generate_initial_conditions``).
     Both its params (``forcings``, the already-built objects; ``filepath``, output
     path(s)) are pure data/output-path inputs, not user-configurable Forge fields.
     """

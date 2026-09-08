@@ -53,10 +53,11 @@ from cstar_forge.forge.input_data import CHILD_IC_PLACEHOLDER_LOCATION
 from cstar_forge.forge_blueprint_resolve import build_forge_blueprint
 
 requires_cstar_pio = pytest.mark.skipif(
-    "pio" not in cstar_models.ROMSCompositeCodeRepository.model_fields,
+    "pio" not in cstar_models.ROMSCompositeCodeRepository.model_fields
+    or "use_pio" not in cstar_models.PartitioningParameterSet.model_fields,
     reason=(
         "installed C-Star predates ParallelIO support "
-        "(code.pio / model_params.use_pio fields, cstar #594)"
+        "(code.pio / partitioning.use_pio fields, cstar #594)"
     ),
 )
 
@@ -69,6 +70,14 @@ _MODEL_DIR_ROMS050 = (
     / "catalog"
     / "ModelSpec"
     / "roms-marbl-0.5-default"
+)
+# ucla-roms >= 0.6.0 ModelSpec (adds &PIO_SETTINGS) -- used by the versioned-namelist
+# golden test below.
+_MODEL_DIR_ROMS060 = (
+    Path(cstar_forge.__file__).parent
+    / "catalog"
+    / "ModelSpec"
+    / "roms-marbl-0.6-default"
 )
 # ModelSpec no longer embeds a default forcing/output selection -- these tests just
 # need a valid, representative pair from the bundled catalog.
@@ -191,12 +200,6 @@ def sample_runtime_params():
         end_date=datetime(2012, 1, 2),
         checkpoint_frequency="1d",
     )
-
-
-@pytest.fixture
-def sample_model_params():
-    """Sample model parameters."""
-    return cstar_models.ModelParameterSet(time_step=60)
 
 
 @pytest.fixture
@@ -674,7 +677,6 @@ class TestForgeExecutorGetDs:
         self,
         minimal_cstar_spec_builder_args,
         sample_runtime_params,
-        sample_model_params,
         tmp_path,
     ):
         """Test getting grid dataset from blueprint."""
@@ -713,7 +715,6 @@ class TestForgeExecutorGetDs:
                 ),
             ),
             partitioning=minimal_cstar_spec_builder_args["partitioning"],
-            model_params=sample_model_params,
             runtime_params=sample_runtime_params,
         )
         builder.roms_marbl_blueprint = roms_marbl_blueprint
@@ -753,7 +754,6 @@ class TestForgeExecutorGetDs:
         self,
         minimal_cstar_spec_builder_args,
         sample_runtime_params,
-        sample_model_params,
         tmp_path,
     ):
         """Test getting forcing.surface dataset."""
@@ -790,7 +790,6 @@ class TestForgeExecutorGetDs:
                 surface=surface_dataset,
             ),
             partitioning=minimal_cstar_spec_builder_args["partitioning"],
-            model_params=sample_model_params,
             runtime_params=sample_runtime_params,
         )
         builder.roms_marbl_blueprint = roms_marbl_blueprint
@@ -984,11 +983,11 @@ class TestForgeExecutorBuildAndRun:
             assert (Path(template_dir) / "cppdefs.opt.j2").exists()
 
     @requires_cstar_pio
-    def test_build_with_use_pio_emits_code_pio_and_model_param(
+    def test_build_with_use_pio_emits_code_pio_and_partitioning_use_pio(
         self, minimal_cstar_spec_builder_args
     ):
         """With use_pio, the emitted RomsMarblBlueprint carries code.pio and
-        model_params.use_pio: true.
+        partitioning.use_pio: true.
         """
         builder = _make_builder(minimal_cstar_spec_builder_args, use_pio=True)
 
@@ -1009,15 +1008,17 @@ class TestForgeExecutorBuildAndRun:
         bp_path = builder.path_roms_marbl_blueprint()
         with open(bp_path) as f:
             data = yaml.safe_load(f)
-        assert data["model_params"]["use_pio"] is True
+        assert data["partitioning"]["use_pio"] is True
         assert data["code"]["pio"]["location"] == (
             "https://github.com/CWorthy-ocean/ParallelIO.git"
         )
         assert data["code"]["pio"]["commit"] == "2.7.1-fork"
 
-    def test_build_without_use_pio_omits_pio(self, minimal_cstar_spec_builder_args):
-        """Without use_pio, model_params has no use_pio key and code.pio is unset
-        (keeps non-PIO blueprints loadable by main-branch C-Star).
+    def test_build_without_use_pio_sets_partitioning_use_pio_false(
+        self, minimal_cstar_spec_builder_args
+    ):
+        """Without use_pio, partitioning.use_pio is stamped False and code.pio is
+        unset (keeps non-PIO blueprints loadable by main-branch C-Star).
         """
         builder = _make_builder(minimal_cstar_spec_builder_args)
 
@@ -1038,8 +1039,49 @@ class TestForgeExecutorBuildAndRun:
         bp_path = builder.path_roms_marbl_blueprint()
         with open(bp_path) as f:
             data = yaml.safe_load(f)
-        assert "use_pio" not in data["model_params"]
+        assert data["partitioning"]["use_pio"] is False
         assert data["code"].get("pio") is None
+
+    @requires_cstar_pio
+    def test_build_with_auto_tiling_partitioning_persists_auto_tiling_and_n_cores(
+        self, minimal_cstar_spec_builder_args
+    ):
+        """An auto_tiling partitioning (n_procs_x/y omitted, n_cores set) round-trips
+        through configure_build into the persisted YAML, alongside the cppdefs-derived
+        partitioning.use_pio it requires.
+        """
+        builder = _make_builder(
+            minimal_cstar_spec_builder_args,
+            partitioning={
+                "n_procs_x": None,
+                "n_procs_y": None,
+                "auto_tiling": True,
+                "n_cores": 8,
+            },
+            use_pio=True,
+        )
+
+        assert builder._use_pio is True
+
+        with (
+            patch("cstar_forge.forge.executor.render_roms_settings") as mock_render,
+            patch("cstar_forge.forge.executor.write_roms_namelist"),
+        ):
+            mock_render.return_value = {
+                "location": str(builder.compile_time_code_dir),
+                "filter": {"files": ["test.opt"]},
+                "branch": "main",
+            }
+
+            builder.configure_build()
+
+        bp_path = builder.path_roms_marbl_blueprint()
+        with open(bp_path) as f:
+            data = yaml.safe_load(f)
+        assert data["partitioning"]["auto_tiling"] is True
+        assert data["partitioning"]["n_cores"] == 8
+        assert data["partitioning"]["use_pio"] is True
+        assert builder.n_procs == 8
 
     def test_configure_build_does_not_clobber_generated_river_and_tidal_settings(
         self, sample_grid_kwargs, sample_open_boundaries, sample_partitioning
@@ -1105,7 +1147,6 @@ class TestForgeExecutorBuildAndRun:
                     "ana_tides": False,
                 },
             },
-            allow_new=True,
         )
 
         run_ov, compile_ov = split_model_settings(cfg)
@@ -1273,6 +1314,101 @@ class TestForgeExecutorBuildAndRun:
         assert builder._settings_run_time["cdr_output"]["do_cdr_output"] is True
         assert builder._settings_compile_time["cppdefs"]["cdr_forcing"] is True
 
+    def test_configure_build_does_not_clobber_upscaled_cdr_frc_statics(
+        self, sample_grid_kwargs, sample_open_boundaries, sample_partitioning
+    ):
+        """The "upscaled" CDR mode: the resolver's static ``cdr_frc`` values (no
+        generation step runs to derive them for this mode -- see
+        ``build_forge_blueprint``'s upscaled handling) must survive
+        ``configure_build``'s overlay unchanged, exactly like the generated-river/
+        real-tidal-count values in
+        ``test_configure_build_does_not_clobber_generated_river_and_tidal_settings``
+        above. Also asserts the CDR-output consistency net fires for "upscaled"
+        even though neither ``cdr_forcing`` nor ``cdr_forcing_file`` is set.
+        """
+        cfg, host = self._cdr_cfg_and_builder(
+            sample_grid_kwargs,
+            sample_open_boundaries,
+            sample_partitioning,
+            cdr={"mode": "upscaled"},
+        )
+        assert cfg.cdr.mode == "upscaled"
+        assert cfg.cdr.cdr_forcing is None
+        assert cfg.cdr.cdr_forcing_file is None
+        # Resolver-set statics (see forge_blueprint_resolve.build_forge_blueprint's
+        # upscaled handling), already present before configure_build ever runs.
+        cdr_frc = cfg.model_settings["cdr_frc"]
+        assert cdr_frc["cdr_source"] is True
+        assert cdr_frc["cdr_file"] == "cdr.nc"
+        assert cdr_frc["forcing_depth_profiles"] is True
+        assert cdr_frc["forcing_parameterized"] is False
+        assert cdr_frc["cdr_volume"] is False
+        assert cdr_frc["relocate_to_wet_pts"] is False
+        assert cfg.model_settings["cdr_output"]["do_cdr_output"] is True
+        assert cfg.model_settings["cppdefs"]["cdr_forcing"] is True
+
+        builder = self._run_configure_build(cfg, host)
+
+        assert builder.cdr_mode == "upscaled"
+        # No generation step ran (no rt.CDRForcing call, no custom-file staging)
+        # -- these leaves are NOT in GENERATION_DERIVED_LEAF_KEYS for a reason:
+        # resolved_settings IS the base the overlay applies, so the statics must
+        # come through byte-identical.
+        run_cdr_frc = builder._settings_run_time["cdr_frc"]
+        assert run_cdr_frc["cdr_source"] is True
+        assert run_cdr_frc["cdr_file"] == "cdr.nc"
+        assert run_cdr_frc["forcing_depth_profiles"] is True
+        assert run_cdr_frc["forcing_parameterized"] is False
+        assert run_cdr_frc["cdr_volume"] is False
+        assert run_cdr_frc["relocate_to_wet_pts"] is False
+        # The consistency net (executor.py) fires for "upscaled" even without
+        # cdr_forcing/cdr_forcing_file being set.
+        assert builder._settings_run_time["cdr_output"]["do_cdr_output"] is True
+        assert builder._settings_compile_time["cppdefs"]["cdr_forcing"] is True
+
+    def test_upscaled_cdr_mode_emits_placeholder_resource(self, tmp_path):
+        """The "upscaled" CDR mode schedules no CDR generation step at all (unlike
+        "simple"/"yaml"/"netcdf", where ``cdr_forcing``/``cdr_forcing_file`` puts
+        "cdr_forcing" into ``input_list``) -- ``RomsMarblInputData.__post_init__``
+        must instead emit a placeholder ``Resource`` directly onto
+        ``roms_marbl_blueprint_elements.cdr_forcing``, mirroring the child-IC
+        placeholder pattern (``CHILD_IC_PLACEHOLDER_LOCATION``).
+
+        Constructs ``RomsMarblInputData`` directly (bypassing the executor/grid/
+        source-data machinery entirely) -- ``__post_init__`` only needs the
+        constructor-time attributes, not a real grid or dataset.
+        """
+        from cstar_forge.forge.input_data import (
+            UPSCALED_CDR_PLACEHOLDER_LOCATION,
+            RomsMarblInputData,
+        )
+
+        obj = RomsMarblInputData(
+            domain_name="upscaled-test",
+            start_date=datetime(2012, 1, 1),
+            end_date=datetime(2012, 1, 2),
+            input_data_dir=tmp_path,
+            grid=MagicMock(),
+            boundaries=forge_models.OpenBoundaries(),
+            source_data=MagicMock(),
+            roms_marbl_blueprint_dir=tmp_path,
+            partitioning=cstar_models.PartitioningParameterSet(
+                n_procs_x=1, n_procs_y=1
+            ),
+            cdr_mode="upscaled",
+            forcing_override={
+                "initial_conditions": {
+                    "source": {"name": "GLORYS", "climatology": False}
+                }
+            },
+        )
+
+        assert not any(key == "cdr_forcing" for key, _ in obj.input_list)
+        cdr_elem = obj.roms_marbl_blueprint_elements.cdr_forcing
+        assert cdr_elem is not None
+        assert len(cdr_elem.data) == 1
+        assert cdr_elem.data[0].location == UPSCALED_CDR_PLACEHOLDER_LOCATION
+
     @pytest.mark.real_template_staging
     def test_template_repo_args_map_from_code_spec(
         self, minimal_cstar_spec_builder_args
@@ -1299,6 +1435,73 @@ class TestForgeExecutorBuildAndRun:
         assert ct["subdir"] == "templates/compile-time"
         assert ct["checkout_target"] == pinned
         assert ct["files"] == ["cppdefs.opt.j2"]
+
+
+class TestForgeBlueprintToBuilderKwargsPartitioning:
+    """Tests for forge_blueprint_engine.forge_blueprint_to_builder_kwargs' partitioning
+    handling. These belong conceptually with test_forge_blueprint.py's other engine
+    tests, but that file is owned by another workstream on this branch -- kept here.
+    """
+
+    def test_injects_use_pio_from_cppdefs_into_partitioning(
+        self, minimal_cstar_spec_builder_args
+    ):
+        """Forge's own Partitioning model has no use_pio field; the engine must
+        derive PartitioningParameterSet.use_pio from model_settings.cppdefs.use_pio
+        so ForgeExecutor construction (which validates auto_tiling requires use_pio)
+        doesn't reject a use_pio=True blueprint.
+        """
+        cfg = build_forge_blueprint(
+            model_dir=_MODEL_DIR,
+            grid_name=minimal_cstar_spec_builder_args["grid_name"],
+            grid_kwargs=minimal_cstar_spec_builder_args["grid_kwargs"],
+            open_boundaries=minimal_cstar_spec_builder_args[
+                "open_boundaries"
+            ].model_dump(),
+            partitioning=minimal_cstar_spec_builder_args["partitioning"].model_dump(),
+            start_date=minimal_cstar_spec_builder_args["start_date"],
+            end_date=minimal_cstar_spec_builder_args["end_date"],
+            use_pio=True,
+            dt=7200,
+            forcing_inputs=_FORCING_INPUTS,
+            output_settings=_OUTPUT_SETTINGS,
+        )
+
+        from cstar_forge.forge.forge_blueprint_engine import (
+            forge_blueprint_to_builder_kwargs,
+        )
+
+        kwargs = forge_blueprint_to_builder_kwargs(cfg)
+
+        assert kwargs["partitioning"]["use_pio"] is True
+
+    def test_omits_use_pio_when_cppdefs_use_pio_false(
+        self, minimal_cstar_spec_builder_args
+    ):
+        """Without use_pio in cppdefs, the injected partitioning.use_pio is False."""
+        cfg = build_forge_blueprint(
+            model_dir=_MODEL_DIR,
+            grid_name=minimal_cstar_spec_builder_args["grid_name"],
+            grid_kwargs=minimal_cstar_spec_builder_args["grid_kwargs"],
+            open_boundaries=minimal_cstar_spec_builder_args[
+                "open_boundaries"
+            ].model_dump(),
+            partitioning=minimal_cstar_spec_builder_args["partitioning"].model_dump(),
+            start_date=minimal_cstar_spec_builder_args["start_date"],
+            end_date=minimal_cstar_spec_builder_args["end_date"],
+            use_pio=False,
+            dt=7200,
+            forcing_inputs=_FORCING_INPUTS,
+            output_settings=_OUTPUT_SETTINGS,
+        )
+
+        from cstar_forge.forge.forge_blueprint_engine import (
+            forge_blueprint_to_builder_kwargs,
+        )
+
+        kwargs = forge_blueprint_to_builder_kwargs(cfg)
+
+        assert kwargs["partitioning"]["use_pio"] is False
 
 
 class TestForgeExecutorPathRomsMarblBlueprint:
@@ -1383,7 +1586,6 @@ class TestValidatedRomsMarblBlueprint:
             grid=ds,
             initial_conditions=ds,
             forcing=cstar_models.ForcingConfiguration(boundary=ds, surface=ds),
-            model_params={"time_step": 60},
             runtime_params={
                 "start_date": builder.start_date,
                 "end_date": builder.end_date,
@@ -1405,7 +1607,10 @@ class TestValidatedRomsMarblBlueprint:
 
         assert isinstance(validated, cstar_models.RomsMarblBlueprint)
         assert validated.runtime_params.start_date == builder.start_date
-        assert validated.model_params.time_step == 60
+        # model_params (schema < 3.0.0) is gone; time_step now comes solely
+        # from the namelist. partitioning survives the round trip instead.
+        assert validated.partitioning.n_procs_x == 2
+        assert validated.partitioning.n_procs_y == 2
 
     def test_validated_blueprint_rejects_smuggled_extra_field(
         self, minimal_cstar_spec_builder_args, tmp_path
@@ -1444,9 +1649,45 @@ class TestForgeExecutorDefaultRuntimeParams:
 class TestForgeExecutorRomsBlueprintWorkingDir:
     """Tests for roms_blueprint_working_dir property."""
 
-    def test_swaps_cstar_forge_run_segment(self, minimal_cstar_spec_builder_args):
-        """When run_output_dir has the known cstar-forge-run root, the blueprint
-        working dir is the sibling cstar-roms-run root, name preserved.
+    def test_swaps_forge_bp_runs_segment(self, minimal_cstar_spec_builder_args):
+        """When run_output_dir has the known _forge_bp_runs root, the blueprint
+        working dir is the sibling _roms_bp_runs root, name preserved.
+        """
+        builder = _make_builder(minimal_cstar_spec_builder_args)
+        run_dir = Path("/home/user/cstar/_forge_bp_runs/my_run_name")
+        builder.host = HostPaths(
+            working_dir=run_dir,
+            source_data_cache=builder.host.source_data_cache,
+            system="test",
+        )
+
+        assert builder.roms_blueprint_working_dir == Path(
+            "/home/user/cstar/_roms_bp_runs/my_run_name"
+        )
+
+    def test_unanchored_forge_bp_runs_segment_is_not_swapped(
+        self, minimal_cstar_spec_builder_args
+    ):
+        """A ``_forge_bp_runs`` segment NOT under ``cstar/`` is a coincidence in a
+        custom path, not the default root -- it falls through to the fallback
+        instead of being rewritten (mirrors relocate_working_dir's anchored match).
+        """
+        builder = _make_builder(minimal_cstar_spec_builder_args)
+        run_dir = Path("/custom/_forge_bp_runs/my_run_name")
+        builder.host = HostPaths(
+            working_dir=run_dir,
+            source_data_cache=builder.host.source_data_cache,
+            system="test",
+        )
+
+        assert builder.roms_blueprint_working_dir == run_dir / "_roms_bp_runs"
+
+    def test_swaps_legacy_cstar_forge_run_segment(
+        self, minimal_cstar_spec_builder_args
+    ):
+        """When run_output_dir has the old (pre-rename) cstar-forge-run root, the
+        blueprint working dir is the sibling legacy cstar-roms-run root, name
+        preserved -- this keeps explicit old-form paths on non-HPC hosts working.
         """
         builder = _make_builder(minimal_cstar_spec_builder_args)
         run_dir = Path("/home/user/cstar-forge-run/my_run_name")
@@ -1463,8 +1704,9 @@ class TestForgeExecutorRomsBlueprintWorkingDir:
     def test_falls_back_to_subdir_when_unrecognized(
         self, minimal_cstar_spec_builder_args
     ):
-        """When run_output_dir doesn't contain the known cstar-forge-run segment,
-        fall back to a cstar-roms-run subdirectory under it.
+        """When run_output_dir doesn't contain the known _forge_bp_runs segment
+        (nor the legacy cstar-forge-run one), fall back to a _roms_bp_runs
+        subdirectory under it.
         """
         builder = _make_builder(minimal_cstar_spec_builder_args)
         run_dir = Path("/custom/spot")
@@ -1474,7 +1716,7 @@ class TestForgeExecutorRomsBlueprintWorkingDir:
             system="test",
         )
 
-        assert builder.roms_blueprint_working_dir == Path("/custom/spot/cstar-roms-run")
+        assert builder.roms_blueprint_working_dir == Path("/custom/spot/_roms_bp_runs")
 
     def test_forge_and_roms_roots_are_siblings_with_matching_name(
         self, minimal_cstar_spec_builder_args
@@ -1694,9 +1936,7 @@ class TestForgeExecutorGenerateInputsComprehensive:
         mock_roms_marbl_blueprint_elements.forcing = MagicMock()
         mock_roms_marbl_blueprint_elements.cdr_forcing = None
         mock_input_data_instance.generate_all.return_value = (
-            mock_roms_marbl_blueprint_elements,
-            {},
-            {},
+            mock_roms_marbl_blueprint_elements
         )
         mock_input_data_class.return_value = mock_input_data_instance
 
@@ -1710,6 +1950,17 @@ class TestForgeExecutorGenerateInputsComprehensive:
             assert call_kwargs["start_date"] == builder.start_date
             assert call_kwargs["end_date"] == builder.end_date
             assert call_kwargs["use_pio"] is False
+            # The resolved compile-time/run-time settings dicts are handed to input
+            # generation BY REFERENCE (executor-owned, mutated in place by the
+            # generation steps) -- steps read e.g. cppdefs.marbl (has_bgc) to
+            # default include_bgc on make_nesting_info.
+            assert (
+                call_kwargs["settings_compile_time"] is builder._settings_compile_time
+            )
+            assert call_kwargs["settings_run_time"] is builder._settings_run_time
+            assert "cppdefs" in call_kwargs["settings_compile_time"]
+            # The minimal fixture is a marbl (BGC) model.
+            assert call_kwargs["has_bgc"] is True
 
     @patch("cstar_forge.forge.executor.input_data.RomsMarblInputData")
     @requires_cstar_pio
@@ -1726,9 +1977,7 @@ class TestForgeExecutorGenerateInputsComprehensive:
         mock_roms_marbl_blueprint_elements.forcing = MagicMock()
         mock_roms_marbl_blueprint_elements.cdr_forcing = None
         mock_input_data_instance.generate_all.return_value = (
-            mock_roms_marbl_blueprint_elements,
-            {},
-            {},
+            mock_roms_marbl_blueprint_elements
         )
         mock_input_data_class.return_value = mock_input_data_instance
 
@@ -1756,9 +2005,7 @@ class TestForgeExecutorGenerateInputsComprehensive:
         mock_roms_marbl_blueprint_elements.forcing = MagicMock()
         mock_roms_marbl_blueprint_elements.cdr_forcing = None
         mock_input_data_instance.generate_all.return_value = (
-            mock_roms_marbl_blueprint_elements,
-            {},
-            {},
+            mock_roms_marbl_blueprint_elements
         )
         mock_input_data_class.return_value = mock_input_data_instance
 
@@ -1780,7 +2027,7 @@ class TestForgeExecutorGenerateInputsComprehensive:
     ):
         """Test generate_inputs raises RuntimeError when roms_marbl_blueprint_elements is None."""
         mock_input_data_instance = MagicMock()
-        mock_input_data_instance.generate_all.return_value = (None, {}, {})
+        mock_input_data_instance.generate_all.return_value = None
         mock_input_data_class.return_value = mock_input_data_instance
 
         with patch.object(ForgeExecutor, "ensure_source_data"):
@@ -1818,9 +2065,7 @@ class TestForgeExecutorGenerateInputsComprehensive:
 
         mock_input_data_instance = MagicMock()
         mock_input_data_instance.generate_all.return_value = (
-            mock_roms_marbl_blueprint_elements,
-            {},
-            {},
+            mock_roms_marbl_blueprint_elements
         )
         mock_input_data_class.return_value = mock_input_data_instance
 
@@ -1859,9 +2104,7 @@ class TestForgeExecutorGenerateInputsComprehensive:
 
         mock_input_data_instance = MagicMock()
         mock_input_data_instance.generate_all.return_value = (
-            mock_roms_marbl_blueprint_elements,
-            {},
-            {},
+            mock_roms_marbl_blueprint_elements
         )
         mock_input_data_class.return_value = mock_input_data_instance
 
@@ -1879,9 +2122,7 @@ class TestForgeExecutorGenerateInputsComprehensive:
 class TestForgeExecutorGetDsComprehensive:
     """Comprehensive tests for get_ds method."""
 
-    def test_get_ds_returns_list(
-        self, minimal_cstar_spec_builder_args, sample_model_params, tmp_path
-    ):
+    def test_get_ds_returns_list(self, minimal_cstar_spec_builder_args, tmp_path):
         """Test get_ds returns list of datasets."""
         test_file1 = tmp_path / "test1.nc"
         test_file1.touch()
@@ -1904,7 +2145,6 @@ class TestForgeExecutorGetDsComprehensive:
                 surface=_create_empty_dataset(tmp_path),
             ),
             partitioning=minimal_cstar_spec_builder_args["partitioning"],
-            model_params=sample_model_params,
             runtime_params=cstar_models.RuntimeParameterSet(
                 start_date=datetime(2012, 1, 1),
                 end_date=datetime(2012, 1, 2),
@@ -1925,7 +2165,7 @@ class TestForgeExecutorGetDsComprehensive:
             assert mock_open.call_count == 1
 
     def test_get_ds_returns_none_when_no_locations(
-        self, minimal_cstar_spec_builder_args, sample_model_params, tmp_path
+        self, minimal_cstar_spec_builder_args, tmp_path
     ):
         """Test get_ds propagates FileNotFoundError when file doesn't exist."""
         placeholder_file = tmp_path / "placeholder_grid.nc"
@@ -1949,7 +2189,6 @@ class TestForgeExecutorGetDsComprehensive:
                 surface=_create_empty_dataset(tmp_path),
             ),
             partitioning=minimal_cstar_spec_builder_args["partitioning"],
-            model_params=sample_model_params,
             runtime_params=cstar_models.RuntimeParameterSet(
                 start_date=datetime(2012, 1, 1),
                 end_date=datetime(2012, 1, 2),
@@ -1964,7 +2203,7 @@ class TestForgeExecutorGetDsComprehensive:
                 builder.get_ds("grid", from_file=False)
 
     def test_get_ds_filters_none_locations(
-        self, minimal_cstar_spec_builder_args, sample_model_params, tmp_path
+        self, minimal_cstar_spec_builder_args, tmp_path
     ):
         """Test get_ds filters out resources with None location."""
         test_file = tmp_path / "test.nc"
@@ -1988,7 +2227,6 @@ class TestForgeExecutorGetDsComprehensive:
                 surface=_create_empty_dataset(tmp_path),
             ),
             partitioning=minimal_cstar_spec_builder_args["partitioning"],
-            model_params=sample_model_params,
             runtime_params=cstar_models.RuntimeParameterSet(
                 start_date=datetime(2012, 1, 1),
                 end_date=datetime(2012, 1, 2),
@@ -2210,14 +2448,7 @@ class TestGoldenNamelist:
         ):
             mock_ic_instance = MagicMock()
             mock_ic_instance.save.side_effect = self._touch_save_list
-            # This suite's IC has an (IC) bgc_sources entry, so
-            # _generate_initial_conditions takes the multi-object merge path,
-            # which needs a real Dataset (not a MagicMock) from
-            # rt.InitialConditions.merge() -- the whole class is mocked here, so
-            # that classmethod needs its own return value too.
-            mock_ic_instance.ds = xr.Dataset()
             mock_ic.return_value = mock_ic_instance
-            mock_ic.merge.return_value = xr.Dataset()
 
             mock_surface_instance = MagicMock()
             mock_surface_instance.save.side_effect = self._touch_save
@@ -2355,6 +2586,41 @@ class TestGoldenNamelist:
         assert "nrpf_particles" in particles
         assert "output_period =" not in particles
         assert "nrpf =" not in particles
+
+    def test_golden_namelist_test_tiny_roms060(self, mock_grid, tmp_path):
+        """Same test-tiny domain/forcing/output, but resolved against the
+        ``roms-marbl-0.6-default`` ModelSpec (ucla-roms >= 0.6.0) -- proves the
+        versioned namelist path selects ``RunTimeSettingsV0_6_0``/
+        ``RomsNamelistV0_6_0`` end to end.
+
+        The one schema-visible difference from the roms050 golden is the added
+        ``&pio_settings`` group (``pio_stride``); everything else about the
+        0.5.0 schema (no ``nrpf_rst``, renamed particles output keys) carries
+        forward unchanged since ``RunTimeSettingsV0_6_0``/``RomsNamelistV0_6_0``
+        subclass the 0.5.0 variants.
+
+        Test name note: this must NOT contain ``roms050`` -- the legacy golden
+        is selected with ``-k "golden_namelist_test_tiny and not roms050 and not
+        roms060"`` (see ``docs/architecture-details.md`` Sec 7), which would
+        otherwise also catch this test.
+        """
+        normalized = self._run_golden_namelist_case(
+            mock_grid,
+            tmp_path,
+            _MODEL_DIR_ROMS060,
+            "golden_namelist_test-tiny-roms060.nml",
+        )
+
+        basic_output = normalized.split("&basic_output_settings")[1].split("/", 1)[0]
+        assert "nrpf_rst" not in basic_output
+
+        particles = normalized.split("&particles_settings")[1].split("/", 1)[0]
+        assert "output_period_particles" in particles
+        assert "nrpf_particles" in particles
+
+        assert "&pio_settings" in normalized
+        pio_settings = normalized.split("&pio_settings")[1].split("/", 1)[0]
+        assert "pio_stride = 1" in pio_settings
 
 
 class TestChildDomainNoInitialConditionsValidatesAtEmit:
@@ -2614,14 +2880,7 @@ class TestForgeRunnerEndToEnd:
         ):
             mock_ic_instance = MagicMock()
             mock_ic_instance.save.side_effect = TestGoldenNamelist._touch_save_list
-            # This suite's IC has an (IC) bgc_sources entry, so
-            # _generate_initial_conditions takes the multi-object merge path,
-            # which needs a real Dataset (not a MagicMock) from
-            # rt.InitialConditions.merge() -- the whole class is mocked here, so
-            # that classmethod needs its own return value too.
-            mock_ic_instance.ds = xr.Dataset()
             mock_ic.return_value = mock_ic_instance
-            mock_ic.merge.return_value = xr.Dataset()
 
             mock_surface_instance = MagicMock()
             mock_surface_instance.save.side_effect = TestGoldenNamelist._touch_save
@@ -2876,14 +3135,7 @@ class TestOnlyInputsReuseIsIdempotent:
         ):
             mock_ic_instance = MagicMock()
             mock_ic_instance.save.side_effect = self._touch_save_list
-            # This suite's IC has an (IC) bgc_sources entry, so
-            # _generate_initial_conditions takes the multi-object merge path,
-            # which needs a real Dataset (not a MagicMock) from
-            # rt.InitialConditions.merge() -- the whole class is mocked here, so
-            # that classmethod needs its own return value too.
-            mock_ic_instance.ds = xr.Dataset()
             mock_ic.return_value = mock_ic_instance
-            mock_ic.merge.return_value = xr.Dataset()
 
             mock_surface_instance = MagicMock()
             mock_surface_instance.save.side_effect = self._touch_save

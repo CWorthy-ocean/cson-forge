@@ -793,6 +793,82 @@ class TestPrepareRivr2o:
         assert sd.dataset_key_for_source("RIVR2O") == "RIVR2O"
 
 
+class TestPrepareGlodap:
+    """Tests for the GLODAP (GLODAPv2.2016b mapped climatology) user-provided
+    BGC dataset handler.
+    """
+
+    _REQUIRED = ("TAlk", "TCO2", "NO3", "PO4", "silicate", "oxygen")
+
+    def test_missing_dir_raises_naming_required_files(self, tmp_path):
+        """Missing GLODAP directory raises FileNotFoundError naming every
+        required per-variable file.
+        """
+        sd = SourceData(datasets=["GLODAP"], source_data_dir=tmp_path)
+
+        with pytest.raises(FileNotFoundError) as excinfo:
+            sd.prepare_all()
+        msg = str(excinfo.value)
+        assert "GLODAP" in msg
+        for var in self._REQUIRED:
+            assert f"GLODAPv2.2016b.{var}.nc" in msg
+
+    def test_partial_required_files_raises_naming_only_the_missing_ones(self, tmp_path):
+        """A directory with some but not all required files still raises,
+        listing only what's actually missing.
+        """
+        glodap_dir = tmp_path / "GLODAP"
+        glodap_dir.mkdir(parents=True)
+        (glodap_dir / "GLODAPv2.2016b.TAlk.nc").touch()
+
+        sd = SourceData(datasets=["GLODAP"], source_data_dir=tmp_path)
+        with pytest.raises(FileNotFoundError) as excinfo:
+            sd.prepare_all()
+        msg = str(excinfo.value)
+        assert "GLODAPv2.2016b.TAlk.nc" not in msg
+        assert "GLODAPv2.2016b.TCO2.nc" in msg
+
+    def test_verified_when_required_files_present_returns_directory(
+        self, tmp_path, caplog
+    ):
+        """With every required file present, the directory itself (not a
+        wildcard/single file) is returned and recorded in sd.paths; missing
+        optional temperature/salinity logs a warning, not an error.
+        """
+        glodap_dir = tmp_path / "GLODAP"
+        glodap_dir.mkdir(parents=True)
+        for var in self._REQUIRED:
+            (glodap_dir / f"GLODAPv2.2016b.{var}.nc").touch()
+
+        sd = SourceData(datasets=["GLODAP"], source_data_dir=tmp_path)
+        with caplog.at_level("WARNING"):
+            sd.prepare_all()
+
+        assert sd.paths["GLODAP"] == glodap_dir
+        assert "temperature/salinity" in caplog.text
+
+    def test_no_warning_when_optional_ts_files_present(self, tmp_path, caplog):
+        """Providing the optional temperature/salinity files silences the
+        density-fallback warning.
+        """
+        glodap_dir = tmp_path / "GLODAP"
+        glodap_dir.mkdir(parents=True)
+        for var in (*self._REQUIRED, "temperature", "salinity"):
+            (glodap_dir / f"GLODAPv2.2016b.{var}.nc").touch()
+
+        sd = SourceData(datasets=["GLODAP"], source_data_dir=tmp_path)
+        with caplog.at_level("WARNING"):
+            sd.prepare_all()
+
+        assert sd.paths["GLODAP"] == glodap_dir
+        assert "temperature/salinity" not in caplog.text
+
+    def test_dataset_key_for_source(self):
+        """Logical name 'GLODAP' resolves to the 'GLODAP' dataset key."""
+        sd = SourceData(datasets=["GLODAP"])
+        assert sd.dataset_key_for_source("GLODAP") == "GLODAP"
+
+
 class TestConstantsRiverBgcSource:
     """Regression: an explicit river bgc_source={"name": "CONSTANTS"} must not crash
     at generation. roms-tools auto-downloads CONSTANTS' own file
@@ -893,7 +969,7 @@ class TestWOABGCHandler:
         assert len(WOA23_BGC_VARIABLES) * len(WOA23_PERIODS) == 78
 
     def test_nutrient_and_ts_decade_tokens_match_ncei(self):
-        """ "decav"/"all" is the over-years averaging token, not the within-year period.
+        """'decav'/'all' is the over-years averaging token, not the within-year period.
 
         Nutrients and oxygen are published only under "all"; T/S under "decav".
         Getting these backwards yields 404s for every file.

@@ -22,7 +22,7 @@ channels:
 dependencies:
 - python >=3.12,<3.14
 - roms-tools >=4.1.1,<5
-- cstar-ocean >=0.11.0
+- cstar-ocean >=0.13.3
 - dask *
 - distributed *
 - numpy *
@@ -69,5 +69,5 @@ dependencies:
   - nest-asyncio
   - ujson
   - fastparquet
-  - cstar-ocean>=0.11.0
+  - cstar-ocean>=0.13.3
   - roms-tools>=4.1.1, <5

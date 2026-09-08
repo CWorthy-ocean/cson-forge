@@ -34,16 +34,23 @@ from pydantic import (
 
 from cstar_forge.forge import input_data, source_data
 from cstar_forge.forge.forge_blueprint import (
+    CDR_MODES,
     DEFAULT_WORKING_ROOT,
     ROMS_RUN_SEGMENT,
     OpenBoundaries,
     UserProvidedFile,
+    infer_cdr_mode,
     vert_kwargs_from_grid_kwargs,
 )
 from cstar_forge.forge.host import HostPaths
 from cstar_forge.forge.namelist_model import (
+    RunTimeSettings,
+    build_namelist,
+    check_output_streams_divide_rst,
     check_rst_period_divisible,
+    cppdefs_for_precheck,
     ensure_cdr_output_marbl_diagnostics,
+    run_time_settings_for_ref,
 )
 from cstar_forge.forge.settings import render_roms_settings, write_roms_namelist
 from cstar_forge.forge.user_files import verify_user_file
@@ -206,6 +213,24 @@ class ForgeExecutor(BaseModel):
     partitioning: cstar_models.PartitioningParameterSet
     start_date: datetime = Field(alias="start_time")
     end_date: datetime = Field(alias="end_time")
+    cdr_mode: str = Field(
+        default="none",
+        description=(
+            "Which of the five CDR modes drives CDR forcing/output for this run "
+            "(from ForgeBlueprint ``cdr.mode`` -- see ``CdrSpec.mode``'s "
+            "docstring): 'none' / 'simple' / 'yaml' / 'netcdf' / 'upscaled'. "
+            "'upscaled' means CDR tracers are supplied by C-Star's runtime "
+            "orchestrator, not generated here: no generation step runs (neither "
+            "cdr_forcing nor cdr_forcing_file is populated for this mode), and "
+            "RomsMarblInputData emits a placeholder Resource instead -- see "
+            "input_data.UPSCALED_CDR_PLACEHOLDER_LOCATION. Backward-compat: a "
+            "caller constructing the executor directly with cdr_forcing/"
+            "cdr_forcing_file set but cdr_mode left at its default 'none' gets "
+            "the mode inferred ('yaml' for cdr_forcing, 'netcdf' for "
+            "cdr_forcing_file -- see ``_resolve_cdr_mode``), so pre-CdrSpec "
+            "callers keep working unchanged."
+        ),
+    )
     cdr_forcing: dict | None = Field(
         default=None,
         alias="CDR_forcing",
@@ -216,7 +241,7 @@ class ForgeExecutor(BaseModel):
         validate_default=False,
         description=(
             "A user-supplied pre-made CDR-forcing netCDF (from ForgeBlueprint "
-            "``forcing.cdr_forcing_file``), used in place of building one via "
+            "``cdr.cdr_forcing_file``), used in place of building one via "
             "``rt.CDRForcing`` from ``cdr_forcing``. Mutually exclusive with "
             "``cdr_forcing`` (the ForgeBlueprint schema already forbids the "
             "combination); verified and staged directly in "
@@ -331,6 +356,25 @@ class ForgeExecutor(BaseModel):
         """Validate that start_date precedes end_date."""
         if self.end_date <= self.start_date:
             raise ValueError("end_date must be after start_date")
+        return self
+
+    @model_validator(mode="after")
+    def _resolve_cdr_mode(self) -> ForgeExecutor:
+        """Validate ``cdr_mode`` and, for backward compat, infer it when a caller
+        constructs the executor directly (bypassing ``from_forge_blueprint``/
+        ``CdrSpec``) with ``cdr_forcing``/``cdr_forcing_file`` set but ``cdr_mode``
+        left at its default ``"none"``. Never overrides an explicitly-set mode
+        (including an explicit ``"none"`` alongside a set field, which the
+        existing generated/custom-file branches would already accept).
+        """
+        if self.cdr_mode not in CDR_MODES:
+            raise ValueError(
+                f"cdr_mode must be one of {CDR_MODES}, got {self.cdr_mode!r}"
+            )
+        if self.cdr_mode == "none":
+            # Shared with the v6->v7 migration and the resolver's convenience
+            # kwargs -- the three entry points can't drift apart.
+            self.cdr_mode = infer_cdr_mode(self.cdr_forcing, self.cdr_forcing_file)
         return self
 
     def _require_host(self) -> HostPaths:
@@ -568,7 +612,7 @@ class ForgeExecutor(BaseModel):
                     # (never merged, unlike initial_conditions -- see
                     # RomsMarblInputData._generate_boundary_forcing).
                     _add_nc("boundary-physics")
-                    for bs in (entries.get("bgc_sources") or []):
+                    for bs in entries.get("bgc_sources") or []:
                         bs_source = bs.get("source") or {}
                         suffix = input_data.RomsMarblInputData._bgc_output_suffix(
                             bs_source.get("name"), bs.get("use_vars")
@@ -604,6 +648,10 @@ class ForgeExecutor(BaseModel):
 
                 _add_nc(category)
 
+        # "upscaled" mode plans no local CDR netCDF: CdrSpec's validator keeps
+        # cdr_forcing/cdr_forcing_file unset for that mode (no generation step
+        # runs -- see RomsMarblInputData's cdr_mode handling), so this condition
+        # is already False for it without a separate cdr_mode check.
         if self.cdr_forcing or self.cdr_forcing_file:
             _add_nc(input_data.CDR_FORCING_NETCDF_STEM)
 
@@ -641,8 +689,23 @@ class ForgeExecutor(BaseModel):
 
     @property
     def n_procs(self) -> int:
-        """Return the number of processors."""
-        return self.partitioning.n_procs_x * self.partitioning.n_procs_y
+        """Return the number of processors.
+
+        Mirrors ``RomsMarblBlueprint.cpus_needed``: ``n_cores`` (set under
+        ``auto_tiling``) is authoritative when present, else the explicit
+        ``n_procs_x * n_procs_y`` product.
+        """
+        if self.partitioning.n_cores is not None:
+            return self.partitioning.n_cores
+        if (
+            self.partitioning.n_procs_x is not None
+            and self.partitioning.n_procs_y is not None
+        ):
+            return self.partitioning.n_procs_x * self.partitioning.n_procs_y
+        raise ValueError(
+            "Cannot determine n_procs: partitioning has neither n_cores nor "
+            "both n_procs_x/n_procs_y set."
+        )
 
     @property
     def datestr(self) -> str:
@@ -667,15 +730,28 @@ class ForgeExecutor(BaseModel):
     def roms_blueprint_working_dir(self) -> Path:
         """Working dir for the emitted ROMS blueprint.
 
-        Mirrors ``run_output_dir`` but under a ``cstar-roms-run`` root instead of
-        the forge run's ``cstar-forge-run`` root, so the two stages don't share a dir.
+        Mirrors ``run_output_dir`` but under a ``_roms_bp_runs`` root instead of
+        the forge run's ``_forge_bp_runs`` root, so the two stages don't share a dir.
         """
-        forge_seg = Path(DEFAULT_WORKING_ROOT).name  # "cstar-forge-run"
+        forge_parent = Path(DEFAULT_WORKING_ROOT).parent.name  # "cstar"
+        forge_seg = Path(DEFAULT_WORKING_ROOT).name  # "_forge_bp_runs"
         blueprint_seg = ROMS_RUN_SEGMENT
         run_dir = self.run_output_dir
-        if forge_seg in run_dir.parts:
+        parts = run_dir.parts
+        # Anchor on the full two-segment default root ("cstar/_forge_bp_runs"),
+        # matching config.relocate_working_dir -- a lone "_forge_bp_runs" segment
+        # elsewhere in a custom path is not the default root.
+        for i in range(1, len(parts)):
+            if parts[i] == forge_seg and parts[i - 1] == forge_parent:
+                return Path(*parts[:i], blueprint_seg, *parts[i + 1 :])
+        # Legacy sibling swap for explicit old-form paths (pre-rename default) on
+        # non-HPC hosts, where relocate_working_dir leaves them untouched.
+        if "cstar-forge-run" in run_dir.parts:
             return Path(
-                *(blueprint_seg if p == forge_seg else p for p in run_dir.parts)
+                *(
+                    "cstar-roms-run" if p == "cstar-forge-run" else p
+                    for p in run_dir.parts
+                )
             )
         return run_dir / blueprint_seg
 
@@ -717,13 +793,20 @@ class ForgeExecutor(BaseModel):
             (self._settings_compile_time.get("cppdefs") or {}).get("use_pio", False)
         )
 
+    @property
+    def _has_bgc(self) -> bool:
+        """Whether the model build includes MARBL BGC, read from compile-time cppdefs."""
+        return bool(
+            (self._settings_compile_time.get("cppdefs") or {}).get("marbl", False)
+        )
+
     def _validated_roms_marbl_blueprint(self) -> cstar_models.RomsMarblBlueprint:
         """Re-validate the assembled blueprint against the installed C-Star models.
 
         The blueprint is assembled with ``model_construct`` because the
         pre-generation stages are deliberately partial (placeholder resources;
-        ``model_params``/``runtime_params`` live in the sidecar until
-        ``configure_build``), so nothing checks it against the cstar models --
+        ``runtime_params`` lives in the sidecar until ``configure_build``), so
+        nothing checks it against the cstar models --
         which are ``extra="forbid"`` -- until C-Star loads the persisted file.
         Round-tripping the exact serialized form (the same ``model_dump`` that
         ``persist`` writes, minus the ``$schema`` key that ``deserialize``
@@ -1161,7 +1244,6 @@ class ForgeExecutor(BaseModel):
             valid_start_date=self.start_date,
             valid_end_date=self.end_date,
             partitioning=self.partitioning,
-            model_params=None,  # stored in sidecar files
             runtime_params=None,  # stored in sidecar files
             code=self._cstar_code_repository(),
             grid=empty_dataset,
@@ -1498,44 +1580,40 @@ class ForgeExecutor(BaseModel):
         if self.src_data is None:
             self.ensure_source_data(include_streamable=False)
 
-        roms_marbl_blueprint_elements, settings_compile_time, settings_run_time = (
-            input_data.RomsMarblInputData(
-                domain_name=self.name,
-                start_date=self.start_date,
-                end_date=self.end_date,
-                input_data_dir=self.input_data_dir,
-                grid=self.grid,
-                grid_parent=self.grid_parent,
-                grid_child=self.grid_child,
-                metadata_child=self.metadata_child,
-                boundaries=self.open_boundaries,
-                source_data=self.src_data,
-                forcing_override=self.forcing_override,
-                model_reference_date=self.model_reference_date,
-                roms_marbl_blueprint_dir=self.roms_marbl_blueprint_dir,
-                partitioning=self.partitioning,
-                cdr_forcing=self.cdr_forcing,
-                cdr_forcing_file=self.cdr_forcing_file,
-                use_dask=use_dask,
-                dask_num_workers=dask_num_workers,
-                serialize_dask_write=serialize_dask_write,
-                subchunk=subchunk,
-                use_pio=self._use_pio,
-                verbose=self.verbose,
-            ).generate_all(clobber=clobber, test=test, only=only)
-        )
+        roms_marbl_blueprint_elements = input_data.RomsMarblInputData(
+            domain_name=self.name,
+            start_date=self.start_date,
+            end_date=self.end_date,
+            input_data_dir=self.input_data_dir,
+            grid=self.grid,
+            grid_parent=self.grid_parent,
+            grid_child=self.grid_child,
+            metadata_child=self.metadata_child,
+            settings_compile_time=self._settings_compile_time,
+            settings_run_time=self._settings_run_time,
+            has_bgc=self._has_bgc,
+            boundaries=self.open_boundaries,
+            source_data=self.src_data,
+            forcing_override=self.forcing_override,
+            model_reference_date=self.model_reference_date,
+            roms_marbl_blueprint_dir=self.roms_marbl_blueprint_dir,
+            partitioning=self.partitioning,
+            cdr_mode=self.cdr_mode,
+            cdr_forcing=self.cdr_forcing,
+            cdr_forcing_file=self.cdr_forcing_file,
+            use_dask=use_dask,
+            dask_num_workers=dask_num_workers,
+            serialize_dask_write=serialize_dask_write,
+            subchunk=subchunk,
+            use_pio=self._use_pio,
+            verbose=self.verbose,
+        ).generate_all(clobber=clobber, test=test, only=only)
 
         if roms_marbl_blueprint_elements is None:
             raise RuntimeError(
                 "Blueprint mismatch detected, but input files exist. "
                 "Set clobber=True to overwrite existing input files."
             )
-
-        # Apply settings from input data generation (deep merge to preserve existing
-        # settings). allow_new=True: the ForgeBlueprint base omits the sections that input
-        # generation fills (grid/initial/forcing/s_coord), so they arrive as new keys.
-        self._update_settings_compile_time(settings_compile_time, allow_new=True)
-        self._update_settings_run_time(settings_run_time, allow_new=True)
 
         if test:
             return
@@ -1569,7 +1647,6 @@ class ForgeExecutor(BaseModel):
         )
 
         # Settings are stored in a sidecar YAML, not in the blueprint itself.
-        roms_marbl_blueprint_dict["model_params"] = None
         roms_marbl_blueprint_dict["runtime_params"] = None
 
         self.roms_marbl_blueprint = cstar_models.RomsMarblBlueprint.model_construct(
@@ -1638,7 +1715,7 @@ class ForgeExecutor(BaseModel):
         )
 
     def _update_settings_compile_time(
-        self, settings_compile_time: dict[str, Any], allow_new: bool = False
+        self, settings_compile_time: dict[str, Any]
     ) -> None:
         """
         Update compile-time settings by recursively merging nested dictionaries.
@@ -1682,19 +1759,13 @@ class ForgeExecutor(BaseModel):
                         if not isinstance(value, (str, int, float, bool, type(None)))
                         else value
                     )
-            elif allow_new:
-                # Generation-overlay path: the ForgeBlueprint base omits sections that are
-                # filled at processing time, so accept new top-level keys.
-                self._settings_compile_time[key] = copy.deepcopy(value)
             else:
                 raise ValueError(
                     f"Unknown compile-time setting key: '{key}'. "
                     f"Valid keys are: {sorted(self._settings_compile_time.keys())}"
                 )
 
-    def _update_settings_run_time(
-        self, settings_run_time: dict[str, Any], allow_new: bool = False
-    ) -> None:
+    def _update_settings_run_time(self, settings_run_time: dict[str, Any]) -> None:
         """
         Update run-time settings by recursively merging nested dictionaries.
 
@@ -1740,11 +1811,6 @@ class ForgeExecutor(BaseModel):
                         if not isinstance(value, (str, int, float, bool, type(None)))
                         else value
                     )
-            elif allow_new:
-                # Generation-overlay path: the ForgeBlueprint base omits sections that are
-                # filled at processing time (grid/initial/forcing/s_coord), so accept
-                # new top-level keys instead of raising.
-                self._settings_run_time[key] = copy.deepcopy(value)
             else:
                 # Unknown key - raise error
                 raise ValueError(
@@ -1797,7 +1863,7 @@ class ForgeExecutor(BaseModel):
            - Run-time: writes namelist.nml (write_roms_namelist) and copies
              static run-time files (e.g., marbl_in)
         5. Updates blueprint with rendered code locations and file lists
-        6. Sets blueprint model_params and runtime_params
+        6. Sets blueprint partitioning.use_pio and runtime_params
         7. Re-validates the final blueprint against the installed C-Star models
            (only when `generate_inputs()` has run -- the placeholder blueprint
            cannot validate), so an extra="forbid" mismatch fails at emit time
@@ -1892,8 +1958,10 @@ class ForgeExecutor(BaseModel):
         # stored blueprints reach configure_build without re-resolving, and wizard
         # accordion overrides apply after the resolver, so this is the enforcement
         # point of record. A generated CDR forcing (or a user-supplied
-        # cdr_forcing_file) implies CDR output regardless of the stored snapshot.
-        if self.cdr_forcing or self.cdr_forcing_file:
+        # cdr_forcing_file) implies CDR output regardless of the stored snapshot --
+        # as does "upscaled" mode, even though neither field is populated for it:
+        # real CDR tracers exist at runtime under that mode too.
+        if self.cdr_forcing or self.cdr_forcing_file or self.cdr_mode == "upscaled":
             self._settings_run_time.setdefault("cdr_output", {})["do_cdr_output"] = True
         # do_cdr_output requires MARBL plus the CDR_FORCING cppdef (both gate
         # compiling ucla-roms' cdr_output.F90), and the MARBL diagnostics ucla-roms
@@ -1923,8 +1991,10 @@ class ForgeExecutor(BaseModel):
                     sorted(set(after) - set(before)),
                 )
 
-        # Derive n_tracers: prefer the value passed by the processing engine; otherwise
-        # derive it from the resolved settings (T + S + BGC ntrc_bio + passive).
+        # Derive n_tracers up front: prefer the value passed by the processing
+        # engine; otherwise derive it from the resolved settings (T + S + BGC
+        # ntrc_bio + passive). Needed below both to build the namelist for the
+        # output-stream precheck and later to render cppdefs.opt/namelist.nml.
         if "n_tracers" in kwargs:
             n_tracers = int(kwargs["n_tracers"])
         elif self.resolved_settings is not None:
@@ -1936,6 +2006,47 @@ class ForgeExecutor(BaseModel):
             raise ValueError(
                 "n_tracers could not be determined: neither passed as a kwarg nor "
                 "derivable from resolved_settings."
+            )
+
+        # Output-stream / restart-rollover consistency net (ucla-roms >= 0.5.0's
+        # check_output_divides_rst, precheck.F90), mirroring the resolver's guard
+        # (build_forge_blueprint): stored blueprints reach configure_build without
+        # re-resolving, and the CDR-output net above and wizard accordion overrides
+        # can both still change do_cdr_output/cppdefs after the resolver ran, so
+        # this is the enforcement point of record for that path. Unlike the
+        # resolver, there's no separate check_extract_divides_rst call here to
+        # de-duplicate against, so `extract` is covered by this general check too.
+        #
+        # The checker is keyed on C-Star's canonical namelist vocabulary
+        # (RomsNamelistBase group field names / real Fortran keys), not forge's
+        # settings-dict vocabulary -- build the same RomsNamelistBase subclass
+        # `write_roms_namelist` below builds and feed its `model_dump()`.
+        # (`write_roms_namelist` re-validates/rebuilds this from
+        # `_settings_run_time` again when it writes namelist.nml; that
+        # duplication is intentional and cheap -- this check must run before
+        # any build side effects (the mkdir/render calls just below), so it
+        # can't reuse an object built later in this method.)
+        effective_roms_ref = (
+            self.code_spec.roms.commit or self.code_spec.roms.branch
+            if self.code_spec is not None
+            else None
+        )
+        with warnings.catch_warnings():
+            # See the matching resolver guard: an internal version probe
+            # shouldn't repeat the non-semver-pin warning surfaced elsewhere.
+            warnings.simplefilter("ignore", UserWarning)
+            settings_cls = run_time_settings_for_ref(
+                str(effective_roms_ref) if effective_roms_ref is not None else None
+            )
+        if settings_cls is not RunTimeSettings:
+            rt = settings_cls.model_validate(self._settings_run_time)
+            nml = build_namelist(rt, n_tracers)
+            check_output_streams_divide_rst(
+                nml.model_dump(),
+                cppdefs_for_precheck(
+                    self._settings_compile_time.get("cppdefs", {}),
+                    self._settings_run_time.get("upscale_output", {}),
+                ),
             )
 
         # Ensure build output directories exist before writing files.
@@ -2024,11 +2135,14 @@ class ForgeExecutor(BaseModel):
                 cstar_models.ROMSCompositeCodeRepository.model_construct(**code_dict)
             )
 
-            roms_marbl_blueprint_dict["model_params"] = {
-                "time_step": self._settings_run_time["time_stepping"]["dt"],
-            }
-            if self._use_pio:
-                roms_marbl_blueprint_dict["model_params"]["use_pio"] = True
+            # model_params (and its time_step/use_pio fields) is gone in schema
+            # 3.0.0+: time_step now comes solely from the namelist's
+            # time_stepping.dt (already written above), and use_pio moves onto
+            # partitioning. model_dump() serialized partitioning as a plain
+            # dict here (mode="json"), so stamp use_pio directly on it -- this
+            # is the authoritative write for direct ForgeExecutor constructions
+            # whose supplied partitioning didn't already carry use_pio.
+            roms_marbl_blueprint_dict["partitioning"]["use_pio"] = self._use_pio
             # No output_dir here: it is a pre-2.0.0 field superseded by the
             # blueprint working_dir (set just below).
             roms_marbl_blueprint_dict["runtime_params"] = {

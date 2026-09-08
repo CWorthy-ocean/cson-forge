@@ -55,7 +55,7 @@ WOA23_BGC_VARIABLES: dict[str, tuple[str, str, str]] = {
 # Monthly WOA fields are shallow -- 800 m for the nutrients, 1500 m for oxygen and
 # T/S -- so the full-depth annual (period 00) files are staged too. roms-tools splices
 # them underneath the monthly data for its default "annual_blend" deep fill.
-WOA23_PERIODS = tuple(range(1, 13)) + (0,)
+WOA23_PERIODS = (*range(1, 13), 0)
 WOA23_GRID = "01"
 # The unified BGC climatology. From v2.1 on, the file names its dimensions
 # ``longitude``/``latitude``/``depth`` and stores ``month`` as an integer index 1-12;
@@ -94,6 +94,7 @@ SOURCE_ALIAS: dict[str, str] = {
     "GLOFAS": "GLOFAS",  # alternative river-discharge dataset (roms-tools rt>=4, PR #625)
     "EMOD": "EMOD",  # alternative topography source (EMODnet); user-staged, like TPXO/WOA
     "RIVR2O": "RIVR2O",  # river biogeochemistry source; user-staged, like TPXO/WOA/GLOFAS
+    "GLODAP": "GLODAP",  # GLODAPv2.2016b mapped BGC climatology; user-staged, like EMOD/RIVR2O
     "CONSTANTS": "CONSTANTS",  # river-BGC default (roms-tools' own auto-download)
 }
 
@@ -152,6 +153,7 @@ DATASET_METADATA: dict[str, dict[str, str]] = {
     "GLOFAS": {"url": GLOFAS_CDS_URL},
     "EMOD": {},  # user-staged (EMODnet has no canonical download URL Forge can pin)
     "RIVR2O": {},  # user-staged (no roms-tools auto-download; annual files, 1903-2024)
+    "GLODAP": {},  # user-staged (GLODAPv2.2016b mapped climatology; no auto-download)
     "CONSTANTS": {},  # roms-tools auto-download (river_tracer_defaults.nc); streamable
 }
 
